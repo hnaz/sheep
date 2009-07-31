@@ -5,13 +5,15 @@
 
 typedef struct sheep_object * sheep_t;
 
-struct sheep_level;
+struct sheep_object_pool;
+struct sheep_compile;
+struct sheep_context;
 struct sheep_vm;
 
 struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(sheep_t);
-	int (*compile)(struct sheep_vm *, struct sheep_level *, sheep_t);
+	int (*compile)(struct sheep_compile *, struct sheep_context *, sheep_t);
 };
 
 struct sheep_object {
@@ -31,7 +33,6 @@ static inline void sheep_set_data(sheep_t sheep, void *data)
 	sheep->data = (unsigned long)data | (sheep->data & 1);
 }
 
-struct sheep_object_pool;
 struct sheep_objects {
 	struct sheep_object_pool *fulls;
 	struct sheep_object_pool *parts;

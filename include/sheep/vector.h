@@ -7,4 +7,11 @@ struct sheep_vector {
 	unsigned int blocksize;
 };
 
+void sheep_vector_push(struct sheep_vector *, void *);
+
+static inline void *sheep_vector_pop(struct sheep_vector *vec)
+{
+	return vec->items[--vec->nr_items];
+}
+
 #endif /* _SHEEP_VECTOR_H */

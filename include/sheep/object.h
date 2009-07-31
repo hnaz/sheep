@@ -1,0 +1,49 @@
+#ifndef _SHEEP_OBJECT_H
+#define _SHEEP_OBJECT_H
+
+#include <sheep/vector.h>
+
+typedef struct sheep_object * sheep_t;
+
+struct sheep_level;
+struct sheep_vm;
+
+struct sheep_type {
+	void (*mark)(sheep_t);
+	void (*free)(sheep_t);
+	int (*compile)(struct sheep_vm *, struct sheep_level *, sheep_t);
+};
+
+struct sheep_object {
+	const struct sheep_type *type;
+	unsigned long data;
+};
+
+sheep_t sheep_make(struct sheep_vm *, struct sheep_type *, void *);
+
+static inline void *sheep_data(sheep_t sheep)
+{
+	return (void *)(sheep->data & ~1);
+}
+
+static inline void sheep_set_data(sheep_t sheep, void *data)
+{
+	sheep->data = (unsigned long)data | (sheep->data & 1);
+}
+
+struct sheep_object_pool;
+struct sheep_objects {
+	struct sheep_object_pool *fulls;
+	struct sheep_object_pool *parts;
+	struct sheep_vector protected;
+};
+
+void sheep_mark(sheep_t);
+
+void sheep_protect(struct sheep_vm *, sheep_t);
+void sheep_unprotect(struct sheep_vm *, sheep_t);
+
+void sheep_gc_disable(struct sheep_vm *);
+void sheep_gc_enable(struct sheep_vm *);
+
+#endif /* _SHEEP_OBJECT_H */

@@ -8,12 +8,12 @@ int main(void)
 {
 	struct sheep_code *code;
 	struct sheep_vm vm;
-	sheep_t name, list;
+	sheep_t list;
 
 	sheep_vm_init(&vm);
-	name = sheep_name(&vm, "hallo");
-	list = sheep_list(&vm, name, NULL);
-	code = sheep_compile(&vm, name);
+	list = sheep_list(&vm, 2,
+			sheep_name(&vm, "quote"),
+			sheep_name(&vm, "hallo"));
 	code = sheep_compile(&vm, list);
 	sheep_vm_exit(&vm);
 

@@ -1,9 +1,11 @@
 #include <sheep/block.h>
 #include <sheep/code.h>
+#include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -20,11 +22,6 @@ static void code_init(struct sheep_code *code)
 {
 	memset(&code->code, 0, sizeof(struct sheep_vector));
 	code->code.blocksize = 64;
-}
-
-void sheep_compiler_init(struct sheep_vm *vm)
-{
-	code_init(&vm->code);
 }
 
 struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
@@ -120,8 +117,104 @@ int sheep_compile_name(struct sheep_compile *compile,
 	return 0;
 }
 
+static int unpack(struct sheep_list *list, const char *items, ...)
+{
+	struct sheep_object *object;
+	va_list ap;
+
+	va_start(ap, items);
+	while (*items) {
+		if (*items == 'r') {
+			va_end(ap);
+			*va_arg(ap, struct sheep_list **) = list;
+			return 0;
+		}
+		if (!list)
+			break;
+		object = list->head;
+		switch (*items) {
+		case 'o':
+			break;
+		case 'c':
+			if (object->type != &sheep_name_type)
+				goto type_error;
+			*va_arg(ap, const char **) = sheep_cname(object);
+			goto next;
+		case 'a':
+			if (object->type != &sheep_name_type)
+				goto type_error;
+			break;
+		case 'l':
+			if (object->type != &sheep_list_type)
+				goto type_error;
+			break;
+		default:
+			fprintf(stderr, "unknown unpack control %c\n", *items);
+			abort();
+		}
+		*va_arg(ap, sheep_t *) = object;
+	next:
+		items++;
+		list = list->tail;
+	}
+	va_end(ap);
+	if (*items) {
+		fprintf(stderr, "too few arguments\n");
+		return -1;
+	}
+	if (list) {
+		fprintf(stderr, "too many arguments\n");
+		return -1;
+	}
+	return 0;
+type_error:
+	va_end(ap);
+	fprintf(stderr, "unexpected argument type: %c/%p [name=%p list=%p]\n",
+		*items, object->type, &sheep_name_type, &sheep_list_type);
+	return -1;
+}
+
+static int compile_quote(struct sheep_compile *compile,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	unsigned int slot;
+	sheep_t obj;
+
+	if (unpack(args, "o", &obj))
+		return -1;
+	slot = sheep_vector_push(&compile->vm->globals, obj);
+	sheep_emit(context->code, SHEEP_GLOBAL, slot);
+	return 0;
+}
+
 int sheep_compile_list(struct sheep_compile *compile,
 		struct sheep_context *context, sheep_t expr)
 {
+	struct sheep_list *form = sheep_data(expr);
+	void *entry;
+	sheep_t op;
+
+	op = form->head;
+	if (op->type != &sheep_name_type) {
+		fprintf(stderr, "unexpected crap in operator position\n");
+		return -1;
+	}
+	if (!sheep_map_get(&compile->vm->specials, sheep_cname(op), &entry)) {
+		int (*special)(struct sheep_compile *, struct sheep_context *,
+			struct sheep_list *) = entry;
+		return special(compile, context, form->tail);
+	}
+	fprintf(stderr, "function calls not implemented\n");
 	return -1;
+}
+
+void sheep_compiler_init(struct sheep_vm *vm)
+{
+	code_init(&vm->code);
+	sheep_map_set(&vm->specials, "quote", compile_quote);
+}
+
+void sheep_compiler_exit(struct sheep_vm *vm)
+{
+	sheep_map_del(&vm->specials, "quote");
 }

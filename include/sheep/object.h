@@ -37,6 +37,7 @@ struct sheep_objects {
 	struct sheep_object_pool *fulls;
 	struct sheep_object_pool *parts;
 	struct sheep_vector protected;
+	int gc_disabled;
 };
 
 void sheep_mark(sheep_t);

@@ -1,14 +1,9 @@
 #ifndef _SHEEP_MAP_H
 #define _SHEEP_MAP_H
 
-#define SHEEP_MAP_SIZE		128
+#define SHEEP_MAP_SIZE		64
 
-struct sheep_map_entry {
-	const char *name;
-	void *value;
-	struct sheep_map_entry *next;
-};
-
+struct sheep_map_entry;
 struct sheep_map {
 	struct sheep_map_entry *entries[SHEEP_MAP_SIZE];
 };

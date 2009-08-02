@@ -3,6 +3,12 @@
 
 #include <sheep/map.h>
 
+struct sheep_map_entry {
+	const char *name;
+	void *value;
+	struct sheep_map_entry *next;
+};
+
 static int hash(const char *name)
 {
 	size_t len = strlen(name);

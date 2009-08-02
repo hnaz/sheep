@@ -53,6 +53,9 @@ static void collect(struct sheep_vm *vm)
 {
 	struct sheep_object_pool *pool, *cache = NULL, *last = NULL;
 	struct sheep_objects *objects = &vm->objects;
+
+	if (objects->gc_disabled)
+		goto alloc;
 	
 	sheep_mark_vm(vm);
 	mark_protected(&objects->protected);
@@ -92,6 +95,7 @@ static void collect(struct sheep_vm *vm)
 			free_pool(pool);
 	}
 
+alloc:
 	if (!objects->parts)
 		objects->parts = alloc_pool();
 }

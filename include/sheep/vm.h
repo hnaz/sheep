@@ -5,6 +5,7 @@
 #include <sheep/object.h>
 #include <sheep/vector.h>
 #include <sheep/block.h>
+#include <sheep/code.h>
 
 struct sheep_vm {
 	struct sheep_objects objects;

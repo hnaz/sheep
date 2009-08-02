@@ -3,7 +3,7 @@
 
 #include <sheep/object.h>
 
-extern struct sheep_type sheep_type_name;
+extern const struct sheep_type sheep_name_type;
 
 sheep_t sheep_name(struct sheep_vm *, const char *);
 

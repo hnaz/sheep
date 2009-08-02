@@ -4,17 +4,17 @@
 
 #include <sheep/name.h>
 
-static void name_free(sheep_t sheep)
+static void free_name(sheep_t sheep)
 {
 	sheep_free(sheep_cname(sheep));
 }
 
-struct sheep_type sheep_type_name = {
-	.free = name_free,
+const struct sheep_type sheep_name_type = {
+	.free = free_name,
 	.compile = sheep_compile_name,
 };
 
 sheep_t sheep_name(struct sheep_vm *vm, const char *cname)
 {
-	return sheep_object(vm, &sheep_type_name, sheep_strdup(cname));
+	return sheep_object(vm, &sheep_name_type, sheep_strdup(cname));
 }

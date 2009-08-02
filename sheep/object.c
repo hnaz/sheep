@@ -159,3 +159,33 @@ void sheep_gc_enable(struct sheep_vm *vm)
 {
 	vm->gc_disabled = 0;
 }
+
+static void drain_pool(struct sheep_objects *pool)
+{
+	unsigned int i;
+
+	for (i = 0; i < POOL_SIZE; i++) {
+		struct sheep_object *sheep = &pool->mem[i];
+
+		if (sheep->type && sheep->type->free)
+			sheep->type->free(sheep);
+	}
+}
+
+void sheep_objects_exit(struct sheep_vm *vm)
+{
+	struct sheep_objects *next;
+
+	while (vm->parts) {
+		next = vm->parts->next;
+		drain_pool(vm->parts);
+		free_pool(vm->parts);
+		vm->parts = next;
+	}
+	while (vm->fulls) {
+		next = vm->fulls->next;
+		drain_pool(vm->fulls);
+		free_pool(vm->fulls);
+		vm->fulls = next;
+	}
+}

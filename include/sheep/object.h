@@ -41,4 +41,6 @@ void sheep_unprotect(struct sheep_vm *, sheep_t);
 void sheep_gc_disable(struct sheep_vm *);
 void sheep_gc_enable(struct sheep_vm *);
 
+void sheep_objects_exit(struct sheep_vm *);
+
 #endif /* _SHEEP_OBJECT_H */

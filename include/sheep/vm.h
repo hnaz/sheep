@@ -27,6 +27,9 @@ struct sheep_vm {
 	struct sheep_block *block;
 };
 
+void sheep_vm_init(struct sheep_vm *);
+void sheep_vm_exit(struct sheep_vm *);
+
 static inline void sheep_mark_vm(struct sheep_vm *vm)
 {
 	/*

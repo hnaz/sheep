@@ -3,7 +3,6 @@
 #include <sheep/vm.h>
 #include <sys/mman.h>
 #include <assert.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #include <sheep/object.h>
@@ -38,7 +37,7 @@ static struct sheep_objects *alloc_pool(void)
 static void free_pool(struct sheep_objects *pool)
 {
 	munmap(pool->mem, PAGE_SIZE);
-	free(pool);
+	sheep_free(pool);
 }
 
 static void mark_protected(struct sheep_vector *protected)

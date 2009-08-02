@@ -31,3 +31,8 @@ char *sheep_strdup(const char *str)
 {
 	return massert(strdup(str));
 }
+
+void sheep_free(const void *mem)
+{
+	free((void *)mem);
+}

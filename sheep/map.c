@@ -1,5 +1,4 @@
 #include <sheep/util.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <sheep/map.h>
@@ -71,6 +70,6 @@ int sheep_map_del(struct sheep_map *map, const char *name)
 		return -1;
 	entry = *pentry;
 	*pentry = entry->next;
-	free(entry);
+	sheep_free(entry);
 	return 0;
 }

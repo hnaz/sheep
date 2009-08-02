@@ -8,17 +8,36 @@
 #include <sheep/code.h>
 
 struct sheep_vm {
-	struct sheep_objects objects;
+	/* Object management */
+	struct sheep_objects *fulls;
+	struct sheep_objects *parts;
+	struct sheep_vector protected;
+	int gc_disabled;
+
+	struct sheep_vector globals;
 	struct sheep_code code;
-	struct sheep_vector globals;	/* sheep_t [] */
+
+	/* Compiler */
+	struct sheep_map specials;
 	struct sheep_module main;
-	struct sheep_vector stack;	/* sheep_t [] */
+
+	/* Evaluator */
+	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastblock] */
 	struct sheep_block *block;
 };
 
 static inline void sheep_mark_vm(struct sheep_vm *vm)
 {
+	/*
+	 * vm->data
+	 *
+	 * vm->stack
+	 *
+	 * every block in vm->calls
+	 *
+	 * vm->block
+	 */
 }
 
 #endif /* _SHEEP_VM_H */

@@ -5,7 +5,7 @@
 
 typedef struct sheep_object * sheep_t;
 
-struct sheep_object_pool;
+struct sheep_objects;
 struct sheep_compile;
 struct sheep_context;
 struct sheep_vm;
@@ -32,13 +32,6 @@ static inline void sheep_set_data(sheep_t sheep, void *data)
 {
 	sheep->data = (unsigned long)data | (sheep->data & 1);
 }
-
-struct sheep_objects {
-	struct sheep_object_pool *fulls;
-	struct sheep_object_pool *parts;
-	struct sheep_vector protected;
-	int gc_disabled;
-};
 
 void sheep_mark(sheep_t);
 

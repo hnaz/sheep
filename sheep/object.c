@@ -11,19 +11,19 @@
 #define PAGE_SIZE	sysconf(_SC_PAGE_SIZE)
 #define POOL_SIZE	(PAGE_SIZE / sizeof(struct sheep_object))
 
-struct sheep_object_pool {
+struct sheep_objects {
 	struct sheep_object *mem;
 	struct sheep_object *free;
 	unsigned int nr_used;
-	struct sheep_object_pool *next;
+	struct sheep_objects *next;
 };
 
-static struct sheep_object_pool *alloc_pool(void)
+static struct sheep_objects *alloc_pool(void)
 {
-	struct sheep_object_pool *pool;
+	struct sheep_objects *pool;
 	unsigned int i;
 
-	pool = sheep_malloc(sizeof(struct sheep_object_pool));
+	pool = sheep_malloc(sizeof(struct sheep_objects));
 	pool->mem = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
@@ -35,7 +35,7 @@ static struct sheep_object_pool *alloc_pool(void)
 	return pool;
 }
 
-static void free_pool(struct sheep_object_pool *pool)
+static void free_pool(struct sheep_objects *pool)
 {
 	munmap(pool->mem, PAGE_SIZE);
 	free(pool);
@@ -51,16 +51,15 @@ static void mark_protected(struct sheep_vector *protected)
 
 static void collect(struct sheep_vm *vm)
 {
-	struct sheep_object_pool *pool, *cache = NULL, *last = NULL;
-	struct sheep_objects *objects = &vm->objects;
+	struct sheep_objects *pool, *cache = NULL, *last = NULL;
 
-	if (objects->gc_disabled)
+	if (vm->gc_disabled)
 		goto alloc;
 	
 	sheep_mark_vm(vm);
-	mark_protected(&objects->protected);
+	mark_protected(&vm->protected);
 
-	for (pool = objects->fulls; pool; last = pool, pool = pool->next) {
+	for (pool = vm->fulls; pool; last = pool, pool = pool->next) {
 		unsigned int i, moved;
 
 		for (i = moved = 0; i < POOL_SIZE; i++) {
@@ -86,33 +85,33 @@ static void collect(struct sheep_vm *vm)
 		if (last)
 			last->next = pool->next;
 		else
-			objects->fulls = pool->next;
+			vm->fulls = pool->next;
 
 		if (moved < POOL_SIZE || !cache) {
-			pool->next = objects->parts;
-			objects->parts = cache = pool;
+			pool->next = vm->parts;
+			vm->parts = cache = pool;
 		} else
 			free_pool(pool);
 	}
 
 alloc:
-	if (!objects->parts)
-		objects->parts = alloc_pool();
+	if (!vm->parts)
+		vm->parts = alloc_pool();
 }
 
-static sheep_t alloc(struct sheep_objects *objects)
+static sheep_t alloc(struct sheep_vm *vm)
 {
-	struct sheep_object *sheep = objects->parts->free;
+	struct sheep_object *sheep = vm->parts->free;
 
-	if (++objects->parts->nr_used < POOL_SIZE)
-		objects->parts->free = (struct sheep_object *)sheep->data;
+	if (++vm->parts->nr_used < POOL_SIZE)
+		vm->parts->free = (struct sheep_object *)sheep->data;
 	else {
-		struct sheep_object_pool *pool;
+		struct sheep_objects *pool;
 
-		pool = objects->parts;
-		objects->parts = objects->parts->next;
-		pool->next = objects->fulls;
-		objects->fulls = pool;
+		pool = vm->parts;
+		vm->parts = vm->parts->next;
+		pool->next = vm->fulls;
+		vm->fulls = pool;
 	}
 	return sheep;
 }
@@ -121,10 +120,10 @@ sheep_t sheep_make(struct sheep_vm *vm, struct sheep_type *type, void *data)
 {
 	struct sheep_object *sheep;
 
-	if (!vm->objects.parts)
+	if (!vm->parts)
 		collect(vm);
 
-	sheep = alloc(&vm->objects);
+	sheep = alloc(vm);
 	sheep->type = type;
 	sheep->data = (unsigned long)data;
 	return sheep;
@@ -141,24 +140,23 @@ void sheep_mark(sheep_t sheep)
 
 void sheep_protect(struct sheep_vm *vm, sheep_t sheep)
 {
-	sheep_vector_push(&vm->objects.protected, sheep);
+	sheep_vector_push(&vm->protected, sheep);
 }
 
 void sheep_unprotect(struct sheep_vm *vm, sheep_t sheep)
 {
 	sheep_t prot;
 
-	prot = sheep_vector_pop(&vm->objects.protected);
+	prot = sheep_vector_pop(&vm->protected);
 	assert(prot == sheep);
 }
 
 void sheep_gc_disable(struct sheep_vm *vm)
 {
-	vm->objects.gc_disabled = 1;
+	vm->gc_disabled = 1;
 }
 
 void sheep_gc_enable(struct sheep_vm *vm)
 {
-	vm->objects.gc_disabled = 0;
+	vm->gc_disabled = 0;
 }
-

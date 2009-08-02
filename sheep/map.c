@@ -35,7 +35,6 @@ find(struct sheep_map *map, const char *name, int create)
 	if (!create)
 		return NULL;
 	entry = sheep_malloc(sizeof(*entry));
-	/* XXX: drop this when reader returns protected constants */
 	entry->name = sheep_strdup(name);
 	entry->next = map->entries[index];
 	map->entries[index] = entry;

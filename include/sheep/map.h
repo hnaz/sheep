@@ -14,7 +14,7 @@ struct sheep_map {
 };
 
 void sheep_map_set(struct sheep_map *, const char *, unsigned int);
-int sheep_map_get(struct sheep_map *, const char *);
+int sheep_map_get(struct sheep_map *, const char *, unsigned int *);
 int sheep_map_del(struct sheep_map *, const char *);
 
 #endif /* _SHEEP_MAP_H */

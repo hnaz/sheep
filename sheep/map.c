@@ -43,8 +43,7 @@ find(struct sheep_map *map, const char *name, int create)
 	return &map->entries[index];
 }
 
-void sheep_map_set(struct sheep_map *map, const char *name,
-		unsigned int value)
+void sheep_map_set(struct sheep_map *map, const char *name, void *value)
 {
 	struct sheep_map_entry **pentry;
 
@@ -52,15 +51,14 @@ void sheep_map_set(struct sheep_map *map, const char *name,
 	(*pentry)->value = value;
 }
 
-int sheep_map_get(struct sheep_map *map, const char *name,
-		unsigned int *value)
+int sheep_map_get(struct sheep_map *map, const char *name, void **valuep)
 {
 	struct sheep_map_entry **pentry;
 
 	pentry = find(map, name, 0);
 	if (!pentry)
 		return -1;
-	*value = (*pentry)->value;
+	*valuep = (*pentry)->value;
 	return 0;
 }
 

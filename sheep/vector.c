@@ -9,9 +9,10 @@ static void vector_resize(struct sheep_vector *vec)
 	vec->items = sheep_realloc(vec->items, nr * sizeof(void *));
 }
 
-void sheep_vector_push(struct sheep_vector *vec, void *item)
+unsigned long sheep_vector_push(struct sheep_vector *vec, void *item)
 {
 	if (!(vec->nr_items % vec->blocksize))
 		vector_resize(vec);
-	vec->items[vec->nr_items++] = item;
+	vec->items[vec->nr_items] = item;
+	return vec->nr_items++;
 }

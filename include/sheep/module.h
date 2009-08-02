@@ -5,7 +5,7 @@
 
 struct sheep_module {
 	const char *name;
-	struct sheep_map map;
+	struct sheep_map env;
 };
 
 #endif /* _SHEEP_MODULE_H */

@@ -1,7 +1,7 @@
 CC	= gcc
 CPP	= cpp
 
-CFLAGS	= -Os -pipe -Wall
+CFLAGS	= -Os -pipe -Wall -Wextra -Wno-unused-parameter
 LDFLAGS	=
 
 all: sheep/sheep

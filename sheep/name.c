@@ -1,3 +1,4 @@
+#include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/util.h>
 
@@ -10,6 +11,7 @@ static void name_free(sheep_t sheep)
 
 struct sheep_type sheep_type_name = {
 	.free = name_free,
+	.compile = sheep_compile_name,
 };
 
 sheep_t sheep_name(struct sheep_vm *vm, const char *cname)

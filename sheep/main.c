@@ -1,27 +1,16 @@
+#include <sheep/compile.h>
 #include <sheep/name.h>
 #include <sheep/vm.h>
 
 int main(void)
 {
-	struct sheep_vm vm;	
+	struct sheep_code *code;
+	struct sheep_vm vm;
+	sheep_t name;
 
 	sheep_vm_init(&vm);
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
-	sheep_name(&vm, "hallo");
+	name = sheep_name(&vm, "hallo");
+	code = sheep_compile(&vm, name);
 	sheep_vm_exit(&vm);
 
 	return 0;

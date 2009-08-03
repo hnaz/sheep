@@ -5,6 +5,7 @@
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -117,7 +118,58 @@ int sheep_compile_name(struct sheep_compile *compile,
 	return 0;
 }
 
-static int unpack(struct sheep_list *list, const char *items, ...)
+struct unpack_map {
+	char control;
+	const struct sheep_type *type;
+	const char *type_name;
+};
+
+static struct unpack_map unpack_table[] = {
+	{ 'o',	NULL,			"object" },
+	{ 'c',	&sheep_name_type,	"name" },
+	{ 'a',	&sheep_name_type,	"name" },
+	{ 'l',	&sheep_list_type,	"list" },
+	{ 0,	NULL,			NULL },
+};
+
+static struct unpack_map *map_control(char control)
+{
+	struct unpack_map *map;
+
+	for (map = unpack_table; map->control; map++)
+		if (map->control == control)
+			break;
+	assert(map->control);
+	return map;
+}
+
+static struct unpack_map *map_type(const struct sheep_type *type)
+{
+	struct unpack_map *map;
+
+	for (map = unpack_table; map->control; map++)
+		if (map->type == type)
+			break;
+	return map;
+}
+
+static int verify(const char *caller, char control, sheep_t object)
+{
+	struct unpack_map *want;
+
+	want = map_control(control);
+	if (want->type && object->type != want->type) {
+		struct unpack_map *got = map_type(object->type);
+
+		fprintf(stderr, "%s: expected %s, got %s\n",
+			caller, want->type_name, got->type_name);
+		return -1;
+	}
+	return 0;
+}	
+
+static int unpack(const char *caller, struct sheep_list *list,
+		const char *items, ...)
 {
 	struct sheep_object *object;
 	va_list ap;
@@ -125,53 +177,34 @@ static int unpack(struct sheep_list *list, const char *items, ...)
 	va_start(ap, items);
 	while (*items) {
 		if (*items == 'r') {
-			va_end(ap);
 			*va_arg(ap, struct sheep_list **) = list;
+			va_end(ap);
 			return 0;
 		}
 		if (!list)
 			break;
 		object = list->head;
-		switch (*items) {
-		case 'o':
-			break;
-		case 'c':
-			if (object->type != &sheep_name_type)
-				goto type_error;
-			*va_arg(ap, const char **) = sheep_cname(object);
-			goto next;
-		case 'a':
-			if (object->type != &sheep_name_type)
-				goto type_error;
-			break;
-		case 'l':
-			if (object->type != &sheep_list_type)
-				goto type_error;
-			break;
-		default:
-			fprintf(stderr, "unknown unpack control %c\n", *items);
-			abort();
+		if (verify(caller, *items, object) < 0) {
+			va_end(ap);
+			return -1;
 		}
-		*va_arg(ap, sheep_t *) = object;
-	next:
+		if (*items == 'c')
+			*va_arg(ap, const char **) = sheep_cname(object);
+		else
+			*va_arg(ap, sheep_t *) = object;
 		items++;
 		list = list->tail;
 	}
 	va_end(ap);
 	if (*items) {
-		fprintf(stderr, "too few arguments\n");
+		fprintf(stderr, "%s: too few arguments\n", caller);
 		return -1;
 	}
 	if (list) {
-		fprintf(stderr, "too many arguments\n");
+		fprintf(stderr, "%s: too many arguments\n", caller);
 		return -1;
 	}
 	return 0;
-type_error:
-	va_end(ap);
-	fprintf(stderr, "unexpected argument type: %c/%p [name=%p list=%p]\n",
-		*items, object->type, &sheep_name_type, &sheep_list_type);
-	return -1;
 }
 
 static int compile_quote(struct sheep_compile *compile,
@@ -180,7 +213,7 @@ static int compile_quote(struct sheep_compile *compile,
 	unsigned int slot;
 	sheep_t obj;
 
-	if (unpack(args, "o", &obj))
+	if (unpack("quote", args, "o", &obj))
 		return -1;
 	slot = sheep_vector_push(&compile->vm->globals, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
@@ -191,19 +224,19 @@ int sheep_compile_list(struct sheep_compile *compile,
 		struct sheep_context *context, sheep_t expr)
 {
 	struct sheep_list *form = sheep_data(expr);
+	const char *op;
 	void *entry;
-	sheep_t op;
 
-	op = form->head;
-	if (op->type != &sheep_name_type) {
-		fprintf(stderr, "unexpected crap in operator position\n");
+	if (unpack("function call", form, "cr", &op, &form))
 		return -1;
-	}
-	if (!sheep_map_get(&compile->vm->specials, sheep_cname(op), &entry)) {
+
+	if (!sheep_map_get(&compile->vm->specials, op, &entry)) {
 		int (*special)(struct sheep_compile *, struct sheep_context *,
 			struct sheep_list *) = entry;
-		return special(compile, context, form->tail);
+
+		return special(compile, context, form);
 	}
+
 	fprintf(stderr, "function calls not implemented\n");
 	return -1;
 }

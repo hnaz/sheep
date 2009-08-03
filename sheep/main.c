@@ -16,8 +16,10 @@ int main(void)
 			sheep_name(&vm, "quote"),
 			sheep_name(&vm, "hallo"));
 	code = sheep_compile(&vm, list);
-	sheep_free(code->code.items);
-	sheep_free(code);
+	if (code) {
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
 	sheep_vm_exit(&vm);
 
 	return 0;

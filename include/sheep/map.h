@@ -12,4 +12,6 @@ void sheep_map_set(struct sheep_map *, const char *, void *);
 int sheep_map_get(struct sheep_map *, const char *, void **);
 int sheep_map_del(struct sheep_map *, const char *);
 
+void sheep_map_drain(struct sheep_map *);
+
 #endif /* _SHEEP_MAP_H */

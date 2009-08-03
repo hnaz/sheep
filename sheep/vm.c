@@ -1,5 +1,6 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
+#include <sheep/util.h>
 #include <string.h>
 
 #include <sheep/vm.h>
@@ -17,6 +18,10 @@ void sheep_vm_init(struct sheep_vm *vm)
 
 void sheep_vm_exit(struct sheep_vm *vm)
 {
-	sheep_objects_exit(vm);
+	sheep_free(vm->calls.items);
+	sheep_free(vm->stack.items);
 	sheep_compiler_exit(vm);
+	sheep_free(vm->globals.items);
+	sheep_free(vm->code.code.items);
+	sheep_objects_exit(vm);
 }

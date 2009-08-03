@@ -216,5 +216,5 @@ void sheep_compiler_init(struct sheep_vm *vm)
 
 void sheep_compiler_exit(struct sheep_vm *vm)
 {
-	sheep_map_del(&vm->specials, "quote");
+	sheep_map_drain(&vm->specials);
 }

@@ -75,6 +75,20 @@ int sheep_map_del(struct sheep_map *map, const char *name)
 		return -1;
 	entry = *pentry;
 	*pentry = entry->next;
+	sheep_free(entry->name);
 	sheep_free(entry);
 	return 0;
+}
+
+void sheep_map_drain(struct sheep_map *map)
+{
+	struct sheep_map_entry *entry, *next;
+	unsigned int i;
+
+	for (i = 0; i < SHEEP_MAP_SIZE; i++)
+		for (entry = map->entries[i]; entry; entry = next) {
+			next = entry->next;
+			sheep_free(entry->name);
+			sheep_free(entry);
+		}
 }

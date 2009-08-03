@@ -109,11 +109,12 @@ static int lookup(struct sheep_context *context, const char *name,
 int sheep_compile_name(struct sheep_compile *compile,
 		struct sheep_context *context, sheep_t expr)
 {
-	const char *name = sheep_cname(expr);
 	struct sheep_vector *foreigns;
 	enum env_level level;
 	unsigned int slot;
+	const char *name;
 
+	name = sheep_cname(expr);
 	if (lookup(context, name, &foreigns, &slot, &level)) {
 		fprintf(stderr, "unbound name: %s\n", name);
 		return -1;
@@ -198,8 +199,10 @@ static int unpack(const char *caller, struct sheep_list *list,
 			va_end(ap);
 			return 0;
 		}
+
 		if (!list)
 			break;
+
 		object = list->head;
 		if (verify(caller, *items, object) < 0) {
 			va_end(ap);
@@ -209,10 +212,11 @@ static int unpack(const char *caller, struct sheep_list *list,
 			*va_arg(ap, const char **) = sheep_cname(object);
 		else
 			*va_arg(ap, sheep_t *) = object;
+
 		items++;
 		list = list->tail;
 	}
-	va_end(ap);
+
 	if (*items) {
 		fprintf(stderr, "%s: too few arguments\n", caller);
 		return -1;
@@ -221,6 +225,8 @@ static int unpack(const char *caller, struct sheep_list *list,
 		fprintf(stderr, "%s: too many arguments\n", caller);
 		return -1;
 	}
+
+	va_end(ap);
 	return 0;
 }
 
@@ -233,7 +239,7 @@ static int compile_quote(struct sheep_compile *compile,
 
 	if (unpack("quote", args, "o", &obj))
 		return -1;
-	slot = sheep_vector_push(&compile->vm->globals, obj);
+	slot = constant_slot(compile, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -262,12 +268,11 @@ static int compile_with(struct sheep_compile *compile,
 	struct sheep_list *bindings, *body;
 	struct sheep_context wcontext;
 	struct sheep_map wenv;
-	sheep_t pairs, value;
-	unsigned int slot;
-	const char *name;
+	sheep_t pairs;
 	int ret = -1;
 
 	memset(&wenv, 0, sizeof(struct sheep_map));
+
 	wcontext.code = context->code;
 	wcontext.locals = context->locals;
 	wcontext.foreigns = context->foreigns;
@@ -278,6 +283,10 @@ static int compile_with(struct sheep_compile *compile,
 		return -1;
 	bindings = sheep_data(pairs);
 	do {
+		unsigned int slot;
+		const char *name;
+		sheep_t value;
+
 		if (unpack("with", bindings, "cor", &name, &value, &bindings))
 			goto out;
 		if (value->type->compile(compile, &wcontext, value))
@@ -286,19 +295,21 @@ static int compile_with(struct sheep_compile *compile,
 		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
 	} while (bindings);
+
 	ret = compile_block(compile, &wcontext, body);
 out:
-	sheep_map_drain(wcontext.env);
+	sheep_map_drain(&wenv);
 	return ret;
 }
 
 int sheep_compile_list(struct sheep_compile *compile,
 		struct sheep_context *context, sheep_t expr)
 {
-	struct sheep_list *form = sheep_data(expr);
+	struct sheep_list *form;
 	const char *op;
 	void *entry;
 
+	form = sheep_data(expr);
 	if (unpack("function call", form, "cr", &op, &form))
 		return -1;
 

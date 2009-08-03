@@ -12,15 +12,19 @@ int main(void)
 	sheep_t list;
 
 	sheep_vm_init(&vm);
-	list = sheep_list(&vm, 2,
-			sheep_name(&vm, "quote"),
-			sheep_name(&vm, "hallo"));
+	list = sheep_list(&vm, 3,
+			sheep_name(&vm, "with"),
+			sheep_list(&vm, 2,
+				sheep_name(&vm, "a"),
+				sheep_list(&vm, 2,
+					sheep_name(&vm, "quote"),
+					sheep_name(&vm, "b"))),
+			sheep_name(&vm, "a"));
 	code = sheep_compile(&vm, list);
 	if (code) {
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}
 	sheep_vm_exit(&vm);
-
 	return 0;
 }

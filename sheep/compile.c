@@ -14,10 +14,26 @@
 
 struct sheep_context {
 	struct sheep_code *code;
-	struct sheep_block *block;
+	struct sheep_vector *locals;
+	struct sheep_vector *foreigns;
 	struct sheep_map *env;
 	struct sheep_context *parent;
 };
+
+static unsigned int constant_slot(struct sheep_compile *compile, void *data)
+{
+	return sheep_vector_push(&compile->vm->globals, data);
+}
+
+static unsigned int local_slot(struct sheep_context *context, void *data)
+{
+	return sheep_vector_push(context->locals, data);
+}
+
+static unsigned int foreign_slot(struct sheep_context *context, void **islot)
+{
+	return sheep_vector_push(context->foreigns, islot);
+}
 
 static void code_init(struct sheep_code *code)
 {
@@ -35,9 +51,11 @@ struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
 
 	memset(&context, 0, sizeof(context));
 	context.code = code;
+	context.locals = &compile->vm->globals;
 	context.env = &compile->vm->main.env;
 
 	if (expr->type->compile(compile, &context, expr)) {
+		sheep_free(code->code.items);
 		sheep_free(code);
 		return NULL;
 	}
@@ -51,7 +69,7 @@ int sheep_compile_constant(struct sheep_compile *compile,
 {
 	unsigned int slot;
 
-	slot = sheep_vector_push(&compile->vm->globals, expr);
+	slot = constant_slot(compile, expr);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -63,7 +81,7 @@ enum env_level {
 };
 
 static int lookup(struct sheep_context *context, const char *name,
-		struct sheep_block **block, unsigned int *slot,
+		struct sheep_vector **slots, unsigned int *slot,
 		enum env_level *env_level)
 {
 	struct sheep_context *current = context;
@@ -76,7 +94,7 @@ static int lookup(struct sheep_context *context, const char *name,
 	}
 
 	*slot = (unsigned long)entry;
-	*block = current->block;
+	*slots = current->locals;
 
 	if (!current->parent)
 		*env_level = ENV_GLOBAL;
@@ -92,11 +110,11 @@ int sheep_compile_name(struct sheep_compile *compile,
 		struct sheep_context *context, sheep_t expr)
 {
 	const char *name = sheep_cname(expr);
-	struct sheep_block *block;
+	struct sheep_vector *foreigns;
 	enum env_level level;
 	unsigned int slot;
 
-	if (lookup(context, name, &block, &slot, &level)) {
+	if (lookup(context, name, &foreigns, &slot, &level)) {
 		fprintf(stderr, "unbound name: %s\n", name);
 		return -1;
 	}
@@ -109,8 +127,7 @@ int sheep_compile_name(struct sheep_compile *compile,
 		sheep_emit(context->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = sheep_vector_push(&context->block->foreigns,
-					&block->locals.items[slot]);
+		slot = foreign_slot(context, &foreigns->items[slot]);
 		sheep_emit(context->code, SHEEP_FOREIGN, slot);
 		break;
 	}
@@ -207,6 +224,7 @@ static int unpack(const char *caller, struct sheep_list *list,
 	return 0;
 }
 
+/* (quote expr) */
 static int compile_quote(struct sheep_compile *compile,
 			struct sheep_context *context, struct sheep_list *args)
 {
@@ -218,6 +236,52 @@ static int compile_quote(struct sheep_compile *compile,
 	slot = sheep_vector_push(&compile->vm->globals, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
+}
+
+/* (with (name expr name expr ...) &rest expr) */
+static int compile_with(struct sheep_compile *compile,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	struct sheep_list *bindings, *body;
+	struct sheep_context wcontext;
+	struct sheep_map wenv;
+	sheep_t pairs, value;
+	unsigned int slot;
+	const char *name;
+	int ret = -1;
+
+	memset(&wenv, 0, sizeof(struct sheep_map));
+	wcontext.code = context->code;
+	wcontext.locals = context->locals;
+	wcontext.foreigns = context->foreigns;
+	wcontext.env = &wenv;
+	wcontext.parent = context;
+
+	if (unpack("with", args, "lr", &pairs, &body))
+		return -1;
+	bindings = sheep_data(pairs);
+	do {
+		if (unpack("with", bindings, "cor", &name, &value, &bindings))
+			goto out;
+		if (value->type->compile(compile, &wcontext, value))
+			goto out;
+		slot = local_slot(&wcontext, NULL);
+		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
+		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
+	} while (bindings);
+	while (body) {
+		value = body->head;
+		if (value->type->compile(compile, &wcontext, value))
+			goto out;
+		if (!body->tail)
+			goto out;
+		sheep_emit(context->code, SHEEP_DROP, 0);
+		body = body->tail;
+	}
+	ret = 0;
+out:
+	sheep_map_drain(wcontext.env);
+	return ret;
 }
 
 int sheep_compile_list(struct sheep_compile *compile,
@@ -245,6 +309,7 @@ void sheep_compiler_init(struct sheep_vm *vm)
 {
 	code_init(&vm->code);
 	sheep_map_set(&vm->specials, "quote", compile_quote);
+	sheep_map_set(&vm->specials, "with", compile_with);
 }
 
 void sheep_compiler_exit(struct sheep_vm *vm)

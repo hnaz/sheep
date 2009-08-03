@@ -238,6 +238,23 @@ static int compile_quote(struct sheep_compile *compile,
 	return 0;
 }
 
+/* (block &rest expr) */
+static int compile_block(struct sheep_compile *compile,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	while (args) {
+		sheep_t value = args->head;
+
+		if (value->type->compile(compile, context, value))
+			return -1;
+		if (!args->tail)
+			break;
+		sheep_emit(context->code, SHEEP_DROP, 0);
+		args = args->tail;
+	}
+	return 0;
+}
+
 /* (with (name expr name expr ...) &rest expr) */
 static int compile_with(struct sheep_compile *compile,
 			struct sheep_context *context, struct sheep_list *args)
@@ -269,16 +286,7 @@ static int compile_with(struct sheep_compile *compile,
 		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
 	} while (bindings);
-	while (body) {
-		value = body->head;
-		if (value->type->compile(compile, &wcontext, value))
-			goto out;
-		if (!body->tail)
-			goto out;
-		sheep_emit(context->code, SHEEP_DROP, 0);
-		body = body->tail;
-	}
-	ret = 0;
+	ret = compile_block(compile, &wcontext, body);
 out:
 	sheep_map_drain(wcontext.env);
 	return ret;
@@ -309,6 +317,7 @@ void sheep_compiler_init(struct sheep_vm *vm)
 {
 	code_init(&vm->code);
 	sheep_map_set(&vm->specials, "quote", compile_quote);
+	sheep_map_set(&vm->specials, "block", compile_block);
 	sheep_map_set(&vm->specials, "with", compile_with);
 }
 

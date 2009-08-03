@@ -7,8 +7,7 @@ LDFLAGS	=
 all: sheep/sheep
 
 include sheep/Makefile
-sheep-src := $(addprefix sheep/,$(sheep-src))
-sheep-obj := $(sheep-src:.c=.o)
+sheep-obj := $(addprefix sheep/,$(sheep-obj))
 
 sheep/sheep: $(sheep-obj)
 	$(CC) -o $@ $^ $(LDFLAGS)
@@ -16,7 +15,7 @@ sheep/sheep: $(sheep-obj)
 %.o: %.c sheep/make.deps
 	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
 
-sheep/make.deps: $(sheep-src)
+sheep/make.deps:
 	rm -f sheep/make.deps
 	$(foreach obj,$(sheep-obj), \
 		$(CPP) -Iinclude -MM -MT $(obj) \

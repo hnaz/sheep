@@ -269,17 +269,25 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_context *context,
 	return 0;
 }
 
-static int do_compile_block(struct sheep_vm *vm, struct sheep_context *context,
-			struct sheep_list *args)
+static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
+			struct sheep_function *function, struct sheep_map *env,
+			struct sheep_context *parent, struct sheep_list *args)
 {
+	struct sheep_context context = {
+		.code = code,
+		.function = function,
+		.env = env,
+		.parent = parent,
+	};
+
 	while (args) {
 		sheep_t value = args->head;
 
-		if (value->type->compile(vm, context, value))
+		if (value->type->compile(vm, &context, value))
 			return -1;
 		if (!args->tail)
 			break;
-		sheep_emit(context->code, SHEEP_DROP, 0);
+		sheep_emit(code, SHEEP_DROP, 0);
 		args = args->tail;
 	}
 	return 0;
@@ -289,20 +297,13 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_context *context,
 static int compile_block(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
-	struct sheep_context bcontext;
-	struct sheep_map benv;
+	struct sheep_map env;
 	int ret;
 
-	memset(&benv, 0, sizeof(struct sheep_map));
-
-	bcontext.code = context->code;
-	bcontext.function = context->function;
-	bcontext.env = &benv;
-	bcontext.parent = context;
-
-	ret = do_compile_block(vm, &bcontext, args);
-
-	sheep_map_drain(&benv);
+	memset(&env, 0, sizeof(struct sheep_map));
+	ret = do_compile_block(vm, context->code, context->function,
+			&env, context, args);
+	sheep_map_drain(&env);
 	return ret;
 }
 
@@ -311,18 +312,11 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
 	struct sheep_list *bindings, *body;
-	struct sheep_context wcontext;
-	struct sheep_map wenv;
+	struct sheep_map env;
 	sheep_t pairs;
 	int ret = -1;
 
-	memset(&wenv, 0, sizeof(struct sheep_map));
-
-	wcontext.code = context->code;
-	wcontext.function = context->function;
-	wcontext.env = &wenv;
-	wcontext.parent = context;
-
+	memset(&env, 0, sizeof(struct sheep_map));
 	if (unpack("with", args, "lr", &pairs, &body))
 		return -1;
 	bindings = sheep_data(pairs);
@@ -333,21 +327,21 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 
 		if (unpack("with", bindings, "cor", &name, &value, &bindings))
 			goto out;
-		if (value->type->compile(vm, &wcontext, value))
+		if (value->type->compile(vm, context, value))
 			goto out;
-		if (wcontext.function) {
-			slot = local_slot(&wcontext);
+		if (context->function) {
+			slot = local_slot(context);
 			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		} else {
 			slot = global_slot(vm);
 			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
 		}
-		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
+		sheep_map_set(&env, name, (void *)(unsigned long)slot);
 	} while (bindings);
-
-	ret = do_compile_block(vm, &wcontext, body);
+	ret = do_compile_block(vm, context->code, context->function,
+			&env, context, body);
 out:
-	sheep_map_drain(&wenv);
+	sheep_map_drain(&env);
 	return ret;
 }
 

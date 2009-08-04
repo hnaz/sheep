@@ -14,7 +14,7 @@ struct sheep_vm {
 	struct sheep_vector protected;
 	int gc_disabled;
 
-	struct sheep_vector globals;
+	struct sheep_block root;
 	struct sheep_code code;
 
 	/* Compiler */

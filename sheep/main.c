@@ -1,4 +1,5 @@
 #include <sheep/compile.h>
+#include <sheep/eval.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/util.h>
@@ -22,6 +23,8 @@ int main(void)
 			sheep_name(&vm, "a"));
 	code = sheep_compile(&vm, list);
 	if (code) {
+		list = sheep_eval(&vm, code);
+		puts(sheep_cname(list));
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}

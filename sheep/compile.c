@@ -14,25 +14,24 @@
 
 struct sheep_context {
 	struct sheep_code *code;
-	struct sheep_vector *locals;
-	struct sheep_vector *foreigns;
+	struct sheep_block *block;
 	struct sheep_map *env;
 	struct sheep_context *parent;
 };
 
 static unsigned int constant_slot(struct sheep_compile *compile, void *data)
 {
-	return sheep_vector_push(&compile->vm->globals, data);
+	return sheep_vector_push(&compile->vm->root.locals, data);
 }
 
 static unsigned int local_slot(struct sheep_context *context, void *data)
 {
-	return sheep_vector_push(context->locals, data);
+	return sheep_vector_push(&context->block->locals, data);
 }
 
 static unsigned int foreign_slot(struct sheep_context *context, void **islot)
 {
-	return sheep_vector_push(context->foreigns, islot);
+	return sheep_vector_push(&context->block->foreigns, islot);
 }
 
 static void code_init(struct sheep_code *code)
@@ -51,7 +50,7 @@ struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
 
 	memset(&context, 0, sizeof(context));
 	context.code = code;
-	context.locals = &compile->vm->globals;
+	context.block = &compile->vm->root;
 	context.env = &compile->vm->main.env;
 
 	if (expr->type->compile(compile, &context, expr)) {
@@ -94,7 +93,7 @@ static int lookup(struct sheep_context *context, const char *name,
 	}
 
 	*slot = (unsigned long)entry;
-	*slots = current->locals;
+	*slots = &current->block->locals;
 
 	if (!current->parent)
 		*env_level = ENV_GLOBAL;
@@ -274,8 +273,7 @@ static int compile_with(struct sheep_compile *compile,
 	memset(&wenv, 0, sizeof(struct sheep_map));
 
 	wcontext.code = context->code;
-	wcontext.locals = context->locals;
-	wcontext.foreigns = context->foreigns;
+	wcontext.block = context->block;
 	wcontext.env = &wenv;
 	wcontext.parent = context;
 

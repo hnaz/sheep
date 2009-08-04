@@ -13,6 +13,10 @@ int main(void)
 	sheep_t list;
 
 	sheep_vm_init(&vm);
+
+	/*
+	 * (with (a (quote b)) a)
+	 */
 	list = sheep_list(&vm, 3,
 			sheep_name(&vm, "with"),
 			sheep_list(&vm, 2,
@@ -28,6 +32,58 @@ int main(void)
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}
+
+	/*
+	 * (block
+	 *   (block
+	 *     (variable na (quote va))
+	 *     na))
+	 */
+	list = sheep_list(&vm, 2,
+			sheep_name(&vm, "block"),
+			sheep_list(&vm, 3,
+				sheep_name(&vm, "block"),
+				sheep_list(&vm, 3,
+					sheep_name(&vm, "variable"),
+					sheep_name(&vm, "na"),
+					sheep_list(&vm, 2,
+						sheep_name(&vm, "quote"),
+						sheep_name(&vm, "va"))),
+				sheep_name(&vm, "na")));
+	code = sheep_compile(&vm, list);
+	if (code) {
+		list = sheep_eval(&vm, code);
+		puts(sheep_cname(list));
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
+
+	/*
+	 * (variable foo (quote bar))
+	 * foo
+	 */
+	list = sheep_list(&vm, 3,
+			sheep_name(&vm, "variable"),
+			sheep_name(&vm, "foo"),
+			sheep_list(&vm, 2,
+				sheep_name(&vm, "quote"),
+				sheep_name(&vm, "bar")));
+	code = sheep_compile(&vm, list);
+	if (code) {
+		list = sheep_eval(&vm, code);
+		puts(sheep_cname(list));
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
+	list = sheep_name(&vm, "foo");
+	code = sheep_compile(&vm, list);
+	if (code) {
+		list = sheep_eval(&vm, code);
+		puts(sheep_cname(list));
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
+
 	sheep_vm_exit(&vm);
 	return 0;
 }

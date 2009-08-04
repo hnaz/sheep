@@ -243,8 +243,7 @@ static int compile_quote(struct sheep_compile *compile,
 	return 0;
 }
 
-/* (block &rest expr) */
-static int compile_block(struct sheep_compile *compile,
+static int do_compile_block(struct sheep_compile *compile,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	while (args) {
@@ -258,6 +257,27 @@ static int compile_block(struct sheep_compile *compile,
 		args = args->tail;
 	}
 	return 0;
+}
+
+/* (block &rest expr) */
+static int compile_block(struct sheep_compile *compile,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	struct sheep_context bcontext;
+	struct sheep_map benv;
+	int ret;
+
+	memset(&benv, 0, sizeof(struct sheep_map));
+
+	bcontext.code = context->code;
+	bcontext.block = context->block;
+	bcontext.env = &benv;
+	bcontext.parent = context;
+
+	ret = do_compile_block(compile, &bcontext, args);
+
+	sheep_map_drain(&benv);
+	return ret;
 }
 
 /* (with (name expr name expr ...) &rest expr) */
@@ -294,10 +314,29 @@ static int compile_with(struct sheep_compile *compile,
 		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
 	} while (bindings);
 
-	ret = compile_block(compile, &wcontext, body);
+	ret = do_compile_block(compile, &wcontext, body);
 out:
 	sheep_map_drain(&wenv);
 	return ret;
+}
+
+/* (variable name value) */
+int compile_variable(struct sheep_compile *compile,
+		struct sheep_context *context, struct sheep_list *args)
+{
+	unsigned int slot;
+	const char *name;
+	sheep_t value;
+
+	if (unpack("variable", args, "co", &name, &value))
+		return -1;
+	if (value->type->compile(compile, context, value))
+		return -1;
+	slot = local_slot(context, NULL);
+	sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
+	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+	sheep_emit(context->code, SHEEP_LOCAL, slot);
+	return 0;
 }
 
 int sheep_compile_list(struct sheep_compile *compile,
@@ -328,9 +367,11 @@ void sheep_compiler_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "quote", compile_quote);
 	sheep_map_set(&vm->specials, "block", compile_block);
 	sheep_map_set(&vm->specials, "with", compile_with);
+	sheep_map_set(&vm->specials, "variable", compile_variable);
 }
 
 void sheep_compiler_exit(struct sheep_vm *vm)
 {
+	sheep_map_drain(&vm->main.env);
 	sheep_map_drain(&vm->specials);
 }

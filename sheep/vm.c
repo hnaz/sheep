@@ -18,10 +18,10 @@ void sheep_vm_init(struct sheep_vm *vm)
 
 void sheep_vm_exit(struct sheep_vm *vm)
 {
+	sheep_compiler_exit(vm);
 	sheep_free(vm->calls.items);
 	sheep_free(vm->stack.items);
-	sheep_compiler_exit(vm);
-	sheep_free(vm->root.locals.items);
 	sheep_free(vm->code.code.items);
+	sheep_free(vm->root.locals.items);
 	sheep_objects_exit(vm);
 }

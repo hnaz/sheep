@@ -54,7 +54,7 @@ static unsigned int foreign_slot(struct sheep_context *context,
 static void code_init(struct sheep_code *code)
 {
 	memset(&code->code, 0, sizeof(struct sheep_vector));
-	code->code.blocksize = 64;
+	code->code.blocksize = 32;
 }
 
 struct sheep_code *__sheep_compile(struct sheep_vm *vm,

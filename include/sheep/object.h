@@ -6,14 +6,13 @@
 typedef struct sheep_object * sheep_t;
 
 struct sheep_objects;
-struct sheep_compile;
 struct sheep_context;
 struct sheep_vm;
 
 struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(sheep_t);
-	int (*compile)(struct sheep_compile *, struct sheep_context *, sheep_t);
+	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
 };
 
 struct sheep_object {

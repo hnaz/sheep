@@ -19,9 +19,9 @@ struct sheep_context {
 	struct sheep_context *parent;
 };
 
-static unsigned int constant_slot(struct sheep_compile *compile, void *data)
+static unsigned int constant_slot(struct sheep_vm *vm, void *data)
 {
-	return sheep_vector_push(&compile->vm->root.locals, data);
+	return sheep_vector_push(&vm->root.locals, data);
 }
 
 static unsigned int local_slot(struct sheep_context *context, void *data)
@@ -40,7 +40,8 @@ static void code_init(struct sheep_code *code)
 	code->code.blocksize = 64;
 }
 
-struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
+struct sheep_code *__sheep_compile(struct sheep_vm *vm,
+				struct sheep_module *module, sheep_t expr)
 {
 	struct sheep_context context;
 	struct sheep_code *code;
@@ -50,10 +51,10 @@ struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
 
 	memset(&context, 0, sizeof(context));
 	context.code = code;
-	context.block = &compile->vm->root;
-	context.env = &compile->vm->main.env;
+	context.block = &vm->root;
+	context.env = &module->env;
 
-	if (expr->type->compile(compile, &context, expr)) {
+	if (expr->type->compile(vm, &context, expr)) {
 		sheep_free(code->code.items);
 		sheep_free(code);
 		return NULL;
@@ -63,12 +64,12 @@ struct sheep_code *__sheep_compile(struct sheep_compile *compile, sheep_t expr)
 	return code;
 }
 
-int sheep_compile_constant(struct sheep_compile *compile,
-			struct sheep_context *context, sheep_t expr)
+int sheep_compile_constant(struct sheep_vm *vm, struct sheep_context *context,
+			sheep_t expr)
 {
 	unsigned int slot;
 
-	slot = constant_slot(compile, expr);
+	slot = constant_slot(vm, expr);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -105,8 +106,8 @@ static int lookup(struct sheep_context *context, const char *name,
 	return 0;
 }
 
-int sheep_compile_name(struct sheep_compile *compile,
-		struct sheep_context *context, sheep_t expr)
+int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
+		sheep_t expr)
 {
 	struct sheep_vector *foreigns;
 	enum env_level level;
@@ -230,26 +231,26 @@ static int unpack(const char *caller, struct sheep_list *list,
 }
 
 /* (quote expr) */
-static int compile_quote(struct sheep_compile *compile,
-			struct sheep_context *context, struct sheep_list *args)
+static int compile_quote(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *args)
 {
 	unsigned int slot;
 	sheep_t obj;
 
 	if (unpack("quote", args, "o", &obj))
 		return -1;
-	slot = constant_slot(compile, obj);
+	slot = constant_slot(vm, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
 
-static int do_compile_block(struct sheep_compile *compile,
-			struct sheep_context *context, struct sheep_list *args)
+static int do_compile_block(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *args)
 {
 	while (args) {
 		sheep_t value = args->head;
 
-		if (value->type->compile(compile, context, value))
+		if (value->type->compile(vm, context, value))
 			return -1;
 		if (!args->tail)
 			break;
@@ -260,8 +261,8 @@ static int do_compile_block(struct sheep_compile *compile,
 }
 
 /* (block &rest expr) */
-static int compile_block(struct sheep_compile *compile,
-			struct sheep_context *context, struct sheep_list *args)
+static int compile_block(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *args)
 {
 	struct sheep_context bcontext;
 	struct sheep_map benv;
@@ -274,15 +275,15 @@ static int compile_block(struct sheep_compile *compile,
 	bcontext.env = &benv;
 	bcontext.parent = context;
 
-	ret = do_compile_block(compile, &bcontext, args);
+	ret = do_compile_block(vm, &bcontext, args);
 
 	sheep_map_drain(&benv);
 	return ret;
 }
 
 /* (with (name expr name expr ...) &rest expr) */
-static int compile_with(struct sheep_compile *compile,
-			struct sheep_context *context, struct sheep_list *args)
+static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *args)
 {
 	struct sheep_list *bindings, *body;
 	struct sheep_context wcontext;
@@ -307,22 +308,22 @@ static int compile_with(struct sheep_compile *compile,
 
 		if (unpack("with", bindings, "cor", &name, &value, &bindings))
 			goto out;
-		if (value->type->compile(compile, &wcontext, value))
+		if (value->type->compile(vm, &wcontext, value))
 			goto out;
 		slot = local_slot(&wcontext, NULL);
 		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		sheep_map_set(wcontext.env, name, (void *)(unsigned long)slot);
 	} while (bindings);
 
-	ret = do_compile_block(compile, &wcontext, body);
+	ret = do_compile_block(vm, &wcontext, body);
 out:
 	sheep_map_drain(&wenv);
 	return ret;
 }
 
 /* (variable name value) */
-int compile_variable(struct sheep_compile *compile,
-		struct sheep_context *context, struct sheep_list *args)
+int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
+		struct sheep_list *args)
 {
 	unsigned int slot;
 	const char *name;
@@ -330,7 +331,7 @@ int compile_variable(struct sheep_compile *compile,
 
 	if (unpack("variable", args, "co", &name, &value))
 		return -1;
-	if (value->type->compile(compile, context, value))
+	if (value->type->compile(vm, context, value))
 		return -1;
 	slot = local_slot(context, NULL);
 	sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
@@ -339,8 +340,8 @@ int compile_variable(struct sheep_compile *compile,
 	return 0;
 }
 
-int sheep_compile_list(struct sheep_compile *compile,
-		struct sheep_context *context, sheep_t expr)
+int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
+		sheep_t expr)
 {
 	struct sheep_list *form;
 	const char *op;
@@ -350,11 +351,11 @@ int sheep_compile_list(struct sheep_compile *compile,
 	if (unpack("function call", form, "cr", &op, &form))
 		return -1;
 
-	if (!sheep_map_get(&compile->vm->specials, op, &entry)) {
-		int (*special)(struct sheep_compile *, struct sheep_context *,
+	if (!sheep_map_get(&vm->specials, op, &entry)) {
+		int (*special)(struct sheep_vm *, struct sheep_context *,
 			struct sheep_list *) = entry;
 
-		return special(compile, context, form);
+		return special(vm, context, form);
 	}
 
 	fprintf(stderr, "function calls not implemented\n");

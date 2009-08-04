@@ -4,7 +4,6 @@
 #include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/vector.h>
-#include <sheep/block.h>
 #include <sheep/code.h>
 
 struct sheep_vm {
@@ -14,7 +13,7 @@ struct sheep_vm {
 	struct sheep_vector protected;
 	int gc_disabled;
 
-	struct sheep_block root;
+	struct sheep_vector globals;
 	struct sheep_code code;
 
 	/* Compiler */
@@ -23,8 +22,7 @@ struct sheep_vm {
 
 	/* Evaluator */
 	struct sheep_vector stack;
-	struct sheep_vector calls;	/* [lastpc lastblock] */
-	struct sheep_block *block;
+	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };
 
 void sheep_vm_init(struct sheep_vm *);

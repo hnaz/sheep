@@ -13,6 +13,8 @@ struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(sheep_t);
 	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
+
+	void (*ddump)(sheep_t);
 };
 
 struct sheep_object {
@@ -21,6 +23,8 @@ struct sheep_object {
 };
 
 sheep_t sheep_object(struct sheep_vm *, const struct sheep_type *, void *);
+
+void sheep_ddump(sheep_t);
 
 static inline void *sheep_data(sheep_t sheep)
 {

@@ -28,7 +28,7 @@ int main(void)
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
-		puts(sheep_cname(list));
+		sheep_ddump(list);
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}
@@ -53,7 +53,7 @@ int main(void)
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
-		puts(sheep_cname(list));
+		sheep_ddump(list);
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}
@@ -71,7 +71,7 @@ int main(void)
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
-		puts(sheep_cname(list));
+		sheep_ddump(list);
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}
@@ -79,7 +79,30 @@ int main(void)
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
-		puts(sheep_cname(list));
+		list->type->ddump(list);
+		puts("");
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
+
+	/*
+	 * (with (a (quote (1 2 3))) a)
+	 */
+	list = sheep_list(&vm, 3,
+			sheep_name(&vm, "with"),
+			sheep_list(&vm, 2,
+				sheep_name(&vm, "a"),
+				sheep_list(&vm, 2,
+					sheep_name(&vm, "quote"),
+					sheep_list(&vm, 3,
+						sheep_name(&vm, "1"),
+						sheep_name(&vm, "2"),
+						sheep_name(&vm, "3")))),
+			sheep_name(&vm, "a"));
+	code = sheep_compile(&vm, list);
+	if (code) {
+		list = sheep_eval(&vm, code);
+		sheep_ddump(list);
 		sheep_free(code->code.items);
 		sheep_free(code);
 	}

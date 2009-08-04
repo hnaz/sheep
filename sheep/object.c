@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include <sheep/object.h>
 
@@ -127,6 +128,15 @@ sheep_t sheep_object(struct sheep_vm *vm, const struct sheep_type *type,
 	sheep->type = type;
 	sheep->data = (unsigned long)data;
 	return sheep;
+}
+
+void sheep_ddump(sheep_t sheep)
+{
+	if (sheep->type->ddump) {
+		sheep->type->ddump(sheep);
+		puts("");
+	} else
+		printf("#<Object %p>\n", sheep);
 }
 
 void sheep_mark(sheep_t sheep)

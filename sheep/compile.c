@@ -6,7 +6,6 @@
 #include <sheep/map.h>
 #include <sheep/vm.h>
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 

@@ -346,8 +346,8 @@ out:
 }
 
 /* (variable name value) */
-int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
-		struct sheep_list *args)
+static int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *args)
 {
 	unsigned int slot;
 	const char *name;

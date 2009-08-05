@@ -70,6 +70,11 @@ sheep_t sheep_list(struct sheep_vm *vm, unsigned int nr, ...)
 	struct sheep_list *list, *pos;
 	va_list ap;
 
+	/*
+	 * XXX: What is `the empty list' and where is it allowed to
+	 * appear?
+	 */
+
 	va_start(ap, nr);
 	list = pos = sheep_malloc(sizeof(struct sheep_list));
 	for (;;) {

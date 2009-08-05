@@ -4,13 +4,14 @@
 
 #include <sheep/function.h>
 
-static void free_function(sheep_t sheep)
+static void free_function(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
-	if (function->foreigns)
-		/* XXX free foreigns */;
+	/* XXX: free private container of preserved slots */
+	sheep_free(function->foreigns);
+	sheep_free(function);
 }
 
 const struct sheep_type sheep_function_type = {

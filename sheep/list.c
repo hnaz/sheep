@@ -18,7 +18,7 @@ static void mark_list(sheep_t sheep)
 	}
 }
 
-static void free_list(sheep_t sheep)
+static void free_list(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_list *list, *tail;
 

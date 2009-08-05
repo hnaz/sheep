@@ -71,7 +71,7 @@ static void collect(struct sheep_vm *vm)
 			}
 
 			if (sheep->type->free)
-				sheep->type->free(sheep);
+				sheep->type->free(vm, sheep);
 
 			sheep->data = (unsigned long)pool->free;
 			pool->free = &pool->mem[i];
@@ -171,7 +171,7 @@ void sheep_gc_enable(struct sheep_vm *vm)
 	vm->gc_disabled = 0;
 }
 
-static void drain_pool(struct sheep_objects *pool)
+static void drain_pool(struct sheep_vm *vm, struct sheep_objects *pool)
 {
 	unsigned int i;
 
@@ -179,7 +179,7 @@ static void drain_pool(struct sheep_objects *pool)
 		struct sheep_object *sheep = &pool->mem[i];
 
 		if (sheep->type && sheep->type->free)
-			sheep->type->free(sheep);
+			sheep->type->free(vm, sheep);
 	}
 }
 
@@ -189,13 +189,13 @@ void sheep_objects_exit(struct sheep_vm *vm)
 
 	while (vm->parts) {
 		next = vm->parts->next;
-		drain_pool(vm->parts);
+		drain_pool(vm, vm->parts);
 		free_pool(vm->parts);
 		vm->parts = next;
 	}
 	while (vm->fulls) {
 		next = vm->fulls->next;
-		drain_pool(vm->fulls);
+		drain_pool(vm, vm->fulls);
 		free_pool(vm->fulls);
 		vm->fulls = next;
 	}

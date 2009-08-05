@@ -1,11 +1,12 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/util.h>
+#include <sheep/vm.h>
 #include <stdio.h>
 
 #include <sheep/name.h>
 
-static void free_name(sheep_t sheep)
+static void free_name(struct sheep_vm *vm, sheep_t sheep)
 {
 	sheep_free(sheep_cname(sheep));
 }

@@ -11,7 +11,7 @@ struct sheep_vm;
 
 struct sheep_type {
 	void (*mark)(sheep_t);
-	void (*free)(sheep_t);
+	void (*free)(struct sheep_vm *, sheep_t);
 	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
 
 	void (*ddump)(sheep_t);

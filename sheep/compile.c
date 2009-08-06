@@ -151,7 +151,6 @@ int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_emit(context->code, SHEEP_FOREIGN, slot);
 		break;
 	}
-
 	return 0;
 }
 
@@ -255,6 +254,7 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (unpack("quote", args, "o", &obj))
 		return -1;
+
 	slot = constant_slot(vm, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
@@ -276,8 +276,10 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 
 		if (value->type->compile(vm, &context, value))
 			return -1;
+
 		if (!args->tail)
 			break;
+
 		sheep_emit(code, SHEEP_DROP, 0);
 		args = args->tail;
 	}
@@ -288,12 +290,12 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 static int compile_block(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
-	struct sheep_map env;
+	SHEEP_DEFINE_MAP(env);
 	int ret;
 
-	memset(&env, 0, sizeof(struct sheep_map));
 	ret = do_compile_block(vm, context->code, context->function,
 			&env, context, args);
+
 	sheep_map_drain(&env);
 	return ret;
 }
@@ -308,6 +310,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (unpack("with", args, "Lr", &bindings, &body))
 		return -1;
+
 	do {
 		unsigned int slot;
 		const char *name;
@@ -315,8 +318,10 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 
 		if (unpack("with", bindings, "Aor", &name, &value, &bindings))
 			goto out;
+
 		if (value->type->compile(vm, context, value))
 			goto out;
+
 		if (context->function) {
 			slot = local_slot(context);
 			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
@@ -326,6 +331,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 		}
 		sheep_map_set(&env, name, (void *)(unsigned long)slot);
 	} while (bindings);
+
 	ret = do_compile_block(vm, context->code, context->function,
 			&env, context, body);
 out:
@@ -343,8 +349,10 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (unpack("variable", args, "Ao", &name, &value))
 		return -1;
+
 	if (value->type->compile(vm, context, value))
 		return -1;
+
 	if (context->function) {
 		slot = local_slot(context);
 		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
@@ -379,8 +387,10 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (unpack("function", args, "Lr", &parms, &body))
 		return -1;
+
 	sheep = sheep_function(vm);
 	function = sheep_data(sheep);
+
 	while (parms) {
 		const char *parm;
 
@@ -390,14 +400,19 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
 		function->nr_parms++;
 	}
+
 	sheep_protect(vm, sheep);
 	ret = do_compile_block(vm, &code, function, &env, context, body);
 	sheep_unprotect(vm, sheep);
+
 	sheep_emit(&code, SHEEP_RET, 0);
+
+	function->offset = vm->code.code.nr_items;
 	sheep_vector_concat(&vm->code.code, &code.code);
 
 	slot = constant_slot(vm, sheep);
 	sheep_emit(context->code, SHEEP_CLOSURE, slot);
+
 	if (name) {
 		if (context->function) {
 			slot = local_slot(context);
@@ -425,6 +440,7 @@ static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
 	for (nargs = 0; args; args = args->tail, nargs++)
 		if (args->head->type->compile(vm, context, args->head))
 			return -1;
+
 	if (form->head->type->compile(vm, context, form->head))
 		return -1;
 	sheep_emit(context->code, SHEEP_CALL, nargs);
@@ -443,11 +459,11 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 
 		op = sheep_data(form->head);
 		if (!sheep_map_get(&vm->specials, op, &entry)) {
-			int (*special)(struct sheep_vm *,
-				struct sheep_context *,
-				struct sheep_list *) = entry;
+			int (*compile_special)(struct sheep_vm *,
+					struct sheep_context *,
+					struct sheep_list *) = entry;
 			
-			return special(vm, context, form->tail);
+			return compile_special(vm, context, form->tail);
 		}
 	}
 	return compile_call(vm, context, form);

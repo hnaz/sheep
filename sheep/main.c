@@ -23,6 +23,7 @@ int main(void)
 			sheep_list(&vm, 2,
 				sheep_name(&vm, "quote"),
 				sheep_name(&vm, "bar")));
+	sheep_ddump(list);
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
@@ -31,6 +32,7 @@ int main(void)
 		sheep_free(code);
 	}
 	list = sheep_name(&vm, "foo");
+	sheep_ddump(list);
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
@@ -53,6 +55,7 @@ int main(void)
 						sheep_name(&vm, "2"),
 						sheep_name(&vm, "3")))),
 			sheep_name(&vm, "a"));
+	sheep_ddump(list);
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);
@@ -78,6 +81,26 @@ int main(void)
 				sheep_list(&vm, 2,
 					sheep_name(&vm, "quote"),
 					sheep_name(&vm, "a"))));
+	sheep_ddump(list);
+	code = sheep_compile(&vm, list);
+	if (code) {
+		list = sheep_eval(&vm, code);
+		sheep_ddump(list);
+		sheep_free(code->code.items);
+		sheep_free(code);
+	}
+	/*
+	 * ((function (x) x) (quote a))
+	 */
+	list = sheep_list(&vm, 2,
+			sheep_list(&vm, 3,
+				sheep_name(&vm, "function"),
+				sheep_list(&vm, 1, sheep_name(&vm, "x")),
+				sheep_name(&vm, "x")),
+			sheep_list(&vm, 2,
+				sheep_name(&vm, "quote"),
+				sheep_name(&vm, "b")));
+	sheep_ddump(list);
 	code = sheep_compile(&vm, list);
 	if (code) {
 		list = sheep_eval(&vm, code);

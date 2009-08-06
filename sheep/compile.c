@@ -416,26 +416,41 @@ out:
 	return ret;
 }
 
+static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
+			struct sheep_list *form)
+{
+	struct sheep_list *args = form->tail;
+	int nargs;
+
+	for (nargs = 0; args; args = args->tail, nargs++)
+		if (args->head->type->compile(vm, context, args->head))
+			return -1;
+	if (form->head->type->compile(vm, context, form->head))
+		return -1;
+	sheep_emit(context->code, SHEEP_CALL, nargs);
+	return 0;
+}
+
 int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
 	struct sheep_list *form;
-	const char *op;
-	void *entry;
 
 	form = sheep_data(expr);
-	if (unpack("function call", form, "Ar", &op, &form))
-		return -1;
+	if (form->head->type == &sheep_name_type) {
+		const char *op;
+		void *entry;
 
-	if (!sheep_map_get(&vm->specials, op, &entry)) {
-		int (*special)(struct sheep_vm *, struct sheep_context *,
-			struct sheep_list *) = entry;
-
-		return special(vm, context, form);
+		op = sheep_data(form->head);
+		if (!sheep_map_get(&vm->specials, op, &entry)) {
+			int (*special)(struct sheep_vm *,
+				struct sheep_context *,
+				struct sheep_list *) = entry;
+			
+			return special(vm, context, form->tail);
+		}
 	}
-
-	fprintf(stderr, "function calls not implemented\n");
-	return -1;
+	return compile_call(vm, context, form);
 }
 
 void sheep_compiler_init(struct sheep_vm *vm)

@@ -49,11 +49,40 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			vm->globals.items[arg] = tmp;
 			break;
 		case SHEEP_CLOSURE:
+			tmp = vm->globals.items[arg];
+			sheep_vector_push(&vm->stack, tmp);
+			break;
 		case SHEEP_CALL:
-			abort();
+			/* Save context */
+			sheep_vector_push(&vm->calls, (void *)pc);
+			sheep_vector_push(&vm->calls, (void *)basep);
+			sheep_vector_push(&vm->calls, function);
+
+			/* Get callable */
+			tmp = sheep_vector_pop(&vm->stack);
+			assert(tmp->type == &sheep_function_type);
+
+			/* Set up new context */
+			basep = vm->stack.nr_items - arg;
+			function = sheep_data(tmp);
+			pc = function->offset;
+			current = &vm->code;
+			break;
 		case SHEEP_RET:
+			/* Toplevel RET */
 			if (!vm->calls.nr_items)
 				goto out;
+
+			/* Restore old context */
+			function = sheep_vector_pop(&vm->calls);
+			basep = (unsigned long)sheep_vector_pop(&vm->calls);
+			pc = (unsigned long)sheep_vector_pop(&vm->calls);
+
+			if (!function) {
+				/* Switch back to toplevel code */
+				current = code;
+			}
+			break;
 		default:
 			abort();
 		}

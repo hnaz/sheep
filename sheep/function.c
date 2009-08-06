@@ -22,6 +22,6 @@ sheep_t sheep_function(struct sheep_vm *vm)
 {
 	struct sheep_function *function;
 
-	function = sheep_malloc(sizeof(struct sheep_function));
+	function = sheep_zalloc(sizeof(struct sheep_function));
 	return sheep_object(vm, &sheep_function_type, function);
 }

@@ -30,6 +30,26 @@ static void free_list(struct sheep_vm *vm, sheep_t sheep)
 	}
 }
 
+static int test_list(sheep_t sheep)
+{
+	return 1;/*fixme*/
+}
+
+static int equal_list(sheep_t a, sheep_t b)
+{
+	struct sheep_list *la, *lb;
+
+	la = sheep_data(a);
+	lb = sheep_data(b);
+	while (la && lb) {
+		if (!sheep_equal(la->head, lb->head))
+			return 0;
+		la = la->tail;
+		lb = lb->tail;
+	}
+	return !(la || lb);
+}
+
 static void ddump_list(sheep_t sheep)
 {
 	struct sheep_list *list;
@@ -51,6 +71,8 @@ const struct sheep_type sheep_list_type = {
 	.mark = mark_list,
 	.free = free_list,
 	.compile = sheep_compile_list,
+	.test = test_list,
+	.equal = equal_list,
 	.ddump = ddump_list,
 };
 

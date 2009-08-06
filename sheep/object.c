@@ -130,6 +130,24 @@ sheep_t sheep_object(struct sheep_vm *vm, const struct sheep_type *type,
 	return sheep;
 }
 
+int sheep_test(sheep_t sheep)
+{
+	if (sheep->type->test)
+		return sheep->type->test(sheep);
+	return 1;
+}
+
+int sheep_equal(sheep_t a, sheep_t b)
+{
+	if (a == b)
+		return 1;
+	if (a->type != b->type)
+		return 0;
+	if (a->type->equal)
+		return a->type->equal(a, b);
+	return 0;
+}
+
 void sheep_ddump(sheep_t sheep)
 {
 	if (sheep->type->ddump) {

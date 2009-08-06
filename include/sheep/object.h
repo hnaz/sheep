@@ -14,6 +14,9 @@ struct sheep_type {
 	void (*free)(struct sheep_vm *, sheep_t);
 	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
 
+	int (*test)(sheep_t);
+	int (*equal)(sheep_t, sheep_t);
+
 	void (*ddump)(sheep_t);
 };
 
@@ -24,8 +27,6 @@ struct sheep_object {
 
 sheep_t sheep_object(struct sheep_vm *, const struct sheep_type *, void *);
 
-void sheep_ddump(sheep_t);
-
 static inline void *sheep_data(sheep_t sheep)
 {
 	return (void *)(sheep->data & ~1);
@@ -35,6 +36,11 @@ static inline void sheep_set_data(sheep_t sheep, void *data)
 {
 	sheep->data = (unsigned long)data | (sheep->data & 1);
 }
+
+int sheep_test(sheep_t);
+int sheep_equal(sheep_t, sheep_t);
+
+void sheep_ddump(sheep_t);
 
 void sheep_mark(sheep_t);
 

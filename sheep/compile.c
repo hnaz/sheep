@@ -41,21 +41,13 @@ static unsigned int foreign_slot(struct sheep_context *context,
 	if (!context->function->foreigns) {
 		context->function->foreigns =
 			sheep_malloc(sizeof(struct sheep_vector));
-		context->function->foreigns->items = NULL;
-		context->function->foreigns->nr_items = 0;
-		context->function->foreigns->blocksize = 8;
+		sheep_vector_init(context->function->foreigns, 8);
 	}
 	sheep_vector_push(context->function->foreigns,
 			(void *)(unsigned long)dist);
 	sheep_vector_push(context->function->foreigns,
 			(void *)(unsigned long)slot);
 	return context->function->foreigns->nr_items / 2;
-}
-
-static void code_init(struct sheep_code *code)
-{
-	memset(&code->code, 0, sizeof(struct sheep_vector));
-	code->code.blocksize = 32;
 }
 
 struct sheep_code *__sheep_compile(struct sheep_vm *vm,
@@ -65,7 +57,7 @@ struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 	struct sheep_code *code;
 
 	code = sheep_malloc(sizeof(struct sheep_code));
-	code_init(code);
+	sheep_code_init(code);
 
 	memset(&context, 0, sizeof(context));
 	context.code = code;
@@ -311,10 +303,9 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
 	struct sheep_list *bindings, *body;
-	struct sheep_map env;
+	SHEEP_DEFINE_MAP(env);
 	int ret = -1;
 
-	memset(&env, 0, sizeof(struct sheep_map));
 	if (unpack("with", args, "Lr", &bindings, &body))
 		return -1;
 	do {
@@ -373,15 +364,12 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 {
 	struct sheep_function *function;
 	struct sheep_list *parms, *body;
-	struct sheep_code code;
-	struct sheep_map env;
+	SHEEP_DEFINE_CODE(code);
+	SHEEP_DEFINE_MAP(env);
 	unsigned int slot;
 	const char *name;
 	sheep_t sheep;
 	int ret = -1;
-
-	memset(&env, 0, sizeof(struct sheep_map));
-	code_init(&code);
 
 	if (args->head->type == &sheep_name_type) {
 		name = sheep_cname(args->head);
@@ -452,7 +440,7 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 
 void sheep_compiler_init(struct sheep_vm *vm)
 {
-	code_init(&vm->code);
+	sheep_code_init(&vm->code);
 	sheep_map_set(&vm->specials, "quote", compile_quote);
 	sheep_map_set(&vm->specials, "block", compile_block);
 	sheep_map_set(&vm->specials, "with", compile_with);

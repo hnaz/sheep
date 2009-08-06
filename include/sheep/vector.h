@@ -7,6 +7,18 @@ struct sheep_vector {
 	unsigned int blocksize;
 };
 
+#define SHEEP_VECTOR_INITIALIZER(_blocksize)				\
+	{ .items = 0, .nr_items = 0, .blocksize = (_blocksize) }
+
+#define SHEEP_DEFINE_VECTOR(name, blocksize)				\
+	struct sheep_vector name = SHEEP_VECTOR_INITIALIZER(blocksize)
+
+static inline void
+sheep_vector_init(struct sheep_vector *vec, unsigned int blocksize)
+{
+	*vec = (struct sheep_vector)SHEEP_VECTOR_INITIALIZER(blocksize);
+}
+
 unsigned long sheep_vector_push(struct sheep_vector *, void *);
 
 static inline void *sheep_vector_pop(struct sheep_vector *vec)

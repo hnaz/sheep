@@ -23,6 +23,17 @@ struct sheep_code {
 	struct sheep_vector code;
 };
 
+#define SHEEP_CODE_INITIALIZER			\
+	{ .code = SHEEP_VECTOR_INITIALIZER(32) }
+
+#define SHEEP_DEFINE_CODE(name)				\
+	struct sheep_code name = SHEEP_CODE_INITIALIZER
+
+static inline void sheep_code_init(struct sheep_code *code)
+{
+	*code = (struct sheep_code)SHEEP_CODE_INITIALIZER;
+}
+
 static inline unsigned long
 sheep_encode(enum sheep_opcode op, unsigned int arg)
 {

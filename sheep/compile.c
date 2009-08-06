@@ -381,7 +381,6 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	int ret = -1;
 
 	memset(&env, 0, sizeof(struct sheep_map));
-	memset(&code, 0, sizeof(struct sheep_code));
 	code_init(&code);
 
 	if (args->head->type == &sheep_name_type) {
@@ -408,6 +407,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_unprotect(vm, sheep);
 	sheep_emit(&code, SHEEP_RET, 0);
 	sheep_vector_concat(&vm->code.code, &code.code);
+
 	slot = constant_slot(vm, sheep);
 	sheep_emit(context->code, SHEEP_CLOSURE, slot);
 	if (name) {

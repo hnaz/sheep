@@ -438,7 +438,6 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 	form = sheep_data(expr);
 	if (unpack("function call", form, "Ar", &op, &form))
 		return -1;
-	printf("op='%s'\n", op);
 
 	if (!sheep_map_get(&vm->specials, op, &entry)) {
 		int (*special)(struct sheep_vm *, struct sheep_context *,

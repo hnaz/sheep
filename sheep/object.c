@@ -187,6 +187,7 @@ void sheep_objects_exit(struct sheep_vm *vm)
 {
 	struct sheep_objects *next;
 
+	sheep_free(vm->protected.items);
 	while (vm->parts) {
 		next = vm->parts->next;
 		drain_pool(vm, vm->parts);

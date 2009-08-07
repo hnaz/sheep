@@ -311,7 +311,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("with", args, "Lr", &bindings, &body))
 		return -1;
 
-	do {
+	while (bindings) {
 		unsigned int slot;
 		const char *name;
 		sheep_t value;
@@ -330,7 +330,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
 		}
 		sheep_map_set(&env, name, (void *)(unsigned long)slot);
-	} while (bindings);
+	}
 
 	ret = do_compile_block(vm, context->code, context->function,
 			&env, context, body);

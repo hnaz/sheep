@@ -32,7 +32,7 @@ static void free_list(struct sheep_vm *vm, sheep_t sheep)
 
 static int test_list(sheep_t sheep)
 {
-	return 1;/*fixme*/
+	return !!sheep_data(sheep);
 }
 
 static int equal_list(sheep_t a, sheep_t b)
@@ -56,7 +56,7 @@ static void ddump_list(sheep_t sheep)
 
 	list = sheep_data(sheep);
 	printf("(");
-	for (;;) {
+	while (list) {
 		sheep = list->head;
 		sheep->type->ddump(sheep);
 		if (!list->tail)
@@ -92,10 +92,8 @@ sheep_t sheep_list(struct sheep_vm *vm, unsigned int nr, ...)
 	struct sheep_list *list, *pos;
 	va_list ap;
 
-	/*
-	 * XXX: What is `the empty list' and where is it allowed to
-	 * appear?
-	 */
+	if (!nr)
+		return sheep_object(vm, &sheep_list_type, NULL);
 
 	va_start(ap, nr);
 	list = pos = sheep_malloc(sizeof(struct sheep_list));

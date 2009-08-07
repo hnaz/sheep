@@ -67,21 +67,32 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			function = sheep_data(tmp);
 			pc = function->offset;
 			current = &vm->code;
-			break;
+			continue;
 		case SHEEP_RET:
 			/* Toplevel RET */
 			if (!vm->calls.nr_items)
 				goto out;
+
+			/* Sanity-check: exactly one return value */
+			assert(vm->stack.nr_items -
+				basep - function->nr_locals == 1);
+
+			/* Move return value, drop locals */
+			if (function->nr_locals) {
+				vm->stack.items[basep] =
+					vm->stack.items[basep +
+							function->nr_locals];
+				vm->stack.nr_items = basep + 1;
+			}
 
 			/* Restore old context */
 			function = sheep_vector_pop(&vm->calls);
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
 			pc = (unsigned long)sheep_vector_pop(&vm->calls);
 
-			if (!function) {
-				/* Switch back to toplevel code */
+			/* Switch back to toplevel code? */
+			if (!function)
 				current = code;
-			}
 			break;
 		default:
 			abort();

@@ -28,17 +28,6 @@ struct sheep_vm {
 void sheep_vm_init(struct sheep_vm *);
 void sheep_vm_exit(struct sheep_vm *);
 
-static inline void sheep_mark_vm(struct sheep_vm *vm)
-{
-	/*
-	 * vm->data
-	 *
-	 * vm->stack
-	 *
-	 * every block in vm->calls
-	 *
-	 * vm->block
-	 */
-}
+void sheep_vm_mark(struct sheep_vm *);
 
 #endif /* _SHEEP_VM_H */

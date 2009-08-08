@@ -56,7 +56,7 @@ static void collect(struct sheep_vm *vm)
 	if (vm->gc_disabled)
 		goto alloc;
 	
-	sheep_mark_vm(vm);
+	sheep_vm_mark(vm);
 	mark_protected(&vm->protected);
 
 	for (pool = vm->fulls; pool; last = pool, pool = pool->next) {

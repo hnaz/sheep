@@ -5,6 +5,17 @@
 
 #include <sheep/vm.h>
 
+void sheep_vm_mark(struct sheep_vm *vm)
+{
+	unsigned int i;
+
+	for (i = 0; i < vm->globals.nr_items; i++)
+		sheep_mark(vm->globals.items[i]);
+
+	for (i = 0; i < vm->stack.nr_items; i++)
+		sheep_mark(vm->stack.items[i]);
+}
+
 void sheep_vm_init(struct sheep_vm *vm)
 {
 	memset(vm, 0, sizeof(*vm));

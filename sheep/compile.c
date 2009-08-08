@@ -453,6 +453,8 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 	struct sheep_list *form;
 
 	form = sheep_data(expr);
+	if (!form)
+		return sheep_compile_constant(vm, context, expr);
 	if (form->head->type == &sheep_name_type) {
 		const char *op;
 		void *entry;

@@ -26,6 +26,20 @@ int main(void)
 
 	sheep_vm_init(&vm);
 	/*
+	 * ()
+	 */
+	test(&vm, sheep_list(&vm, 0));
+	/*
+	 * a
+	 */
+	test(&vm, sheep_name(&vm, "a"));
+	/*
+	 * (quote a)
+	 */
+	test(&vm, sheep_list(&vm, 2,
+				sheep_name(&vm, "quote"),
+				sheep_name(&vm, "a")));
+	/*
 	 * (variable foo (quote bar))
 	 * foo
 	 */

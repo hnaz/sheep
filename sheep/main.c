@@ -1,4 +1,5 @@
 #include <sheep/compile.h>
+#include <sheep/bool.h>
 #include <sheep/eval.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
@@ -29,6 +30,10 @@ int main(void)
 	 * ()
 	 */
 	test(&vm, sheep_list(&vm, 0));
+	/*
+	 * true
+	 */
+	test(&vm, &sheep_true);
 	/*
 	 * a
 	 */

@@ -104,6 +104,21 @@ int main(void)
 					sheep_list(&vm, 2,
 						sheep_name(&vm, "quote"),
 						sheep_name(&vm, "x")))));
+	/*
+	 * (function foo (x)
+	 *   (foo x))
+	 * (foo foo)
+	 */
+	test(&vm, sheep_list(&vm, 4,
+				sheep_name(&vm, "function"),
+				sheep_name(&vm, "foo"),
+				sheep_list(&vm, 1, sheep_name(&vm, "x")),
+				sheep_list(&vm, 2,
+					sheep_name(&vm, "foo"),
+					sheep_name(&vm, "x"))));
+	/*test(&vm, sheep_list(&vm, 2,
+				sheep_name(&vm, "foo"),
+				sheep_name(&vm, "foo")));*/
 	sheep_vm_exit(&vm);
 	return 0;
 }

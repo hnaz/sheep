@@ -372,9 +372,9 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 {
 	struct sheep_function *function;
 	struct sheep_list *parms, *body;
+	unsigned int cslot, bslot;
 	SHEEP_DEFINE_CODE(code);
 	SHEEP_DEFINE_MAP(env);
-	unsigned int slot;
 	const char *name;
 	sheep_t sheep;
 	int ret = -1;
@@ -392,6 +392,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	function = sheep_data(sheep);
 
 	while (parms) {
+		unsigned int slot;
 		const char *parm;
 
 		if (unpack("function", parms, "Ar", &parm, &parms))
@@ -401,29 +402,32 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 		function->nr_parms++;
 	}
 
+	cslot = constant_slot(vm, sheep);
+	if (name) {
+		if (context->function)
+			bslot = local_slot(context);
+		else
+			bslot = global_slot(vm);
+		sheep_map_set(context->env, name, (void *)(unsigned long)bslot);
+	}
+
 	sheep_protect(vm, sheep);
 	ret = do_compile_block(vm, &code, function, &env, context, body);
 	sheep_unprotect(vm, sheep);
 
 	sheep_emit(&code, SHEEP_RET, 0);
-
 	function->offset = vm->code.code.nr_items;
 	sheep_vector_concat(&vm->code.code, &code.code);
 
-	slot = constant_slot(vm, sheep);
-	sheep_emit(context->code, SHEEP_CLOSURE, slot);
-
+	sheep_emit(context->code, SHEEP_CLOSURE, cslot);
 	if (name) {
 		if (context->function) {
-			slot = local_slot(context);
-			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
-			sheep_emit(context->code, SHEEP_LOCAL, slot);
+			sheep_emit(context->code, SHEEP_SET_LOCAL, bslot);
+			sheep_emit(context->code, SHEEP_LOCAL, bslot);
 		} else {
-			slot = global_slot(vm);
-			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
-			sheep_emit(context->code, SHEEP_GLOBAL, slot);
+			sheep_emit(context->code, SHEEP_SET_GLOBAL, bslot);
+			sheep_emit(context->code, SHEEP_GLOBAL, bslot);
 		}
-		sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	}
 out:
 	sheep_free(code.code.items);

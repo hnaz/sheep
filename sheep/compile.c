@@ -47,7 +47,7 @@ static unsigned int foreign_slot(struct sheep_context *context,
 			(void *)(unsigned long)dist);
 	sheep_vector_push(context->function->foreigns,
 			(void *)(unsigned long)slot);
-	return context->function->foreigns->nr_items / 2;
+	return (context->function->foreigns->nr_items - 1) / 2;
 }
 
 struct sheep_code *__sheep_compile(struct sheep_vm *vm,

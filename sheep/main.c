@@ -124,6 +124,24 @@ int main(void)
 	/*test(&vm, sheep_list(&vm, 2,
 				sheep_name(&vm, "foo"),
 				sheep_name(&vm, "foo")));*/
+	/*
+	 * (function outer (x)
+	 *   (function inner ()
+	 *     x)
+	 *   (inner))
+	 * (outer true)
+	 */
+	test(&vm, sheep_list(&vm, 5,
+				sheep_name(&vm, "function"),
+				sheep_name(&vm, "outer"),
+				sheep_list(&vm, 1, sheep_name(&vm, "x")),
+				sheep_list(&vm, 4,
+					sheep_name(&vm, "function"),
+					sheep_name(&vm, "inner"),
+					sheep_list(&vm, 0),
+					sheep_name(&vm, "x")),
+				sheep_list(&vm, 1, sheep_name(&vm, "inner"))));
+	test(&vm, sheep_list(&vm, 2, sheep_name(&vm, "outer"), &sheep_true));
 	sheep_vm_exit(&vm);
 	return 0;
 }

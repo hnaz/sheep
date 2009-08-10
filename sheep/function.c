@@ -9,8 +9,11 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
-	/* XXX: free private container of preserved slots */
-	sheep_free(function->foreigns);
+	if (function->foreigns) {
+		/* XXX: free private container of preserved slots */
+		sheep_free(function->foreigns->items);
+		sheep_free(function->foreigns);
+	}
 	sheep_free(function);
 }
 

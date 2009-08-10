@@ -101,6 +101,7 @@ static int lookup(struct sheep_context *context, const char *name,
 	while (sheep_map_get(current->env, name, &entry)) {
 		if (!current->parent)
 			return -1;
+		current = current->parent;
 		/*
 		 * There can be several environment nestings within
 		 * one function level, but for foreign slots we are
@@ -110,7 +111,6 @@ static int lookup(struct sheep_context *context, const char *name,
 			last = current->function;
 			distance++;
 		}
-		current = current->parent;
 	}
 
 	*dist = distance;

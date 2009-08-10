@@ -21,6 +21,8 @@ sheep_vector_init(struct sheep_vector *vec, unsigned int blocksize)
 
 unsigned long sheep_vector_push(struct sheep_vector *, void *);
 
+void sheep_vector_grow(struct sheep_vector *, unsigned long);
+
 static inline void *sheep_vector_pop(struct sheep_vector *vec)
 {
 	return vec->items[--vec->nr_items];

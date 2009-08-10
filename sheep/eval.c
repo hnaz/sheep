@@ -53,20 +53,24 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_CALL:
-			/* Save context */
+			/* Save the old context */
 			sheep_vector_push(&vm->calls, (void *)pc);
 			sheep_vector_push(&vm->calls, (void *)basep);
 			sheep_vector_push(&vm->calls, function);
 
-			/* Get callable */
+			/* Get the callee */
 			tmp = sheep_vector_pop(&vm->stack);
 			assert(tmp->type == &sheep_function_type);
-
-			/* Set up new context */
-			basep = vm->stack.nr_items - arg;
 			function = sheep_data(tmp);
-			pc = function->offset;
+
+			/* Prepare the stack */
+			basep = vm->stack.nr_items - arg;
+			sheep_vector_grow(&vm->stack,
+					function->nr_locals - arg);
+
+			/* Execute the function body */
 			current = &vm->code;
+			pc = function->offset;
 			continue;
 		case SHEEP_RET:
 			/* Toplevel RET */
@@ -77,7 +81,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			assert(vm->stack.nr_items -
 				basep - function->nr_locals == 1);
 
-			/* Move return value, drop locals */
+			/* Nip the locals */
 			if (function->nr_locals) {
 				vm->stack.items[basep] =
 					vm->stack.items[basep +
@@ -85,7 +89,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 				vm->stack.nr_items = basep + 1;
 			}
 
-			/* Restore old context */
+			/* Restore the old context */
 			function = sheep_vector_pop(&vm->calls);
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
 			pc = (unsigned long)sheep_vector_pop(&vm->calls);

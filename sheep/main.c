@@ -142,6 +142,7 @@ int main(void)
 					sheep_name(&vm, "x")),
 				sheep_list(&vm, 1, sheep_name(&vm, "inner"))));
 	test(&vm, sheep_list(&vm, 2, sheep_name(&vm, "outer"), &sheep_true));
+	test(&vm, sheep_list(&vm, 2, sheep_name(&vm, "outer"), &sheep_true));
 	sheep_vm_exit(&vm);
 	return 0;
 }

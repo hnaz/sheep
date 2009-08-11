@@ -1,6 +1,7 @@
 #include <sheep/function.h>
 #include <sheep/object.h>
 #include <sheep/code.h>
+#include <sheep/util.h>
 #include <sheep/vm.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -8,22 +9,26 @@
 
 #include <sheep/eval.h>
 
-static void closure(struct sheep_vm *vm, sheep_t sheep)
+static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 {
-	struct sheep_function *function;
+	struct sheep_function *function, *fnew;
+	struct sheep_vector *foreigns;
 	unsigned int i;
 
 	assert(sheep->type == &sheep_function_type);
 	function = sheep_data(sheep);
 
 	if (!function->foreigns)
-		return;
+		return sheep;
+
+	foreigns = sheep_malloc(sizeof(struct sheep_vector));
+	sheep_vector_init(foreigns, 4);
 
 	assert(!(function->foreigns->nr_items % 2));
 	for (i = 0; i < function->foreigns->nr_items; i += 2) {
 		unsigned long fbasep, offset;
 		unsigned int dist, slot;
-		void **foreigns;
+		void **foreignp;
 
 		dist = (unsigned long)function->foreigns->items[i];
 		slot = (unsigned long)function->foreigns->items[i + 1];
@@ -32,22 +37,29 @@ static void closure(struct sheep_vm *vm, sheep_t sheep)
 		 * our foreign slot owner and the actual intex into
 		 * the stack locals of that owner.
 		 *
-		 * Work out the base pointer of the owning frame and
-		 * set the foreign pointer to the live stack slot.
-		 *
 		 * Every active stack frame has 3 entries in
 		 * vm->calls:
 		 *
 		 *     vm->calls = [... lastpc lastbasep lastfunction]
+		 *
+		 * Work out the base pointer of the owning frame and
+		 * establish the foreign slot reference to the live
+		 * stack slot.
 		 */
 		dist = (dist - 1) * 3 + 1;
 		offset = vm->calls.nr_items - 1 - dist;
 		fbasep = (unsigned long)vm->calls.items[offset];
-
-		foreigns = vm->stack.items + fbasep;
-		function->foreigns->items[i / 2] = foreigns + slot;
+		foreignp = vm->stack.items + fbasep;
+		sheep_vector_push(foreigns, foreignp + slot);
 	}
-	function->foreigns->nr_items /= 2;
+
+	sheep = sheep_function(vm);
+	fnew = sheep_data(sheep);
+
+	*fnew = *function;
+	fnew->foreigns = foreigns;
+
+	return sheep;
 }
 
 sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
@@ -92,7 +104,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			break;
 		case SHEEP_CLOSURE:
 			tmp = vm->globals.items[arg];
-			closure(vm, tmp);
+			tmp = closure(vm, tmp);
 			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_CALL:

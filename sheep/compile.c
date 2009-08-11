@@ -41,7 +41,7 @@ static unsigned int foreign_slot(struct sheep_context *context,
 	if (!context->function->foreigns) {
 		context->function->foreigns =
 			sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(context->function->foreigns, 8);
+		sheep_vector_init(context->function->foreigns, 4);
 	}
 	sheep_vector_push(context->function->foreigns,
 			(void *)(unsigned long)dist);

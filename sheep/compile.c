@@ -279,7 +279,11 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 
 		if (!args->tail)
 			break;
-
+		/*
+		 * The last value is the value of the whole block,
+		 * drop everything in between to keep the stack
+		 * balanced.
+		 */
 		sheep_emit(code, SHEEP_DROP, 0);
 		args = args->tail;
 	}
@@ -295,7 +299,6 @@ static int compile_block(struct sheep_vm *vm, struct sheep_context *context,
 
 	ret = do_compile_block(vm, context->code, context->function,
 			&env, context, args);
-
 	sheep_map_drain(&env);
 	return ret;
 }
@@ -457,6 +460,7 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 	struct sheep_list *form;
 
 	form = sheep_data(expr);
+	/* The empty list is a constant */
 	if (!form)
 		return sheep_compile_constant(vm, context, expr);
 	if (form->head->type == &sheep_name_type) {

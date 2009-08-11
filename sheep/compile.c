@@ -370,9 +370,9 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
 static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
+	unsigned int cslot, bslot = 0xf00;
 	struct sheep_function *function;
 	struct sheep_list *parms, *body;
-	unsigned int cslot, bslot;
 	SHEEP_DEFINE_CODE(code);
 	SHEEP_DEFINE_MAP(env);
 	const char *name;

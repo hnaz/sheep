@@ -11,15 +11,17 @@
 static void test(struct sheep_vm *vm, sheep_t src)
 {
 	struct sheep_code *code;
+	sheep_t res;
 
 	printf("executing "), sheep_ddump(src);
 	code = sheep_compile(vm, src);
-	if (code) {
-		sheep_t res = sheep_eval(vm, code);
+	if (!code)
+		return;
+	res = sheep_eval(vm, code);
+	sheep_free(code->code.items);
+	sheep_free(code);
+	if (res)
 		sheep_ddump(res);
-		sheep_free(code->code.items);
-		sheep_free(code);
-	}
 }
 
 int main(void)

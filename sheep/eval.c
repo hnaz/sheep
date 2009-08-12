@@ -119,6 +119,11 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			sheep_bug_on(tmp->type != &sheep_function_type);
 			function = sheep_data(tmp);
 
+			if (function->nr_parms != arg) {
+				fprintf(stderr, "wrong number of arguments\n");
+				goto err;
+			}
+
 			/* Prepare the stack */
 			basep = vm->stack.nr_items - arg;
 			sheep_vector_grow(&vm->stack,
@@ -162,6 +167,11 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 out:
 	sheep_bug_on(vm->stack.nr_items != 1);
 	return sheep_vector_pop(&vm->stack);
+err:
+	/* Unwind the stack */
+	vm->stack.nr_items = 0;
+	vm->calls.nr_items = 0;
+	return NULL;
 }
 
 void sheep_evaluator_init(struct sheep_vm *vm)

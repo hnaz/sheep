@@ -1,3 +1,6 @@
+VERSION	= 0.1
+NAME	= Klaatu
+
 CC	= gcc
 CPP	= cpp
 
@@ -19,14 +22,19 @@ sheep-clean	:= sheep/sheep $(sheep-obj) sheep/make.deps
 sheep/sheep: $(sheep-obj)
 	$(call print,"   LD     $@") $(CC) -o $@ $^ $(LDFLAGS)
 
-%.o: %.c sheep/make.deps
+%.o: %.c sheep/make.deps include/sheep/config.h
 	$(call print,"   CC     $@") $(CC) $(CFLAGS) -Iinclude -o $@ -c $<
 
 sheep/make.deps:
-	$(call print,"   DEPS   $@") rm -f sheep/make.deps;	\
-	$(foreach obj,$(sheep-obj),				\
-		$(CPP) -Iinclude -MM -MT $(obj)			\
-		$(basename $(obj)).c >> sheep/make.deps; )
+	$(call print,"   DEPS   $@") rm -f $@;	\
+	$(foreach obj,$(sheep-obj),		\
+		$(CPP) -Iinclude -MM -MT $(obj)	\
+		$(basename $(obj)).c >> $@; )
+
+include/sheep/config.h:
+	$(call print,"   CONF   $@") rm -f $@;			\
+	echo "#define SHEEP_VERSION \"$(VERSION)\"" >> $@;	\
+	echo "#define SHEEP_NAME \"$(NAME)\"" >> $@
 
 ifneq ($(MAKECMDGOALS),clean)
 -include sheep/make.deps

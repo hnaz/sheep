@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -35,4 +36,16 @@ char *sheep_strdup(const char *str)
 void sheep_free(const void *mem)
 {
 	free((void *)mem);
+}
+
+void sheep_bug(const char *fmt, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "*** sheep BUG: ");
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
+	abort();
 }

@@ -2,7 +2,6 @@
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <sys/mman.h>
-#include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
 
@@ -176,7 +175,7 @@ void sheep_unprotect(struct sheep_vm *vm, sheep_t sheep)
 	sheep_t prot;
 
 	prot = sheep_vector_pop(&vm->protected);
-	assert(prot == sheep);
+	sheep_bug_on(prot != sheep);
 }
 
 void sheep_gc_disable(struct sheep_vm *vm)

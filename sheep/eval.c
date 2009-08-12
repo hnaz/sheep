@@ -3,7 +3,6 @@
 #include <sheep/code.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -15,7 +14,7 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_vector *foreigns;
 	unsigned int i;
 
-	assert(sheep->type == &sheep_function_type);
+	sheep_bug_on(sheep->type != &sheep_function_type);
 	function = sheep_data(sheep);
 
 	if (!function->foreigns)
@@ -24,7 +23,7 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 	foreigns = sheep_malloc(sizeof(struct sheep_vector));
 	sheep_vector_init(foreigns, 4);
 
-	assert(!(function->foreigns->nr_items % 2));
+	sheep_bug_on(function->foreigns->nr_items % 2);
 	for (i = 0; i < function->foreigns->nr_items; i += 2) {
 		unsigned long fbasep, offset;
 		unsigned int dist, slot;
@@ -115,7 +114,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 
 			/* Get the callee */
 			tmp = sheep_vector_pop(&vm->stack);
-			assert(tmp->type == &sheep_function_type);
+			sheep_bug_on(tmp->type != &sheep_function_type);
 			function = sheep_data(tmp);
 
 			/* Prepare the stack */
@@ -133,8 +132,8 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 				goto out;
 
 			/* Sanity-check: exactly one return value */
-			assert(vm->stack.nr_items -
-				basep - function->nr_locals == 1);
+			sheep_bug_on(vm->stack.nr_items -
+				basep - function->nr_locals != 1);
 
 			/* Nip the locals */
 			if (function->nr_locals) {
@@ -159,6 +158,6 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 		pc++;
 	}
 out:
-	assert(vm->stack.nr_items == 1);
+	sheep_bug_on(vm->stack.nr_items != 1);
 	return sheep_vector_pop(&vm->stack);
 }

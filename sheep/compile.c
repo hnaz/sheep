@@ -6,7 +6,6 @@
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
-#include <assert.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -174,7 +173,7 @@ static struct unpack_map *map_control(char control)
 	for (map = unpack_table; map->control; map++)
 		if (map->control == control)
 			break;
-	assert(map->control);
+	sheep_bug_on(!map->control);
 	return map;
 }
 
@@ -185,7 +184,7 @@ static struct unpack_map *map_type(const struct sheep_type *type)
 	for (map = unpack_table; map->control; map++)
 		if (map->type == type)
 			break;
-	assert(map->control);
+	sheep_bug_on(!map->control);
 	return map;
 }
 

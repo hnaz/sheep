@@ -1,3 +1,4 @@
+#include <sheep/config.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +43,7 @@ void sheep_bug(const char *fmt, ...)
 {
 	va_list ap;
 
-	fprintf(stderr, "*** sheep BUG: ");
+	fprintf(stderr, "*** sheep v%s BUG: ", SHEEP_VERSION);
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);

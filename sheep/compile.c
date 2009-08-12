@@ -480,7 +480,6 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 
 void sheep_compiler_init(struct sheep_vm *vm)
 {
-	sheep_code_init(&vm->code);
 	sheep_map_set(&vm->specials, "quote", compile_quote);
 	sheep_map_set(&vm->specials, "block", compile_block);
 	sheep_map_set(&vm->specials, "with", compile_with);
@@ -490,6 +489,5 @@ void sheep_compiler_init(struct sheep_vm *vm)
 
 void sheep_compiler_exit(struct sheep_vm *vm)
 {
-	sheep_map_drain(&vm->main.env);
 	sheep_map_drain(&vm->specials);
 }

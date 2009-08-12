@@ -1,7 +1,9 @@
 #include <sheep/function.h>
 #include <sheep/object.h>
+#include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/util.h>
+#include <sheep/map.h>
 #include <sheep/vm.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -160,4 +162,23 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 out:
 	sheep_bug_on(vm->stack.nr_items != 1);
 	return sheep_vector_pop(&vm->stack);
+}
+
+void sheep_evaluator_init(struct sheep_vm *vm)
+{
+	sheep_map_set(&vm->main.env, "true",
+		(void *)(unsigned long)sheep_vector_push(&vm->globals,
+							&sheep_true));
+	sheep_map_set(&vm->main.env, "false",
+		(void *)(unsigned long)sheep_vector_push(&vm->globals,
+							&sheep_false));
+	vm->stack.blocksize = 32;
+	vm->calls.blocksize = 16;
+}
+
+void sheep_evaluator_exit(struct sheep_vm *vm)
+{
+	sheep_free(vm->calls.items);
+	sheep_free(vm->stack.items);
+	sheep_map_drain(&vm->main.env);
 }

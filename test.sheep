@@ -1,0 +1,33 @@
+()
+
+true
+
+a
+
+(quote a)
+
+(variable foo (quote bar))
+foo
+
+(with (a (quote (1 2 3)))
+  a)
+
+(block
+  (function id (x) x)
+  (id (quote a)))
+
+((function (x)
+   x)
+ (quote a))
+
+((function ()
+   (quote x)))
+
+(function foo (x)
+  (foo x))
+
+(function outer (x)
+  (function inner ()
+    x)
+  (inner))
+(outer true)

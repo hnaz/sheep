@@ -213,6 +213,11 @@ static int unpack(const char *caller, struct sheep_list *list,
 	va_start(ap, items);
 	while (*items) {
 		if (*items == 'r') {
+			/*
+			 * "r!" makes sure the rest is non-empty
+			 */
+			if (items[1] == '!' && !list)
+				break;
 			*va_arg(ap, struct sheep_list **) = list;
 			ret = 0;
 			goto out;
@@ -296,8 +301,13 @@ static int compile_block(struct sheep_vm *vm, struct sheep_context *context,
 	SHEEP_DEFINE_MAP(env);
 	int ret;
 
+	/* Just make sure the block is not empty */
+	if (unpack("block", args, "r!", &args))
+		return -1;
+
 	ret = do_compile_block(vm, context->code, context->function,
 			&env, context, args);
+
 	sheep_map_drain(&env);
 	return ret;
 }
@@ -310,7 +320,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 	SHEEP_DEFINE_MAP(env);
 	int ret = -1;
 
-	if (unpack("with", args, "Lr", &bindings, &body))
+	if (unpack("with", args, "Lr!", &bindings, &body))
 		return -1;
 
 	while (bindings) {
@@ -381,13 +391,13 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_t sheep;
 	int ret = -1;
 
-	if (args->head->type == &sheep_name_type) {
+	if (args && args->head->type == &sheep_name_type) {
 		name = sheep_cname(args->head);
 		args = args->tail;
 	} else
 		name = NULL;
 
-	if (unpack("function", args, "Lr", &parms, &body))
+	if (unpack("function", args, "Lr!", &parms, &body))
 		return -1;
 
 	sheep = sheep_function(vm);

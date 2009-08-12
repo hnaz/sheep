@@ -29,7 +29,8 @@ int main(void)
 
 	sheep_vm_init(&vm);
 	while ((src = sheep_read(&vm, stdin)) != &sheep_eof)
-		test(&vm, src);
+		if (src)
+			test(&vm, src);
 	sheep_vm_exit(&vm);
 	return 0;
 }

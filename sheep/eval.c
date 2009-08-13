@@ -145,13 +145,13 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			pc = function->offset;
 			continue;
 		case SHEEP_RET:
+			/* Sanity-check: exactly one return value */
+			sheep_bug_on(vm->stack.nr_items - basep -
+				(function ? function->nr_locals : 0) != 1);
+
 			/* Toplevel RET */
 			if (!vm->calls.nr_items)
 				goto out;
-
-			/* Sanity-check: exactly one return value */
-			sheep_bug_on(vm->stack.nr_items -
-				basep - function->nr_locals != 1);
 
 			/* Nip the locals */
 			if (function->nr_locals) {
@@ -176,7 +176,6 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 		pc++;
 	}
 out:
-	sheep_bug_on(vm->stack.nr_items != 1);
 	return sheep_vector_pop(&vm->stack);
 err:
 	/* Unwind the stack */

@@ -1,7 +1,10 @@
+#include <sheep/number.h>
 #include <sheep/object.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/vm.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -54,13 +57,32 @@ static int read_token(FILE *fp, char *buf, int len, int string)
 	return 0;
 }
 
+static int parse_number(const char *buf, long *number)
+{
+	char *end;
+	long val;
+
+	val = strtol(buf, &end, 0);
+	if (*end)
+		return -1;
+	if (val < (LONG_MIN >> 1))
+		return -1;
+	if (val > (LONG_MAX >> 1))
+		return -1;
+	*number = val;
+	return 0;
+}
+
 static sheep_t read_atom(struct sheep_vm *vm, FILE *fp, int c)
 {
 	char buf[512];
+	long number;
 
 	ungetc(c, fp);
 	if (read_token(fp, buf, 512, 0) < 0)
 		return NULL;
+	if (!parse_number(buf, &number))
+		return sheep_number(vm, number);
 	return sheep_name(vm, buf);
 }
 

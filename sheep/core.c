@@ -2,6 +2,7 @@
 #include <sheep/compile.h>
 #include <sheep/config.h>
 #include <sheep/module.h>
+#include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
@@ -315,6 +316,9 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "with", compile_with);
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
+
+	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
+	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

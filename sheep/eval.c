@@ -186,12 +186,6 @@ err:
 
 void sheep_evaluator_init(struct sheep_vm *vm)
 {
-	sheep_map_set(&vm->main.env, "true",
-		(void *)(unsigned long)sheep_vector_push(&vm->globals,
-							&sheep_true));
-	sheep_map_set(&vm->main.env, "false",
-		(void *)(unsigned long)sheep_vector_push(&vm->globals,
-							&sheep_false));
 	vm->stack.blocksize = 32;
 	vm->calls.blocksize = 16;
 }

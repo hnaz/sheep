@@ -12,29 +12,7 @@
 
 #include <sheep/compile.h>
 
-struct sheep_context {
-	struct sheep_code *code;
-	struct sheep_function *function;
-	struct sheep_map *env;
-	struct sheep_context *parent;
-};
-
-static unsigned int constant_slot(struct sheep_vm *vm, void *data)
-{
-	return sheep_vector_push(&vm->globals, data);
-}
-
-static unsigned int global_slot(struct sheep_vm *vm)
-{
-	return sheep_vector_push(&vm->globals, NULL);
-}
-
-static unsigned int local_slot(struct sheep_context *context)
-{
-	return context->function->nr_locals++;
-}
-
-static unsigned int foreign_slot(struct sheep_context *context,
+unsigned int sheep_slot_foreign(struct sheep_context *context,
 				unsigned int dist, unsigned int slot)
 {
 	if (!context->function->foreigns) {
@@ -77,7 +55,7 @@ int sheep_compile_constant(struct sheep_vm *vm, struct sheep_context *context,
 {
 	unsigned int slot;
 
-	slot = constant_slot(vm, expr);
+	slot = sheep_slot_constant(vm, expr);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -146,7 +124,7 @@ int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_emit(context->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = foreign_slot(context, dist, slot);
+		slot = sheep_slot_foreign(context, dist, slot);
 		sheep_emit(context->code, SHEEP_FOREIGN, slot);
 		break;
 	}
@@ -259,7 +237,7 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("quote", args, "o", &obj))
 		return -1;
 
-	slot = constant_slot(vm, obj);
+	slot = sheep_slot_constant(vm, obj);
 	sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -335,10 +313,10 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 			goto out;
 
 		if (context->function) {
-			slot = local_slot(context);
+			slot = sheep_slot_local(context);
 			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		} else {
-			slot = global_slot(vm);
+			slot = sheep_slot_global(vm);
 			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
 		}
 		sheep_map_set(&env, name, (void *)(unsigned long)slot);
@@ -366,11 +344,11 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
 		return -1;
 
 	if (context->function) {
-		slot = local_slot(context);
+		slot = sheep_slot_local(context);
 		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
 		sheep_emit(context->code, SHEEP_LOCAL, slot);
 	} else {
-		slot = global_slot(vm);
+		slot = sheep_slot_global(vm);
 		sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
 		sheep_emit(context->code, SHEEP_GLOBAL, slot);
 	}
@@ -414,12 +392,12 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 		function->nr_parms++;
 	}
 
-	cslot = constant_slot(vm, sheep);
+	cslot = sheep_slot_constant(vm, sheep);
 	if (name) {
 		if (context->function)
-			bslot = local_slot(context);
+			bslot = sheep_slot_local(context);
 		else
-			bslot = global_slot(vm);
+			bslot = sheep_slot_global(vm);
 		sheep_map_set(context->env, name, (void *)(unsigned long)bslot);
 	}
 

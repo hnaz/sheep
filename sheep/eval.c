@@ -109,16 +109,26 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_CALL:
+			tmp = sheep_vector_pop(&vm->stack);
+			/*
+			 * Alien type?  Call directly.  Otherwise, it
+			 * has to be a function object and we do the
+			 * stack stuff here.
+			 */
+			if (tmp->type == &sheep_alien_type) {
+				if (sheep_calien(tmp)(vm))
+					goto err;
+				break;
+			}
+
+			sheep_bug_on(tmp->type != &sheep_function_type);
+
 			/* Save the old context */
 			sheep_vector_push(&vm->calls, (void *)pc);
 			sheep_vector_push(&vm->calls, (void *)basep);
 			sheep_vector_push(&vm->calls, function);
 
-			/* Get the callee */
-			tmp = sheep_vector_pop(&vm->stack);
-			sheep_bug_on(tmp->type != &sheep_function_type);
 			function = sheep_data(tmp);
-
 			if (function->nr_parms != arg) {
 				fprintf(stderr, "wrong number of arguments\n");
 				goto err;
@@ -126,8 +136,9 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 
 			/* Prepare the stack */
 			basep = vm->stack.nr_items - arg;
-			sheep_vector_grow(&vm->stack,
-					function->nr_locals - arg);
+			if (function->nr_locals)
+				sheep_vector_grow(&vm->stack,
+						function->nr_locals - arg);
 
 			/* Execute the function body */
 			current = &vm->code;

@@ -31,3 +31,5 @@ foo
     x)
   (inner))
 (outer true)
+
+(sheep-version)

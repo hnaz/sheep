@@ -1,5 +1,6 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
+#include <sheep/core.h>
 #include <sheep/eval.h>
 #include <sheep/util.h>
 #include <string.h>
@@ -25,6 +26,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	sheep_code_init(&vm->code);
 	sheep_compiler_init(vm);
 	sheep_evaluator_init(vm);
+	sheep_core_register(vm);
 }
 
 void sheep_vm_exit(struct sheep_vm *vm)

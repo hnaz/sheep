@@ -1,4 +1,3 @@
-#include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/core.h>
 #include <sheep/eval.h>

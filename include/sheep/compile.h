@@ -24,7 +24,11 @@ struct sheep_code *__sheep_compile(struct sheep_vm *, struct sheep_module *,
  * @vm: runtime
  * @exp: expression to compile
  *
- * Returns the bytecode object representing the expression.
+ * Compiles @exp to bytecode, using the module vm->main as the
+ * namespace to establish and resolve bindings.
+ *
+ * Returns a code object that can be executed by sheep_eval() with the
+ * same @vm argument.
  */
 static inline struct sheep_code *sheep_compile(struct sheep_vm *vm, sheep_t exp)
 {

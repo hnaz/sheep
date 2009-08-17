@@ -11,6 +11,18 @@
 
 #include <sheep/compile.h>
 
+/**
+ * __sheep_compile - compile an expression
+ * @vm: runtime
+ * @module: module namespace
+ * @exp: expression to compile
+ *
+ * Compiles @exp to bytecode, using @module as the namespace to
+ * establish and resolve bindings.
+ *
+ * Returns a code object that can be executed by sheep_eval() with the
+ * same @vm argument.
+ */
 struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 				struct sheep_module *module, sheep_t expr)
 {
@@ -34,6 +46,14 @@ struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 	return code;
 }
 
+/**
+ * sheep_compile_constant - compile a constant reference
+ * @vm: runtime
+ * @context: compilation context
+ * @exp: constant expression
+ *
+ * Compilation helper that emits a direct load for a constant value.
+ */
 int sheep_compile_constant(struct sheep_vm *vm, struct sheep_context *context,
 			sheep_t expr)
 {
@@ -102,6 +122,17 @@ static unsigned int slot_foreign(struct sheep_context *context,
 	return (context->function->foreigns->nr_items - 1) / 2;
 }
 
+/**
+ * sheep_compile_name - compile a name reference
+ * @vm: runtime
+ * @context: compilation context
+ * @exp: name expression
+ *
+ * Compilation helper that emits an appropriate load for the slot
+ * bound to the name in @exp, given that a binding exists.
+ *
+ * Returns 0 on success, -1 otherwise.
+ */
 int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
@@ -146,6 +177,17 @@ static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
 	return 0;
 }
 
+/**
+ * sheep_compile_list - compile a list form
+ * @vm: runtime
+ * @context: compilation context
+ * @expr: list
+ *
+ * Compilation helper for list expressions, which can be the empty
+ * list constant, a special form or a function call.
+ *
+ * Returns 0 on success, -1 otherwise.
+ */
 int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {

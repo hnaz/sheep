@@ -11,21 +11,6 @@
 
 #include <sheep/compile.h>
 
-unsigned int sheep_slot_foreign(struct sheep_context *context,
-				unsigned int dist, unsigned int slot)
-{
-	if (!context->function->foreigns) {
-		context->function->foreigns =
-			sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(context->function->foreigns, 4);
-	}
-	sheep_vector_push(context->function->foreigns,
-			(void *)(unsigned long)dist);
-	sheep_vector_push(context->function->foreigns,
-			(void *)(unsigned long)slot);
-	return (context->function->foreigns->nr_items - 1) / 2;
-}
-
 struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 				struct sheep_module *module, sheep_t expr)
 {
@@ -102,6 +87,21 @@ static int lookup(struct sheep_context *context, const char *name,
 	return 0;
 }
 
+static unsigned int slot_foreign(struct sheep_context *context,
+				unsigned int dist, unsigned int slot)
+{
+	if (!context->function->foreigns) {
+		context->function->foreigns =
+			sheep_malloc(sizeof(struct sheep_vector));
+		sheep_vector_init(context->function->foreigns, 4);
+	}
+	sheep_vector_push(context->function->foreigns,
+			(void *)(unsigned long)dist);
+	sheep_vector_push(context->function->foreigns,
+			(void *)(unsigned long)slot);
+	return (context->function->foreigns->nr_items - 1) / 2;
+}
+
 int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
@@ -123,7 +123,7 @@ int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_emit(context->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = sheep_slot_foreign(context, dist, slot);
+		slot = slot_foreign(context, dist, slot);
 		sheep_emit(context->code, SHEEP_FOREIGN, slot);
 		break;
 	}

@@ -262,7 +262,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("function", args, "Lr!", &parms, &body))
 		return -1;
 
-	sheep = sheep_function(vm);
+	sheep = sheep_native_function(vm);
 	function = sheep_data(sheep);
 
 	while (parms) {
@@ -271,7 +271,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 
 		if (unpack("function", parms, "Ar", &parm, &parms))
 			goto out;
-		slot = function->nr_locals++;
+		slot = function->function.native->nr_locals++;
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
 		function->nr_parms++;
 	}
@@ -290,7 +290,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_unprotect(vm, sheep);
 
 	sheep_emit(&code, SHEEP_RET, 0);
-	function->offset = vm->code.code.nr_items;
+	function->function.native->offset = vm->code.code.nr_items;
 	sheep_vector_concat(&vm->code.code, &code.code);
 
 	sheep_emit(context->code, SHEEP_CLOSURE, cslot);
@@ -309,6 +309,12 @@ out:
 	return ret;
 }
 
+static int eval_ddump(struct sheep_vm *vm)
+{
+	sheep_ddump(vm->stack.items[vm->stack.nr_items - 1]);
+	return 0;
+}
+
 void sheep_core_init(struct sheep_vm *vm)
 {
 	sheep_map_set(&vm->specials, "quote", compile_quote);
@@ -319,6 +325,9 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
+
+	sheep_module_shared(vm, &vm->main, "ddump",
+			sheep_foreign_function(vm, eval_ddump, 1));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

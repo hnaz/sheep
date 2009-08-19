@@ -47,7 +47,7 @@ static inline unsigned int sheep_slot_global(struct sheep_vm *vm)
 
 static inline unsigned int sheep_slot_local(struct sheep_context *context)
 {
-	return context->function->nr_locals++;
+	return context->function->function.native->nr_locals++;
 }
 
 int sheep_compile_constant(struct sheep_vm *, struct sheep_context *, sheep_t);

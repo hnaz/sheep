@@ -138,7 +138,7 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 		.parent = parent,
 	};
 
-	while (args) {
+	for (;;) {
 		sheep_t value = args->head;
 
 		if (value->type->compile(vm, &context, value))

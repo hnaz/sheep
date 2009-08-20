@@ -5,7 +5,7 @@
 #include <sheep/vector.h>
 #include <sheep/vm.h>
 
-struct sheep_native_function {
+struct sheep_function {
 	unsigned long offset;	/* in vm->code */
 	unsigned int nr_parms;
 	unsigned int nr_locals;	/* nr_parms + private slots */
@@ -27,19 +27,8 @@ struct sheep_native_function {
 	struct sheep_vector *foreigns;
 };
 
-typedef int (*sheep_foreign_function_t)(struct sheep_vm *, unsigned int);
-
-struct sheep_function {
-	unsigned int nativep;
-	union {
-		struct sheep_native_function *native;
-		sheep_foreign_function_t foreign;
-	} function;
-};
-
 extern const struct sheep_type sheep_function_type;
 
-sheep_t sheep_native_function(struct sheep_vm *);
-sheep_t sheep_foreign_function(struct sheep_vm *, sheep_foreign_function_t);
+sheep_t sheep_function(struct sheep_vm *);
 
 #endif /* _SHEEP_FUNCTION_H */

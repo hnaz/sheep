@@ -1,5 +1,6 @@
 #include <sheep/function.h>
 #include <sheep/object.h>
+#include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/util.h>
@@ -12,29 +13,27 @@
 
 static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 {
-	struct sheep_native_function *native;
 	struct sheep_function *old, *new;
 	struct sheep_vector *foreigns;
 	unsigned int i;
 
 	sheep_bug_on(sheep->type != &sheep_function_type);
 	old = sheep_data(sheep);
-	native = old->function.native;
 
-	if (!native->foreigns)
+	if (!old->foreigns)
 		return sheep;
 
 	foreigns = sheep_malloc(sizeof(struct sheep_vector));
 	sheep_vector_init(foreigns, 4);
 
-	sheep_bug_on(native->foreigns->nr_items % 2);
-	for (i = 0; i < native->foreigns->nr_items; i += 2) {
+	sheep_bug_on(old->foreigns->nr_items % 2);
+	for (i = 0; i < old->foreigns->nr_items; i += 2) {
 		unsigned long fbasep, offset;
 		unsigned int dist, slot;
 		void **foreignp;
 
-		dist = (unsigned long)native->foreigns->items[i];
-		slot = (unsigned long)native->foreigns->items[i + 1];
+		dist = (unsigned long)old->foreigns->items[i];
+		slot = (unsigned long)old->foreigns->items[i + 1];
 		/*
 		 * Okay, we have the static function level distance to
 		 * our foreign slot owner and the actual intex into
@@ -56,18 +55,17 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 		sheep_vector_push(foreigns, foreignp + slot);
 	}
 
-	sheep = sheep_native_function(vm);
+	sheep = sheep_function(vm);
 	new = sheep_data(sheep);
-
-	*new->function.native = *native;
-	new->function.native->foreigns = foreigns;
+	*new = *old;
+	new->foreigns = foreigns;
 
 	return sheep;
 }
 
 sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 {
-	struct sheep_native_function *function = NULL;
+	struct sheep_function *function = NULL;
 	struct sheep_code *current = code;
 	unsigned long pc = 0, basep = 0;
 
@@ -110,25 +108,26 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			tmp = closure(vm, tmp);
 			sheep_vector_push(&vm->stack, tmp);
 			break;
-		case SHEEP_CALL: {
-			struct sheep_function *ftmp;
-
+		case SHEEP_CALL:
 			tmp = sheep_vector_pop(&vm->stack);
-			sheep_bug_on(tmp->type != &sheep_function_type);
-			ftmp = sheep_data(tmp);
 
-			if (!ftmp->nativep) {
-				if (ftmp->function.foreign(vm, arg))
+			if (tmp->type == &sheep_alien_type) {
+				sheep_alien_t alien;
+
+				alien = *(sheep_alien_t *)sheep_data(tmp);
+				if (alien(vm, arg))
 					goto err;
 				break;
 			}
+
+			sheep_bug_on(tmp->type != &sheep_function_type);
 
 			/* Save the old context */
 			sheep_vector_push(&vm->calls, (void *)pc);
 			sheep_vector_push(&vm->calls, (void *)basep);
 			sheep_vector_push(&vm->calls, function);
 
-			function = ftmp->function.native;
+			function = sheep_data(tmp);
 			if (function->nr_parms != arg) {
 				fprintf(stderr, "wrong number of arguments\n");
 				goto err;
@@ -144,7 +143,6 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			current = &vm->code;
 			pc = function->offset;
 			continue;
-		}
 		case SHEEP_RET:
 			/* Sanity-check: exactly one return value */
 			sheep_bug_on(vm->stack.nr_items - basep -

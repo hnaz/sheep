@@ -2,6 +2,7 @@
 #include <sheep/compile.h>
 #include <sheep/config.h>
 #include <sheep/module.h>
+#include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -262,7 +263,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("function", args, "Lr!", &parms, &body))
 		return -1;
 
-	sheep = sheep_native_function(vm);
+	sheep = sheep_function(vm);
 	function = sheep_data(sheep);
 
 	while (parms) {
@@ -271,9 +272,9 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 
 		if (unpack("function", parms, "Ar", &parm, &parms))
 			goto out;
-		slot = function->function.native->nr_locals++;
+		slot = function->nr_locals++;
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
-		function->function.native->nr_parms++;
+		function->nr_parms++;
 	}
 
 	cslot = sheep_slot_constant(vm, sheep);
@@ -290,7 +291,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_unprotect(vm, sheep);
 
 	sheep_emit(&code, SHEEP_RET, 0);
-	function->function.native->offset = vm->code.code.nr_items;
+	function->offset = vm->code.code.nr_items;
 	sheep_vector_concat(&vm->code.code, &code.code);
 
 	sheep_emit(context->code, SHEEP_CLOSURE, cslot);
@@ -368,7 +369,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
 	sheep_module_shared(vm, &vm->main, "ddump",
-			sheep_foreign_function(vm, eval_ddump));
+			sheep_alien(vm, eval_ddump));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

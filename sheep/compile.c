@@ -110,16 +110,16 @@ static int lookup(struct sheep_context *context, const char *name,
 static unsigned int slot_foreign(struct sheep_context *context,
 				unsigned int dist, unsigned int slot)
 {
-	struct sheep_native_function *native;
+	struct sheep_function *function;
 
-	native = context->function->function.native;
-	if (!native->foreigns) {
-		native->foreigns = sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(native->foreigns, 4);
+	function = context->function;
+	if (!function->foreigns) {
+		function->foreigns = sheep_malloc(sizeof(struct sheep_vector));
+		sheep_vector_init(function->foreigns, 4);
 	}
-	sheep_vector_push(native->foreigns, (void *)(unsigned long)dist);
-	sheep_vector_push(native->foreigns, (void *)(unsigned long)slot);
-	return (native->foreigns->nr_items - 1) / 2;
+	sheep_vector_push(function->foreigns, (void *)(unsigned long)dist);
+	sheep_vector_push(function->foreigns, (void *)(unsigned long)slot);
+	return (function->foreigns->nr_items - 1) / 2;
 }
 
 /**

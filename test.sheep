@@ -32,4 +32,6 @@ foo
   (inner))
 (outer true)
 
-(sheep-version)
+(ddump)
+(ddump 1)
+(ddump 1 2)

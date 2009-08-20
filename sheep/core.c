@@ -310,6 +310,38 @@ out:
 	return ret;
 }
 
+/* (if cond then else*?) */
+static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
+		struct sheep_list *args)
+{
+	struct sheep_list *elseform;
+	unsigned long belse, bend;
+	sheep_t cond, then;
+
+	if (unpack("if", args, "oor", &cond, &then, &elseform))
+		return -1;
+	if (cond->type->compile(vm, context, cond))
+		return -1;
+	belse = sheep_emit(context->code, SHEEP_BRN, 0);
+	if (then->type->compile(vm, context, then))
+		return -1;
+	bend = sheep_emit(context->code, SHEEP_BR, 0);
+	context->code->code.items[belse] =
+		(void *)sheep_encode(SHEEP_BRN, bend + 1 - belse);
+	if (elseform) {
+		if (do_compile_block(vm, context->code, context->function,
+					context->env, context, elseform))
+			return -1;
+	} else {
+		if (sheep_compile_name(vm, context, sheep_name(vm, "false")))
+			return -1;
+	}
+	context->code->code.items[bend] =
+		(void *)sheep_encode(SHEEP_BR,
+				context->code->code.nr_items - bend);
+	return 0;
+}
+
 int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 		unsigned int nr_args, const char *items, ...)
 {
@@ -364,6 +396,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "with", compile_with);
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
+	sheep_map_set(&vm->specials, "if", compile_if);
 
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);

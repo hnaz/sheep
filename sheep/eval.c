@@ -169,6 +169,13 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			if (!function)
 				current = code;
 			break;
+		case SHEEP_BRN:
+			tmp = sheep_vector_pop(&vm->stack);
+			if (sheep_test(tmp))
+				break;
+		case SHEEP_BR:
+			pc += arg;
+			continue;
 		default:
 			abort();
 		}

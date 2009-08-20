@@ -35,3 +35,24 @@ foo
 (ddump)
 (ddump 1)
 (ddump 1 2)
+
+(if)
+(if 0)
+(if 0 1)
+(if 1 2)
+(if 1 2 3)
+(if 0 1 2)
+(if 0 1 2 3 4 5)
+(if 1 2 3 4 5 6)
+
+(function foo (x)
+  (if x 1 2))
+(foo 0)
+(foo 1)
+
+(function tau (x)
+  (if x
+    (tau false)
+    42))
+(tau 0)
+(tau 1)

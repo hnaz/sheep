@@ -273,7 +273,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 			goto out;
 		slot = function->function.native->nr_locals++;
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
-		function->nr_parms++;
+		function->function.native->nr_parms++;
 	}
 
 	cslot = sheep_slot_constant(vm, sheep);
@@ -309,9 +309,50 @@ out:
 	return ret;
 }
 
-static int eval_ddump(struct sheep_vm *vm)
+int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
+		unsigned int nr_args, const char *items, ...)
 {
-	sheep_ddump(vm->stack.items[vm->stack.nr_items - 1]);
+	unsigned int nr = nr_args;
+	int ret = -1;
+	va_list ap;
+
+	va_start(ap, items);
+	while (*items && nr) {
+		struct sheep_object *object;
+
+		object = vm->stack.items[vm->stack.nr_items - nr];
+		if (verify(caller, tolower(*items), object))
+			goto out;
+		if (isupper(*items))
+			*va_arg(ap, void **) = sheep_data(object);
+		else
+			*va_arg(ap, sheep_t *) = object;
+		items++;
+		nr--;
+	}
+	if (*items)
+		fprintf(stderr, "%s: too few arguments\n", caller);
+	else if (nr)
+		fprintf(stderr, "%s: too many arguments\n", caller);
+	else {
+		vm->stack.nr_items -= nr_args;
+		ret = 0;
+	}
+out:
+	va_end(ap);
+	return ret;
+}
+
+static int eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("ddump", vm, nr_args, "o", &sheep))
+		return -1;
+
+	sheep_ddump(sheep);
+
+	sheep_vector_push(&vm->stack, &sheep_true);
 	return 0;
 }
 
@@ -327,7 +368,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
 	sheep_module_shared(vm, &vm->main, "ddump",
-			sheep_foreign_function(vm, eval_ddump, 1));
+			sheep_foreign_function(vm, eval_ddump));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

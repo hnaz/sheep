@@ -7,6 +7,7 @@
 
 struct sheep_native_function {
 	unsigned long offset;	/* in vm->code */
+	unsigned int nr_parms;
 	unsigned int nr_locals;	/* nr_parms + private slots */
 	/*
 	 * This is probably the most versatile field in the whole VM:
@@ -26,10 +27,9 @@ struct sheep_native_function {
 	struct sheep_vector *foreigns;
 };
 
-typedef int (*sheep_foreign_function_t)(struct sheep_vm *);
+typedef int (*sheep_foreign_function_t)(struct sheep_vm *, unsigned int);
 
 struct sheep_function {
-	unsigned int nr_parms;
 	unsigned int nativep;
 	union {
 		struct sheep_native_function *native;
@@ -40,7 +40,6 @@ struct sheep_function {
 extern const struct sheep_type sheep_function_type;
 
 sheep_t sheep_native_function(struct sheep_vm *);
-sheep_t sheep_foreign_function(struct sheep_vm *, sheep_foreign_function_t,
-			unsigned int);
+sheep_t sheep_foreign_function(struct sheep_vm *, sheep_foreign_function_t);
 
 #endif /* _SHEEP_FUNCTION_H */

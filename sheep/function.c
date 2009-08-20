@@ -39,13 +39,11 @@ sheep_t sheep_native_function(struct sheep_vm *vm)
 }
 
 sheep_t sheep_foreign_function(struct sheep_vm *vm,
-			sheep_foreign_function_t foreign,
-			unsigned int nr_parms)
+			sheep_foreign_function_t foreign)
 {
 	struct sheep_function *function;
 
 	function = sheep_zalloc(sizeof(struct sheep_function));
-	function->nr_parms = nr_parms;
 	function->function.foreign = foreign;
 	return sheep_object(vm, &sheep_function_type, function);
 }

@@ -59,7 +59,6 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 	sheep = sheep_native_function(vm);
 	new = sheep_data(sheep);
 
-	new->nr_parms = old->nr_parms;
 	*new->function.native = *native;
 	new->function.native->foreigns = foreigns;
 
@@ -118,13 +117,8 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			sheep_bug_on(tmp->type != &sheep_function_type);
 			ftmp = sheep_data(tmp);
 
-			if (ftmp->nr_parms != arg) {
-				fprintf(stderr, "wrong number of arguments\n");
-				goto err;
-			}
-
 			if (!ftmp->nativep) {
-				if (ftmp->function.foreign(vm))
+				if (ftmp->function.foreign(vm, arg))
 					goto err;
 				break;
 			}
@@ -135,6 +129,10 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			sheep_vector_push(&vm->calls, function);
 
 			function = ftmp->function.native;
+			if (function->nr_parms != arg) {
+				fprintf(stderr, "wrong number of arguments\n");
+				goto err;
+			}
 
 			/* Prepare the stack */
 			basep = vm->stack.nr_items - arg;

@@ -76,14 +76,20 @@ const struct sheep_type sheep_list_type = {
 	.ddump = ddump_list,
 };
 
-struct sheep_list *__sheep_list(struct sheep_vm *vm, sheep_t item)
+struct sheep_list *sheep_cons(struct sheep_vm *vm, sheep_t head,
+			struct sheep_list *tail)
 {
 	struct sheep_list *list;
 
 	list = sheep_malloc(sizeof(struct sheep_list));
-	list->head = item;
-	list->tail = NULL;
+	list->head = head;
+	list->tail = tail;
 	return list;
+}
+
+struct sheep_list *__sheep_list(struct sheep_vm *vm, sheep_t item)
+{
+	return sheep_cons(vm, item, NULL);
 }
 
 sheep_t sheep_list(struct sheep_vm *vm, unsigned int nr, ...)

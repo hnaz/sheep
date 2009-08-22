@@ -389,6 +389,16 @@ static int eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 	return 0;
 }
 
+static int eval_list(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list = NULL;
+
+	while (nr_args--)
+		list = sheep_cons(vm, sheep_vector_pop(&vm->stack), list);
+	sheep_vector_push(&vm->stack, sheep_object(vm, &sheep_list_type, list));
+	return 0;
+}
+
 void sheep_core_init(struct sheep_vm *vm)
 {
 	sheep_map_set(&vm->specials, "quote", compile_quote);
@@ -403,6 +413,8 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_shared(vm, &vm->main, "ddump",
 			sheep_alien(vm, eval_ddump));
+	sheep_module_shared(vm, &vm->main, "list",
+			sheep_alien(vm, eval_list));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

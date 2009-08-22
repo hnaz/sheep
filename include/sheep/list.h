@@ -12,6 +12,7 @@ struct sheep_list {
 
 extern const struct sheep_type sheep_list_type;
 
+struct sheep_list *sheep_cons(struct sheep_vm *, sheep_t, struct sheep_list *);
 struct sheep_list *__sheep_list(struct sheep_vm *, sheep_t);
 sheep_t sheep_list(struct sheep_vm *, unsigned int, ...);
 

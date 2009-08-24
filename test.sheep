@@ -2,6 +2,8 @@
 
 true
 
+"hello"
+
 a
 
 (quote a)

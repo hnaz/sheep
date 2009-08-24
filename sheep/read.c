@@ -1,5 +1,6 @@
 #include <sheep/number.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/vm.h>
@@ -39,7 +40,7 @@ static int issep(int c, int string)
 
 static int read_token(FILE *fp, char *buf, int len, int string)
 {
-	int i, c;
+	int i, c = 0xf00;
 
 	for (i = 0; i < len; i++) {
 		c = fgetc(fp);
@@ -55,6 +56,15 @@ static int read_token(FILE *fp, char *buf, int len, int string)
 	if (!string)
 		ungetc(c, fp);
 	return 0;
+}
+
+static sheep_t read_string(struct sheep_vm *vm, FILE *fp)
+{
+	char buf[512];
+
+	if (read_token(fp, buf, 512, 1))
+		return NULL;
+	return sheep_string(vm, buf);
 }
 
 static int parse_number(const char *buf, long *number)
@@ -122,6 +132,8 @@ static sheep_t read_sexp(struct sheep_vm *vm, FILE *fp, int c)
 {
 	if (c == EOF)
 		return &sheep_eof;
+	else if (c == '"')
+		return read_string(vm, fp);
 	else if (c == '(')
 		return read_list(vm, fp);
 	else if (c == ')') {

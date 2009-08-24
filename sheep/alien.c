@@ -4,7 +4,14 @@
 
 #include <sheep/alien.h>
 
-const struct sheep_type sheep_alien_type;
+static void free_alien(struct sheep_vm *vm, sheep_t sheep)
+{
+	sheep_free(sheep_data(sheep));
+}
+
+const struct sheep_type sheep_alien_type = {
+	.free = free_alien,
+};
 
 sheep_t sheep_alien(struct sheep_vm *vm, sheep_alien_t function)
 {

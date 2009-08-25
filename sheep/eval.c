@@ -68,6 +68,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 	struct sheep_function *function = NULL;
 	struct sheep_code *current = code;
 	unsigned long pc = 0, basep = 0;
+	unsigned int nesting = 0;
 
 	for (;;) {
 		enum sheep_opcode op;
@@ -142,6 +143,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 			/* Execute the function body */
 			current = &vm->code;
 			pc = function->offset;
+			nesting++;
 			continue;
 		case SHEEP_RET:
 			/* Sanity-check: exactly one return value */
@@ -149,7 +151,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 				(function ? function->nr_locals : 0) != 1);
 
 			/* Toplevel RET */
-			if (!vm->calls.nr_items)
+			if (!nesting--)
 				goto out;
 
 			/* Nip the locals */

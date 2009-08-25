@@ -3,6 +3,8 @@
 
 #include <sheep/vector.h>
 
+struct sheep_function;
+
 enum sheep_opcode {
 	/* 0*/SHEEP_DROP,
 	/* 1*/SHEEP_LOCAL,
@@ -58,5 +60,8 @@ sheep_emit(struct sheep_code *code, enum sheep_opcode op, unsigned int arg)
 {
 	return sheep_vector_push(&code->code, (void *)sheep_encode(op, arg));
 }
+
+void sheep_code_dump(struct sheep_vm *, struct sheep_function *,
+		unsigned long, enum sheep_opcode, unsigned int);
 
 #endif /* _SHEEP_CODE_H */

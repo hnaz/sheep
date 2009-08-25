@@ -4,7 +4,7 @@
 #include <sheep/object.h>
 #include <sheep/vm.h>
 
-typedef int (*sheep_alien_t)(struct sheep_vm *, unsigned int);
+typedef sheep_t (*sheep_alien_t)(struct sheep_vm *, unsigned int);
 
 extern const struct sheep_type sheep_alien_type;
 

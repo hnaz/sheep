@@ -4,6 +4,10 @@ true
 
 "hello"
 
+(list)
+
+(list 1 2 3)
+
 a
 
 (quote a)
@@ -58,3 +62,7 @@ foo
     42))
 (tau 0)
 (tau 1)
+
+(map (function (x)
+       (list x))
+     (list 1 2 3 4))

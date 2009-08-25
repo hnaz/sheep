@@ -5,6 +5,7 @@
 #include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
+#include <sheep/eval.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/util.h>
@@ -376,27 +377,50 @@ out:
 	return ret;
 }
 
-static int eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
 	if (sheep_unpack_stack("ddump", vm, nr_args, "o", &sheep))
-		return -1;
+		return NULL;
 
 	sheep_ddump(sheep);
-
-	sheep_vector_push(&vm->stack, &sheep_true);
-	return 0;
+	return &sheep_true;
 }
 
-static int eval_list(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_list *list = NULL;
 
 	while (nr_args--)
 		list = sheep_cons(vm, sheep_vector_pop(&vm->stack), list);
-	sheep_vector_push(&vm->stack, sheep_object(vm, &sheep_list_type, list));
-	return 0;
+	return sheep_object(vm, &sheep_list_type, list);
+}
+
+static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list = NULL, *pos, *seq;
+	sheep_t callable;
+
+	if (sheep_unpack_stack("map", vm, nr_args, "oL", &callable, &seq))
+		return NULL;
+
+	while (seq) {
+		sheep_t item;
+
+		item = sheep_call(vm, callable, 1, seq->head);
+		if (!item)
+			return NULL;
+
+		if (!list)
+			list = pos = __sheep_list(vm, item);
+		else
+			pos = pos->tail = __sheep_list(vm, item);
+
+		seq = seq->tail;
+	}
+
+	return sheep_object(vm, &sheep_list_type, list);
 }
 
 void sheep_core_init(struct sheep_vm *vm)
@@ -415,6 +439,8 @@ void sheep_core_init(struct sheep_vm *vm)
 			sheep_alien(vm, eval_ddump));
 	sheep_module_shared(vm, &vm->main, "list",
 			sheep_alien(vm, eval_list));
+	sheep_module_shared(vm, &vm->main, "map",
+			sheep_alien(vm, eval_map));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

@@ -64,17 +64,51 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 	return sheep;
 }
 
+static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
+		sheep_t *value)
+{
+	struct sheep_function *function;
+
+	if (callable->type == &sheep_alien_type) {
+		sheep_alien_t alien;
+
+		alien = *(sheep_alien_t *)sheep_data(callable);
+		*value = alien(vm, nr_args);
+		return 1 - 2*!*value;
+	}
+
+	sheep_bug_on(callable->type != &sheep_function_type);
+
+	function = sheep_data(callable);
+	if (function->nr_parms != nr_args) {
+		fprintf(stderr, "wrong number of arguments\n");
+		return -1;
+	}
+
+	if (function->nr_locals > nr_args)
+		sheep_vector_grow(&vm->stack, function->nr_locals - nr_args);
+
+	return 0;
+}
+
 static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
-			struct sheep_function *function, unsigned long pc,
-			unsigned long basep)
+			struct sheep_function *function)
 {
 	struct sheep_code *current = code;
 	unsigned int nesting = 0;
+	unsigned long basep, pc;
+
+	if (function) {
+		basep = vm->stack.nr_items - function->nr_locals;
+		pc = function->offset;
+	} else
+		basep = pc = 0;
 
 	for (;;) {
 		enum sheep_opcode op;
 		unsigned int arg;
 		sheep_t tmp;
+		int done;
 
 		sheep_decode((unsigned long)current->code.items[pc], &op, &arg);
 		sheep_code_dump(vm, function, basep, op, arg);
@@ -115,33 +149,19 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		case SHEEP_CALL:
 			tmp = sheep_vector_pop(&vm->stack);
 
-			if (tmp->type == &sheep_alien_type) {
-				sheep_alien_t alien;
-
-				alien = *(sheep_alien_t *)sheep_data(tmp);
-				tmp = alien(vm, arg);
-				if (!tmp)
-					goto err;
+			done = call(vm, tmp, arg, &tmp);
+			if (done < 0)
+				goto err;
+			else if (done) {
 				sheep_vector_push(&vm->stack, tmp);
 				break;
 			}
 
-			sheep_bug_on(tmp->type != &sheep_function_type);
-
-			/* Save the old context */
 			sheep_vector_push(&vm->calls, (void *)pc);
 			sheep_vector_push(&vm->calls, (void *)basep);
 			sheep_vector_push(&vm->calls, function);
 
 			function = sheep_data(tmp);
-			if (function->nr_parms != arg) {
-				fprintf(stderr, "wrong number of arguments\n");
-				goto err;
-			}
-
-			if (function->nr_locals)
-				sheep_vector_grow(&vm->stack, function->nr_locals - arg);
-
 			basep = vm->stack.nr_items - function->nr_locals;
 			pc = function->offset;
 			current = &vm->code;
@@ -151,7 +171,6 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			sheep_bug_on(vm->stack.nr_items - basep -
 				(function ? function->nr_locals : 0) != 1);
 
-			/* Nip the locals */
 			if (function && function->nr_locals) {
 				vm->stack.items[basep] =
 					vm->stack.items[basep +
@@ -162,12 +181,11 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			if (!nesting--)
 				goto out;
 
-			/* Restore the old context */
 			function = sheep_vector_pop(&vm->calls);
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
 			pc = (unsigned long)sheep_vector_pop(&vm->calls);
 
-			/* Switch back to toplevel code? */
+			/* Return to toplevel code */
 			if (!function)
 				current = code;
 			break;
@@ -186,7 +204,6 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 out:
 	return sheep_vector_pop(&vm->stack);
 err:
-	/* Unwind the stack */
 	vm->stack.nr_items = 0;
 	vm->calls.nr_items = 0;
 	return NULL;
@@ -194,15 +211,14 @@ err:
 
 sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 {
-	return __sheep_eval(vm, code, NULL, 0, 0);
+	return __sheep_eval(vm, code, NULL);
 }
 
 sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		unsigned int nr_args, ...)
 {
-	struct sheep_function *function;
 	unsigned int nr = nr_args;
-	unsigned long basep;
+	sheep_t value;
 	va_list ap;
 
 	va_start(ap, nr_args);
@@ -210,24 +226,10 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		sheep_vector_push(&vm->stack, va_arg(ap, sheep_t));
 	va_end(ap);
 
-	if (callable->type == &sheep_alien_type) {
-		sheep_alien_t alien;
+	if (call(vm, callable, nr_args, &value))
+		return value;
 
-		alien = *(sheep_alien_t)sheep_data(callable);
-		return alien(vm, nr_args);
-	}
-
-	sheep_bug_on(callable->type != &sheep_function_type);
-	function = sheep_data(callable);
-	if (function->nr_parms != nr_args) {
-		fprintf(stderr, "wrong number of arguments\n");
-		return NULL;
-	}
-
-	if (function->nr_locals)
-		sheep_vector_grow(&vm->stack, function->nr_locals - nr_args);
-	basep = vm->stack.nr_items - function->nr_locals;
-	return __sheep_eval(vm, &vm->code, function, function->offset, basep);
+	return __sheep_eval(vm, &vm->code, sheep_data(callable));
 }
 
 void sheep_evaluator_init(struct sheep_vm *vm)

@@ -2,6 +2,7 @@
 #include <sheep/compile.h>
 #include <sheep/config.h>
 #include <sheep/module.h>
+#include <sheep/string.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
@@ -17,55 +18,47 @@
 
 #include <sheep/core.h>
 
-struct unpack_map {
-	char control;
-	const struct sheep_type *type;
-	const char *type_name;
+static const char *controlnames[] = {
+	"aname", "sstring", "llist", "qsequence", "ccallable", NULL
 };
 
-static struct unpack_map unpack_table[] = {
-	{ 'o',	NULL,			"object" },
-	{ 'a',	&sheep_name_type,	"name" },
-	{ 'l',	&sheep_list_type,	"list" },
-	{ 0,	NULL,			NULL },
-};
-
-static struct unpack_map *map_control(char control)
+static int do_verify(const char *caller, char control, sheep_t object)
 {
-	struct unpack_map *map;
-
-	for (map = unpack_table; map->control; map++)
-		if (map->control == control)
-			break;
-	sheep_bug_on(!map->control);
-	return map;
-}
-
-static struct unpack_map *map_type(const struct sheep_type *type)
-{
-	struct unpack_map *map;
-
-	for (map = unpack_table; map->control; map++)
-		if (map->type == type)
-			break;
-	sheep_bug_on(!map->control);
-	return map;
+	switch (control) {
+	case 'o':
+		return 1;
+	case 'a':
+		return object->type == &sheep_name_type;
+	case 's':
+		return object->type == &sheep_string_type;
+	case 'l':
+		return object->type == &sheep_list_type;
+	case 'q':
+		return object->type == &sheep_string_type ||
+			object->type == &sheep_list_type;
+	case 'c':
+		return object->type == &sheep_alien_type ||
+			object->type == &sheep_function_type;
+	}
+	sheep_bug("unexpected unpack control %c", control);
+	return 0xdead;
 }
 
 static int verify(const char *caller, char control, sheep_t object)
 {
-	struct unpack_map *want;
+	const char **p;
 
-	want = map_control(control);
-	if (want->type && object->type != want->type) {
-		struct unpack_map *got = map_type(object->type);
+	if (do_verify(caller, control, object))
+		return 1;
 
-		fprintf(stderr, "%s: expected %s, got %s\n",
-			caller, want->type_name, got->type_name);
-		return -1;
-	}
-	return 0;
-}	
+	for (p = controlnames; *p; p++)
+		if (*p[0] == control) {
+			fprintf(stderr, "%s: expected %s\n", caller, p[0] + 1);
+			return 0;
+		}
+	sheep_bug("incomplete controlnames table");
+	return 0xdead;
+}
 
 static int unpack(const char *caller, struct sheep_list *list,
 		const char *items, ...)
@@ -91,8 +84,10 @@ static int unpack(const char *caller, struct sheep_list *list,
 			break;
 
 		object = list->head;
-		if (verify(caller, tolower(*items), object))
+		if (!verify(caller, tolower(*items), object)) {
+			fprintf(stderr, "%s: expected %c\n", caller, *items);
 			goto out;
+		}
 		if (isupper(*items))
 			*va_arg(ap, void **) = sheep_data(object);
 		else
@@ -355,7 +350,7 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 		struct sheep_object *object;
 
 		object = vm->stack.items[vm->stack.nr_items - nr];
-		if (verify(caller, tolower(*items), object))
+		if (!verify(caller, tolower(*items), object))
 			goto out;
 		if (isupper(*items))
 			*va_arg(ap, void **) = sheep_data(object);
@@ -402,7 +397,7 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *list = NULL, *pos = pos, *seq;
 	sheep_t callable;
 
-	if (sheep_unpack_stack("map", vm, nr_args, "oL", &callable, &seq))
+	if (sheep_unpack_stack("map", vm, nr_args, "cL", &callable, &seq))
 		return NULL;
 
 	while (seq) {

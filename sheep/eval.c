@@ -74,7 +74,7 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 
 		alien = *(sheep_alien_t *)sheep_data(callable);
 		*value = alien(vm, nr_args);
-		return 1 - 2*!*value;
+		return 1 - 2 * !*value;
 	}
 
 	sheep_bug_on(callable->type != &sheep_function_type);

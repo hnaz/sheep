@@ -246,7 +246,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_context *context,
 static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *args)
 {
-	unsigned int cslot, bslot = 0xf00;
+	unsigned int cslot, bslot = bslot;
 	struct sheep_function *function;
 	struct sheep_list *parms, *body;
 	SHEEP_DEFINE_CODE(code);
@@ -399,7 +399,7 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
-	struct sheep_list *list = NULL, *pos, *seq;
+	struct sheep_list *list = NULL, *pos = pos, *seq;
 	sheep_t callable;
 
 	if (sheep_unpack_stack("map", vm, nr_args, "oL", &callable, &seq))

@@ -40,7 +40,7 @@ static int issep(int c, int string)
 
 static int read_token(FILE *fp, char *buf, int len, int string)
 {
-	int i, c = 0xf00;
+	int i, c = c;
 
 	for (i = 0; i < len; i++) {
 		c = fgetc(fp);

@@ -226,10 +226,14 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		sheep_vector_push(&vm->stack, va_arg(ap, sheep_t));
 	va_end(ap);
 
-	if (call(vm, callable, nr_args, &value))
+	switch (call(vm, callable, nr_args, &value)) {
+	case -1:
+		return NULL;
+	case 1:
 		return value;
-
-	return __sheep_eval(vm, &vm->code, sheep_data(callable));
+	case 0:
+		return __sheep_eval(vm, &vm->code, sheep_data(callable));
+	}
 }
 
 void sheep_evaluator_init(struct sheep_vm *vm)

@@ -389,6 +389,7 @@ out:
 	return ret;
 }
 
+/* (ddump expr) */
 static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
@@ -400,6 +401,7 @@ static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_true;
 }
 
+/* (list expr*) */
 static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_list *list = NULL;
@@ -409,6 +411,7 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_make_object(vm, &sheep_list_type, list);
 }
 
+/* (map fun list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_list *list = NULL, *pos = pos, *seq;

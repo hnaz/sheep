@@ -83,8 +83,8 @@ static void close_pending(struct sheep_vm *vm, unsigned long basep)
 
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 {
+	struct sheep_vector *foreigns, *distinfo;
 	struct sheep_function *old, *new;
-	struct sheep_vector *foreigns;
 	unsigned int i;
 
 	sheep_bug_on(sheep->type != &sheep_function_type);
@@ -96,14 +96,15 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	foreigns = sheep_malloc(sizeof(struct sheep_vector));
 	sheep_vector_init(foreigns, 4);
 
-	sheep_bug_on(old->foreigns->nr_items % 2);
-	for (i = 0; i < old->foreigns->nr_items; i += 2) {
+	distinfo = sheep_foreigns(old);
+	sheep_bug_on(distinfo->nr_items % 2);
+	for (i = 0; i < distinfo->nr_items; i += 2) {
 		unsigned long fbasep, offset;
 		unsigned int dist, slot;
 		sheep_t *foreignp;
 
-		dist = (unsigned long)old->foreigns->items[i];
-		slot = (unsigned long)old->foreigns->items[i + 1];
+		dist = (unsigned long)distinfo->items[i];
+		slot = (unsigned long)distinfo->items[i + 1];
 		/*
 		 * Closure instantiation happens in the outer
 		 * function, thus if the owner distance is 1, it
@@ -132,6 +133,7 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	new = sheep_data(sheep);
 	*new = *old;
 	new->foreigns = foreigns;
+	sheep_activate_closure(new);
 
 	return sheep;
 }
@@ -198,12 +200,12 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			vm->stack.items[basep + arg] = tmp;
 			break;
 		case SHEEP_FOREIGN:
-			tmp = function->foreigns->items[arg];
+			tmp = sheep_foreigns(function)->items[arg];
 			sheep_vector_push(&vm->stack, *(sheep_t *)tmp);
 			break;
 		case SHEEP_SET_FOREIGN:
 			tmp = sheep_vector_pop(&vm->stack);
-			*(sheep_t *)function->foreigns->items[arg] = tmp;
+			*(sheep_t *)sheep_foreigns(function)->items[arg] = tmp;
 			break;
 		case SHEEP_GLOBAL:
 			tmp = vm->globals.items[arg];

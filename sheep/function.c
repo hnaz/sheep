@@ -15,20 +15,25 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 
 	function = sheep_data(sheep);
 	if (function->foreigns) {
-		unsigned int i;
+		struct sheep_vector *foreigns;
 
-		for (i = 0; i < function->foreigns->nr_items; i++) {
-			sheep_t *start, *end, *slot;
+		foreigns = sheep_foreigns(function);
+		if (sheep_active_closure(function)) {
+			unsigned int i;
 
-			start = (sheep_t *)vm->stack.items;
-			end = start + vm->stack.nr_items;
-			slot = function->foreigns->items[i];
-
-			if (slot < start || slot >= end)
-				/*sheep_free(slot)*/;
+			for (i = 0; i < foreigns->nr_items; i++) {
+				sheep_t *start, *end, *slot;
+				
+				start = (sheep_t *)vm->stack.items;
+				end = start + vm->stack.nr_items;
+				slot = foreigns->items[i];
+				
+				if (slot < start || slot >= end)
+					sheep_free(slot);
+			}
 		}
-		sheep_free(function->foreigns->items);
-		sheep_free(function->foreigns);
+		sheep_free(foreigns->items);
+		sheep_free(foreigns);
 	}
 	sheep_free(function);
 }

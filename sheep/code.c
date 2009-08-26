@@ -27,7 +27,7 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		sheep = vm->stack.items[basep + arg];
 		break;
 	case SHEEP_FOREIGN:
-		sheep = *(sheep_t *)function->foreigns->items[arg];
+		sheep = *(sheep_t *)sheep_foreigns(function)->items[arg];
 		break;
 	case SHEEP_GLOBAL:
 	case SHEEP_CLOSURE:

@@ -1,3 +1,8 @@
+/*
+ * include/sheep/bool.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_BOOL_H
 #define _SHEEP_BOOL_H
 

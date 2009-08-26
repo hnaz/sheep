@@ -1,3 +1,8 @@
+/*
+ * sheep/util.c
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #include <sheep/config.h>
 #include <stdarg.h>
 #include <stdlib.h>

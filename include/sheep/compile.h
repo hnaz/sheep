@@ -1,3 +1,8 @@
+/*
+ * include/sheep/compile.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_COMPILE_H
 #define _SHEEP_COMPILE_H
 

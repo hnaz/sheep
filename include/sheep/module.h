@@ -1,3 +1,8 @@
+/*
+ * include/sheep/module.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_MODULE_H
 #define _SHEEP_MODULE_H
 

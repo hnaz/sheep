@@ -1,3 +1,8 @@
+/*
+ * include/sheep/object.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_OBJECT_H
 #define _SHEEP_OBJECT_H
 
@@ -5,7 +10,6 @@
 
 typedef struct sheep_object * sheep_t;
 
-struct sheep_objects;
 struct sheep_context;
 struct sheep_vm;
 

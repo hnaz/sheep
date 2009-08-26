@@ -1,3 +1,8 @@
+/*
+ * include/sheep/util.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_UTIL_H
 #define _SHEEP_UTIL_H
 

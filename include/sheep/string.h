@@ -1,3 +1,8 @@
+/*
+ * include/sheep/string.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_STRING_H
 #define _SHEEP_STRING_H
 

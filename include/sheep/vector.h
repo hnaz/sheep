@@ -1,3 +1,8 @@
+/*
+ * include/sheep/vector.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_VECTOR_H
 #define _SHEEP_VECTOR_H
 

@@ -1,3 +1,8 @@
+/*
+ * include/sheep/alien.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_ALIEN_H
 #define _SHEEP_ALIEN_H
 

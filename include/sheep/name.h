@@ -1,3 +1,8 @@
+/*
+ * include/sheep/name.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_NAME_H
 #define _SHEEP_NAME_H
 

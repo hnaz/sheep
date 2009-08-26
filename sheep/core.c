@@ -1,3 +1,8 @@
+/*
+ * sheep/core.c
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #include <sheep/function.h>
 #include <sheep/compile.h>
 #include <sheep/config.h>

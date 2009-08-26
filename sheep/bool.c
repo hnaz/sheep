@@ -1,3 +1,8 @@
+/*
+ * sheep/bool.c
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #include <sheep/compile.h>
 #include <sheep/object.h>
 #include <stdio.h>

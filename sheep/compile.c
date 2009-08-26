@@ -1,3 +1,8 @@
+/*
+ * sheep/compile.c
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #include <sheep/function.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>

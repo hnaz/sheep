@@ -1,3 +1,8 @@
+/*
+ * include/sheep/code.h
+ *
+ * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
+ */
 #ifndef _SHEEP_CODE_H
 #define _SHEEP_CODE_H
 

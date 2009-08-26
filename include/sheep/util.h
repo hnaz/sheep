@@ -9,13 +9,19 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#ifdef __GNUC__
+#define __noreturn	__attribute__((noreturn))
+#else
+#define __noreturn
+#endif
+
 void *sheep_malloc(size_t);
 void *sheep_zalloc(size_t);
 void *sheep_realloc(void *, size_t);
 char *sheep_strdup(const char *);
 void sheep_free(const void *);
 
-void sheep_bug(const char *, ...);
+void __noreturn sheep_bug(const char *, ...);
 
 #define sheep_bug_on(cond)						\
 	do if (cond)							\

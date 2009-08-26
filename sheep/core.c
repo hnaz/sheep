@@ -47,7 +47,6 @@ static int do_verify(const char *caller, char control, sheep_t object)
 			object->type == &sheep_function_type;
 	}
 	sheep_bug("unexpected unpack control %c", control);
-	return 0xdead;
 }
 
 static const char *map_control(char control)
@@ -63,7 +62,6 @@ static const char *map_control(char control)
 			return p[0] + 1;
 
 	sheep_bug("incomplete controlnames table");
-	return "dead";
 }
 
 static int verify(const char *caller, char control, sheep_t object)

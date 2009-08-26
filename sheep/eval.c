@@ -307,9 +307,9 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 	case 1:
 		return value;
 	case 0:
+	default:
 		return __sheep_eval(vm, &vm->code, sheep_data(callable));
 	}
-	return (void *)0xdead;
 }
 
 void sheep_evaluator_init(struct sheep_vm *vm)

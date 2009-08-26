@@ -11,6 +11,8 @@
 #include <sheep/vector.h>
 #include <sheep/code.h>
 
+struct sheep_pending;
+
 struct sheep_vm {
 	/* Object management */
 	struct sheep_objects *fulls;
@@ -26,6 +28,7 @@ struct sheep_vm {
 	struct sheep_module main;
 
 	/* Evaluator */
+	struct sheep_pending *pending;
 	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };

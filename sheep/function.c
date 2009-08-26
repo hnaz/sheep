@@ -15,7 +15,18 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 
 	function = sheep_data(sheep);
 	if (function->foreigns) {
-		/* XXX: free private container of preserved slots */
+		unsigned int i;
+
+		for (i = 0; i < function->foreigns->nr_items; i++) {
+			sheep_t *start, *end, *slot;
+
+			start = (sheep_t *)vm->stack.items;
+			end = start + vm->stack.nr_items;
+			slot = function->foreigns->items[i];
+
+			if (slot < start || slot >= end)
+				sheep_free(slot);
+		}
 		sheep_free(function->foreigns->items);
 		sheep_free(function->foreigns);
 	}

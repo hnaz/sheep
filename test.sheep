@@ -8,8 +8,6 @@ true
 
 (list 1 2 3)
 
-a
-
 (quote a)
 
 (variable foo (quote bar))
@@ -38,12 +36,14 @@ foo
   (inner))
 (outer true)
 
-(ddump)
-(ddump 1)
-(ddump 1 2)
+(function make (x)
+  (function inner-make (y)
+    (function ()
+      (list x y)))
+  (inner-make inner-make))
+(variable maker (make 11))
+(maker)
 
-(if)
-(if 0)
 (if 0 1)
 (if 1 2)
 (if 1 2 3)
@@ -64,5 +64,7 @@ foo
 (tau 1)
 
 (map (function (x)
-       (list x))
+       (list x x))
      (list 1 2 3 4))
+
+(ddump (quote success!))

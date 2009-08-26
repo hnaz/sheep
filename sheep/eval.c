@@ -115,8 +115,9 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 			fbasep = basep;
 		else {
 			/*
-			 * The callstack contains triplets of
-			 * [pc basep function]
+			 * The callstack contains
+			 *	[pc basep function]
+			 * for every frame.
 			 */
 			offset = vm->calls.nr_items - 3 * offset - 1;
 			fbasep = (unsigned long)vm->calls.items[offset];
@@ -182,7 +183,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		int done;
 
 		sheep_decode((unsigned long)current->code.items[pc], &op, &arg);
-		sheep_code_dump(vm, function, basep, op, arg);
+		/*sheep_code_dump(vm, function, basep, op, arg);*/
 
 		switch (op) {
 		case SHEEP_DROP:

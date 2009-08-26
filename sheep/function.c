@@ -25,7 +25,7 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 			slot = function->foreigns->items[i];
 
 			if (slot < start || slot >= end)
-				sheep_free(slot);
+				/*sheep_free(slot)*/;
 		}
 		sheep_free(function->foreigns->items);
 		sheep_free(function->foreigns);

@@ -28,6 +28,7 @@ static void ddump_string(sheep_t sheep)
 }
 
 const struct sheep_type sheep_string_type = {
+	.name = "string",
 	.free = free_string,
 	.compile = sheep_compile_constant,
 	.test = test_string,

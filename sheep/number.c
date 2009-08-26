@@ -21,6 +21,7 @@ static void ddump_number(sheep_t sheep)
 }
 
 const struct sheep_type sheep_number_type = {
+	.name = "number",
 	.compile = sheep_compile_constant,
 	.test = test_number,
 	.equal = equal_number,

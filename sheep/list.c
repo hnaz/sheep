@@ -68,6 +68,7 @@ static void ddump_list(sheep_t sheep)
 }
 
 const struct sheep_type sheep_list_type = {
+	.name = "list",
 	.mark = mark_list,
 	.free = free_list,
 	.compile = sheep_compile_list,

@@ -2,6 +2,7 @@
 #include <sheep/compile.h>
 #include <sheep/config.h>
 #include <sheep/module.h>
+#include <sheep/number.h>
 #include <sheep/string.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
@@ -18,15 +19,15 @@
 
 #include <sheep/core.h>
 
-static const char *controlnames[] = {
-	"aname", "sstring", "llist", "qsequence", "ccallable", NULL
-};
-
 static int do_verify(const char *caller, char control, sheep_t object)
 {
 	switch (control) {
 	case 'o':
 		return 1;
+	case 'b':
+		return object->type == &sheep_bool_type;
+	case 'n':
+		return object->type == &sheep_number_type;
 	case 'a':
 		return object->type == &sheep_name_type;
 	case 's':
@@ -44,20 +45,30 @@ static int do_verify(const char *caller, char control, sheep_t object)
 	return 0xdead;
 }
 
-static int verify(const char *caller, char control, sheep_t object)
+static const char *map_control(char control)
 {
+	static const char *controlnames[] = {
+		"bbool", "nnumber", "aname", "sstring",
+		"llist", "qsequence", "ccallable", NULL
+	};
 	const char **p;
 
+	for (p = controlnames; *p; p++)
+		if (*p[0] == control)
+			return p[0] + 1;
+
+	sheep_bug("incomplete controlnames table");
+	return "dead";
+}
+
+static int verify(const char *caller, char control, sheep_t object)
+{
 	if (do_verify(caller, control, object))
 		return 1;
 
-	for (p = controlnames; *p; p++)
-		if (*p[0] == control) {
-			fprintf(stderr, "%s: expected %s\n", caller, p[0] + 1);
-			return 0;
-		}
-	sheep_bug("incomplete controlnames table");
-	return 0xdead;
+	fprintf(stderr, "%s: expected %s, got %s\n",
+		caller, map_control(control), object->type->name);
+	return 0;
 }
 
 static int unpack(const char *caller, struct sheep_list *list,

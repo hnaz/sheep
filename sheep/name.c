@@ -23,6 +23,7 @@ static void ddump_name(sheep_t sheep)
 }
 
 const struct sheep_type sheep_name_type = {
+	.name = "name",
 	.free = free_name,
 	.compile = sheep_compile_name,
 	.equal = equal_name,

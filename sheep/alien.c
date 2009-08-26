@@ -10,6 +10,7 @@ static void free_alien(struct sheep_vm *vm, sheep_t sheep)
 }
 
 const struct sheep_type sheep_alien_type = {
+	.name = "alien",
 	.free = free_alien,
 };
 

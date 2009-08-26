@@ -18,6 +18,7 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 }
 
 const struct sheep_type sheep_function_type = {
+	.name = "function",
 	.free = free_function,
 };
 

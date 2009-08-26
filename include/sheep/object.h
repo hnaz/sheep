@@ -10,8 +10,11 @@ struct sheep_context;
 struct sheep_vm;
 
 struct sheep_type {
+	const char *name;
+
 	void (*mark)(sheep_t);
 	void (*free)(struct sheep_vm *, sheep_t);
+
 	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
 
 	int (*test)(sheep_t);

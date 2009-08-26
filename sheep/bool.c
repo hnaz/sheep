@@ -18,6 +18,7 @@ static void ddump_bool(sheep_t sheep)
 }
 
 const struct sheep_type sheep_bool_type = {
+	.name = "bool",
 	.compile = sheep_compile_constant,
 	.test = test_bool,
 	.ddump = ddump_bool,

@@ -152,13 +152,18 @@ int sheep_equal(sheep_t a, sheep_t b)
 	return 0;
 }
 
+void __sheep_ddump(sheep_t sheep)
+{
+	if (sheep->type->ddump)
+		sheep->type->ddump(sheep);
+	else
+		printf("#<Object %p>", sheep);
+}
+
 void sheep_ddump(sheep_t sheep)
 {
-	if (sheep->type->ddump) {
-		sheep->type->ddump(sheep);
-		puts("");
-	} else
-		printf("#<Object %p>\n", sheep);
+	__sheep_ddump(sheep);
+	puts("");
 }
 
 void sheep_mark(sheep_t sheep)

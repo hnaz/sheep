@@ -63,7 +63,7 @@ static void ddump_list(sheep_t sheep)
 	printf("(");
 	while (list) {
 		sheep = list->head;
-		sheep->type->ddump(sheep);
+		__sheep_ddump(sheep);
 		if (!list->tail)
 			break;
 		printf(" ");

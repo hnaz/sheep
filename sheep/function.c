@@ -43,10 +43,10 @@ const struct sheep_type sheep_function_type = {
 	.free = free_function,
 };
 
-sheep_t sheep_function(struct sheep_vm *vm)
+sheep_t sheep_make_function(struct sheep_vm *vm)
 {
 	struct sheep_function *function;
 
 	function = sheep_zalloc(sizeof(struct sheep_function));
-	return sheep_object(vm, &sheep_function_type, function);
+	return sheep_make_object(vm, &sheep_function_type, function);
 }

@@ -10,7 +10,7 @@
 
 extern const struct sheep_type sheep_number_type;
 
-sheep_t sheep_number(struct sheep_vm *, long);
+sheep_t sheep_make_number(struct sheep_vm *, long);
 
 static inline long sheep_cnumber(sheep_t sheep)
 {

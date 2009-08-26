@@ -36,7 +36,7 @@ struct sheep_function {
 
 extern const struct sheep_type sheep_function_type;
 
-sheep_t sheep_function(struct sheep_vm *);
+sheep_t sheep_make_function(struct sheep_vm *);
 
 /*
  * Having function->foreigns always heap allocated and thus always

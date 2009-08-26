@@ -32,7 +32,7 @@ struct sheep_object {
 	unsigned long data;
 };
 
-sheep_t sheep_object(struct sheep_vm *, const struct sheep_type *, void *);
+sheep_t sheep_make_object(struct sheep_vm *, const struct sheep_type *, void *);
 
 static inline void *sheep_data(sheep_t sheep)
 {

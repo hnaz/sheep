@@ -35,7 +35,7 @@ const struct sheep_type sheep_name_type = {
 	.ddump = ddump_name,
 };
 
-sheep_t sheep_name(struct sheep_vm *vm, const char *cname)
+sheep_t sheep_make_name(struct sheep_vm *vm, const char *cname)
 {
-	return sheep_object(vm, &sheep_name_type, sheep_strdup(cname));
+	return sheep_make_object(vm, &sheep_name_type, sheep_strdup(cname));
 }

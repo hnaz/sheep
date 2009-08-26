@@ -33,8 +33,8 @@ const struct sheep_type sheep_number_type = {
 	.ddump = ddump_number,
 };
 
-sheep_t sheep_number(struct sheep_vm *vm, long cnumber)
+sheep_t sheep_make_number(struct sheep_vm *vm, long cnumber)
 {
-	return sheep_object(vm, &sheep_number_type,
-			(void *)(cnumber << 1));
+	return sheep_make_object(vm, &sheep_number_type,
+				(void *)(cnumber << 1));
 }

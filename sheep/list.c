@@ -82,8 +82,8 @@ const struct sheep_type sheep_list_type = {
 	.ddump = ddump_list,
 };
 
-struct sheep_list *sheep_cons(struct sheep_vm *vm, sheep_t head,
-			struct sheep_list *tail)
+struct sheep_list *sheep_make_cons(struct sheep_vm *vm, sheep_t head,
+				struct sheep_list *tail)
 {
 	struct sheep_list *list;
 
@@ -93,18 +93,18 @@ struct sheep_list *sheep_cons(struct sheep_vm *vm, sheep_t head,
 	return list;
 }
 
-struct sheep_list *__sheep_list(struct sheep_vm *vm, sheep_t item)
+struct sheep_list *__sheep_make_list(struct sheep_vm *vm, sheep_t item)
 {
-	return sheep_cons(vm, item, NULL);
+	return sheep_make_cons(vm, item, NULL);
 }
 
-sheep_t sheep_list(struct sheep_vm *vm, unsigned int nr, ...)
+sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
 {
 	struct sheep_list *list, *pos;
 	va_list ap;
 
 	if (!nr)
-		return sheep_object(vm, &sheep_list_type, NULL);
+		return sheep_make_object(vm, &sheep_list_type, NULL);
 
 	va_start(ap, nr);
 	list = pos = sheep_malloc(sizeof(struct sheep_list));
@@ -117,5 +117,5 @@ sheep_t sheep_list(struct sheep_vm *vm, unsigned int nr, ...)
 	}
 	pos->tail = NULL;
 	va_end(ap);
-	return sheep_object(vm, &sheep_list_type, list);
+	return sheep_make_object(vm, &sheep_list_type, list);
 }

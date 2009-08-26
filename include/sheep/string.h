@@ -10,7 +10,7 @@
 
 extern const struct sheep_type sheep_string_type;
 
-sheep_t sheep_string(struct sheep_vm *, const char *);
+sheep_t sheep_make_string(struct sheep_vm *, const char *);
 
 static inline const char *sheep_rawstring(sheep_t sheep)
 {

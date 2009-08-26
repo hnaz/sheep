@@ -19,11 +19,11 @@ const struct sheep_type sheep_alien_type = {
 	.free = free_alien,
 };
 
-sheep_t sheep_alien(struct sheep_vm *vm, sheep_alien_t function)
+sheep_t sheep_make_alien(struct sheep_vm *vm, sheep_alien_t function)
 {
 	sheep_alien_t *foo;
 
 	foo = sheep_malloc(sizeof(sheep_alien_t));
 	*foo = function;
-	return sheep_object(vm, &sheep_alien_type, foo);
+	return sheep_make_object(vm, &sheep_alien_type, foo);
 }

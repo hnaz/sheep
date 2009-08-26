@@ -41,6 +41,7 @@ static int do_file(const char *path)
 	}
 	ret = 0;
 out:
+	fclose(in);
 	sheep_vm_exit(&vm);
 	return ret;
 }

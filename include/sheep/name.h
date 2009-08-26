@@ -10,7 +10,7 @@
 
 extern const struct sheep_type sheep_name_type;
 
-sheep_t sheep_name(struct sheep_vm *, const char *);
+sheep_t sheep_make_name(struct sheep_vm *, const char *);
 
 static inline const char *sheep_cname(sheep_t sheep)
 {

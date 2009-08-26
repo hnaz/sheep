@@ -275,7 +275,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("function", args, "Lr!", &parms, &body))
 		return -1;
 
-	sheep = sheep_function(vm);
+	sheep = sheep_make_function(vm);
 	function = sheep_data(sheep);
 
 	while (parms) {
@@ -345,7 +345,8 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 					context->env, context, elseform))
 			return -1;
 	} else {
-		if (sheep_compile_name(vm, context, sheep_name(vm, "false")))
+		if (sheep_compile_name(vm, context,
+					sheep_make_name(vm, "false")))
 			return -1;
 	}
 	context->code->code.items[bend] =
@@ -404,8 +405,8 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *list = NULL;
 
 	while (nr_args--)
-		list = sheep_cons(vm, sheep_vector_pop(&vm->stack), list);
-	return sheep_object(vm, &sheep_list_type, list);
+		list = sheep_make_cons(vm, sheep_vector_pop(&vm->stack), list);
+	return sheep_make_object(vm, &sheep_list_type, list);
 }
 
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
@@ -424,14 +425,14 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 			return NULL;
 
 		if (!list)
-			list = pos = __sheep_list(vm, item);
+			list = pos = __sheep_make_list(vm, item);
 		else
-			pos = pos->tail = __sheep_list(vm, item);
+			pos = pos->tail = __sheep_make_list(vm, item);
 
 		seq = seq->tail;
 	}
 
-	return sheep_object(vm, &sheep_list_type, list);
+	return sheep_make_object(vm, &sheep_list_type, list);
 }
 
 void sheep_core_init(struct sheep_vm *vm)
@@ -447,11 +448,11 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
 	sheep_module_shared(vm, &vm->main, "ddump",
-			sheep_alien(vm, eval_ddump));
+			sheep_make_alien(vm, eval_ddump));
 	sheep_module_shared(vm, &vm->main, "list",
-			sheep_alien(vm, eval_list));
+			sheep_make_alien(vm, eval_list));
 	sheep_module_shared(vm, &vm->main, "map",
-			sheep_alien(vm, eval_map));
+			sheep_make_alien(vm, eval_map));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

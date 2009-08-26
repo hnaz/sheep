@@ -41,7 +41,7 @@ const struct sheep_type sheep_string_type = {
 	.ddump = ddump_string,
 };
 
-sheep_t sheep_string(struct sheep_vm *vm, const char *str)
+sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 {
-	return sheep_object(vm, &sheep_string_type, sheep_strdup(str));
+	return sheep_make_object(vm, &sheep_string_type, sheep_strdup(str));
 }

@@ -69,7 +69,7 @@ static sheep_t read_string(struct sheep_vm *vm, FILE *fp)
 
 	if (read_token(fp, buf, 512, 1))
 		return NULL;
-	return sheep_string(vm, buf);
+	return sheep_make_string(vm, buf);
 }
 
 static int parse_number(const char *buf, long *number)
@@ -97,8 +97,8 @@ static sheep_t read_atom(struct sheep_vm *vm, FILE *fp, int c)
 	if (read_token(fp, buf, 512, 0) < 0)
 		return NULL;
 	if (!parse_number(buf, &number))
-		return sheep_number(vm, number);
-	return sheep_name(vm, buf);
+		return sheep_make_number(vm, number);
+	return sheep_make_name(vm, buf);
 }
 
 static sheep_t read_sexp(struct sheep_vm *vm, FILE *fp, int c);
@@ -112,9 +112,9 @@ static sheep_t read_list(struct sheep_vm *vm, FILE *fp)
 		sheep_t item;
 
 		if (c == ')') {
-			if (list)
-				return sheep_object(vm, &sheep_list_type, list);
-			return sheep_list(vm, 0);
+			if (!list)
+				return sheep_make_list(vm, 0);
+			return sheep_make_object(vm, &sheep_list_type, list);
 		}
 
 		item = read_sexp(vm, fp, c);
@@ -124,9 +124,9 @@ static sheep_t read_list(struct sheep_vm *vm, FILE *fp)
 			break;
 
 		if (!list)
-			list = pos = __sheep_list(vm, item);
+			list = pos = __sheep_make_list(vm, item);
 		else
-			pos = pos->tail = __sheep_list(vm, item);
+			pos = pos->tail = __sheep_make_list(vm, item);
 	}
 
 	fprintf(stderr, "EOF while reading list\n");

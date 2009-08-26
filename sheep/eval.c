@@ -37,7 +37,7 @@ static sheep_t closure(struct sheep_vm *vm, sheep_t sheep)
 		slot = (unsigned long)old->foreigns->items[i + 1];
 		/*
 		 * Okay, we have the static function level distance to
-		 * our foreign slot owner and the actual intex into
+		 * our foreign slot owner and the actual index into
 		 * the stack locals of that owner.
 		 *
 		 * Every active stack frame has 3 entries in
@@ -170,7 +170,10 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		case SHEEP_RET:
 			sheep_bug_on(vm->stack.nr_items - basep -
 				(function ? function->nr_locals : 0) != 1);
-
+			/*
+			 * Get rid of the local slots, if any, and
+			 * move the return value accordingly.
+			 */
 			if (function && function->nr_locals) {
 				vm->stack.items[basep] =
 					vm->stack.items[basep +

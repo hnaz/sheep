@@ -143,10 +143,10 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 	struct sheep_function *function;
 
 	if (callable->type == &sheep_alien_type) {
-		sheep_alien_t alien;
+		struct sheep_alien *alien;
 
-		alien = *(sheep_alien_t *)sheep_data(callable);
-		*value = alien(vm, nr_args);
+		alien = sheep_data(callable);
+		*value = alien->function(vm, nr_args);
 		return 1 - 2 * !*value;
 	}
 

@@ -157,7 +157,7 @@ void __sheep_ddump(sheep_t sheep)
 	if (sheep->type->ddump)
 		sheep->type->ddump(sheep);
 	else
-		printf("#<Object %p>", sheep);
+		printf("#<%s %p>", sheep->type->name, sheep);
 }
 
 void sheep_ddump(sheep_t sheep)

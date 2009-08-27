@@ -154,7 +154,9 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 
 	function = sheep_data(callable);
 	if (function->nr_parms != nr_args) {
-		fprintf(stderr, "wrong number of arguments\n");
+		fprintf(stderr, "%s: too %s arguments\n",
+			function->name,
+			function->nr_parms < nr_args ? "many" : "few");
 		return -1;
 	}
 

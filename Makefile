@@ -8,9 +8,9 @@ CFLAGS	= -Os -pipe -Wall -Wextra -Wno-unused-parameter
 LDFLAGS	=
 
 ifeq ($(V),1)
-print	=
+Q	=
 else
-print	= @echo $(1);
+Q	= @
 endif
 
 all: sheep/sheep
@@ -21,20 +21,24 @@ sheep-clean	:= sheep/sheep $(sheep-obj) include/sheep/config.h \
 		   sheep/make.deps
 
 sheep/sheep: $(sheep-obj)
-	$(call print,"   LD     $@") $(CC) -o $@ $^ $(LDFLAGS)
+	$(Q) echo "   LD     $@";				\
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c include/sheep/config.h sheep/make.deps
-	$(call print,"   CC     $@") $(CC) $(CFLAGS) -Iinclude -o $@ -c $<
+	$(Q) echo "   CC     $@";				\
+	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
 
 include/sheep/config.h:
-	$(call print,"   CONF   $@") rm -f $@;			\
+	$(Q) echo "   CONF   $@";				\
+	rm -f $@;						\
 	echo "#define SHEEP_VERSION \"$(VERSION)\"" >> $@;	\
 	echo "#define SHEEP_NAME \"$(NAME)\"" >> $@
 
 sheep/make.deps:
-	$(call print,"   DEPS   $@") rm -f $@;	\
-	$(foreach obj,$(sheep-obj),		\
-		$(CPP) -Iinclude -MM -MT $(obj)	\
+	$(Q) echo "   DEPS   $@";				\
+	rm -f $@;						\
+	$(foreach obj,$(sheep-obj),				\
+		$(CPP) -Iinclude -MM -MT $(obj)			\
 		$(basename $(obj)).c >> $@; )
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -42,4 +46,6 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 clean:
-	$(call print, "   CLEAN  $(sheep-clean)") rm -f $(sheep-clean)
+	$(Q) $(foreach subdir,$(sort $(dir $(sheep-clean))),	\
+		echo "   CLEAN   $(subdir)";			\
+		rm -f $(filter $(subdir)%,$(sheep-clean)); )

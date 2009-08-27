@@ -32,11 +32,14 @@ struct sheep_function {
 	 * Also see the comment in eval.c.
 	 */
 	struct sheep_vector *foreigns;
+
+	const char *name;
 };
 
 extern const struct sheep_type sheep_function_type;
 
-sheep_t sheep_make_function(struct sheep_vm *);
+sheep_t sheep_make_function(struct sheep_vm *, const char *);
+sheep_t sheep_copy_function(struct sheep_vm *, struct sheep_function *);
 
 /*
  * Having function->foreigns always heap allocated and thus always

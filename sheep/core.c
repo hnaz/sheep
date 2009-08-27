@@ -273,7 +273,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("function", args, "Lr!", &parms, &body))
 		return -1;
 
-	sheep = sheep_make_function(vm);
+	sheep = sheep_make_function(vm, name);
 	function = sheep_data(sheep);
 
 	while (parms) {
@@ -449,11 +449,11 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
 	sheep_module_shared(vm, &vm->main, "ddump",
-			sheep_make_alien(vm, eval_ddump));
+			sheep_make_alien(vm, eval_ddump, "ddump"));
 	sheep_module_shared(vm, &vm->main, "list",
-			sheep_make_alien(vm, eval_list));
+			sheep_make_alien(vm, eval_list, "list"));
 	sheep_module_shared(vm, &vm->main, "map",
-			sheep_make_alien(vm, eval_map));
+			sheep_make_alien(vm, eval_map, "map"));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

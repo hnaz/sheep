@@ -129,9 +129,8 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 		note_pending(vm, (sheep_t **)foreigns->items + slot, fbasep);
 	}
 
-	sheep = sheep_make_function(vm);
+	sheep = sheep_copy_function(vm, old);
 	new = sheep_data(sheep);
-	*new = *old;
 	new->foreigns = foreigns;
 	sheep_activate_closure(new);
 

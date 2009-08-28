@@ -297,6 +297,17 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_protect(vm, sheep);
 	ret = do_compile_block(vm, &code, function, &env, context, body);
 	sheep_unprotect(vm, sheep);
+	if (ret) {
+		/*
+		 * Potentially sacrifice a global slot, but take out
+		 * the binding to it if it doesn't contain anything
+		 * useful.  This can probably be done better one
+		 * day...
+		 */
+		if (name)
+			sheep_map_del(context->env, name);
+		goto out;
+	}
 
 	sheep_emit(&code, SHEEP_RET, 0);
 	function->offset = vm->code.code.nr_items;

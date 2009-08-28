@@ -33,6 +33,7 @@ struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 {
 	struct sheep_context context;
 	struct sheep_code *code;
+	int err;
 
 	code = sheep_malloc(sizeof(struct sheep_code));
 	sheep_code_init(code);
@@ -41,7 +42,11 @@ struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 	context.code = code;
 	context.env = &module->env;
 
-	if (expr->type->compile(vm, &context, expr)) {
+	sheep_protect(vm, expr);
+	err = expr->type->compile(vm, &context, expr);
+	sheep_unprotect(vm, expr);
+
+	if (err) {
 		sheep_free(code->code.items);
 		sheep_free(code);
 		return NULL;

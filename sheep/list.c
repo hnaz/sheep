@@ -16,58 +16,51 @@ static void mark_list(sheep_t sheep)
 {
 	struct sheep_list *list;
 
-	list = sheep_data(sheep);
-	while (list) {
-		sheep_mark(list->head);
-		list = list->tail;
-	}
+	list = sheep_list(sheep);
+	if (!list->head)
+		return;
+	sheep_mark(list->head);
+	sheep_mark(list->tail);
 }
 
 static void free_list(struct sheep_vm *vm, sheep_t sheep)
 {
-	struct sheep_list *list, *tail;
-
-	list = sheep_data(sheep);
-	while (list) {
-		tail = list->tail;
-		sheep_free(list);
-		list = tail;
-	}
+	sheep_free(sheep_list(sheep));
 }
 
 static int test_list(sheep_t sheep)
 {
-	return !!sheep_data(sheep);
+	return !!sheep_list(sheep)->head;
 }
 
 static int equal_list(sheep_t a, sheep_t b)
 {
 	struct sheep_list *la, *lb;
 
-	la = sheep_data(a);
-	lb = sheep_data(b);
-	while (la && lb) {
+	la = sheep_list(a);
+	lb = sheep_list(b);
+	while (la->head && lb->head) {
 		if (!sheep_equal(la->head, lb->head))
 			return 0;
-		la = la->tail;
-		lb = lb->tail;
+		la = sheep_list(la->tail);
+		lb = sheep_list(lb->tail);
 	}
-	return !(la || lb);
+	return !(la->head || lb->head);
 }
 
 static void ddump_list(sheep_t sheep)
 {
 	struct sheep_list *list;
 
-	list = sheep_data(sheep);
+	list = sheep_list(sheep);
 	printf("(");
-	while (list) {
+	while (list->head) {
 		sheep = list->head;
 		__sheep_ddump(sheep);
-		if (!list->tail)
+		list = sheep_list(list->tail);
+		if (!list->head)
 			break;
 		printf(" ");
-		list = list->tail;
 	}
 	printf(")");
 }
@@ -82,40 +75,31 @@ const struct sheep_type sheep_list_type = {
 	.ddump = ddump_list,
 };
 
-struct sheep_list *sheep_make_cons(struct sheep_vm *vm, sheep_t head,
-				struct sheep_list *tail)
+sheep_t sheep_make_cons(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 {
 	struct sheep_list *list;
 
 	list = sheep_malloc(sizeof(struct sheep_list));
 	list->head = head;
 	list->tail = tail;
-	return list;
-}
-
-struct sheep_list *__sheep_make_list(struct sheep_vm *vm, sheep_t item)
-{
-	return sheep_make_cons(vm, item, NULL);
+	return sheep_make_object(vm, &sheep_list_type, list);
 }
 
 sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
 {
-	struct sheep_list *list, *pos;
+	sheep_t list, pos;
 	va_list ap;
 
-	if (!nr)
-		return sheep_make_object(vm, &sheep_list_type, NULL);
+	list = pos = sheep_make_cons(vm, NULL, NULL);
 
 	va_start(ap, nr);
-	list = pos = sheep_malloc(sizeof(struct sheep_list));
-	for (;;) {
-		pos->head = va_arg(ap, sheep_t);
-		if (!--nr)
-			break;
-		pos->tail = sheep_malloc(sizeof(struct sheep_list));
-		pos = pos->tail;
+	while (nr--) {
+		struct sheep_list *node;
+
+		node = sheep_list(pos);
+		node->head = va_arg(ap, sheep_t);
+		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
 	}
-	pos->tail = NULL;
 	va_end(ap);
-	return sheep_make_object(vm, &sheep_list_type, list);
+	return list;
 }

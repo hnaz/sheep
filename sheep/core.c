@@ -94,7 +94,7 @@ static int unpack(const char *caller, struct sheep_list *list,
 			goto out;
 		}
 
-		if (!list)
+		if (!list->head)
 			break;
 
 		object = list->head;
@@ -108,12 +108,12 @@ static int unpack(const char *caller, struct sheep_list *list,
 			*va_arg(ap, sheep_t *) = object;
 
 		items++;
-		list = list->tail;
+		list = sheep_list(list->tail);
 	}
 
 	if (*items)
 		fprintf(stderr, "%s: too few arguments\n", caller);
-	else if (list)
+	else if (list->head)
 		fprintf(stderr, "%s: too many arguments\n", caller);
 	else
 		ret = 0;
@@ -154,7 +154,8 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 		if (value->type->compile(vm, &context, value))
 			return -1;
 
-		if (!args->tail)
+		args = sheep_list(args->tail);
+		if (!args->head)
 			break;
 		/*
 		 * The last value is the value of the whole block,
@@ -162,7 +163,6 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_code *code,
 		 * balanced.
 		 */
 		sheep_emit(code, SHEEP_DROP, 0);
-		args = args->tail;
 	}
 	return 0;
 }
@@ -196,7 +196,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_context *context,
 	if (unpack("with", args, "Lr!", &bindings, &body))
 		return -1;
 
-	while (bindings) {
+	while (bindings->head) {
 		unsigned int slot;
 		const char *name;
 		sheep_t value;
@@ -264,9 +264,9 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_t sheep;
 	int ret = -1;
 
-	if (args && args->head->type == &sheep_name_type) {
+	if (args->head && args->head->type == &sheep_name_type) {
 		name = sheep_cname(args->head);
-		args = args->tail;
+		args = sheep_list(args->tail);
 	} else
 		name = NULL;
 
@@ -276,7 +276,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	sheep = sheep_make_function(vm, name);
 	function = sheep_data(sheep);
 
-	while (parms) {
+	while (parms->head) {
 		unsigned int slot;
 		const char *parm;
 
@@ -338,7 +338,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 	bend = sheep_emit(context->code, SHEEP_BR, 0);
 	context->code->code.items[belse] =
 		(void *)sheep_encode(SHEEP_BRN, bend + 1 - belse);
-	if (elseform) {
+	if (elseform->head) {
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))
 			return -1;
@@ -402,38 +402,65 @@ static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 /* (list expr*) */
 static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 {
-	struct sheep_list *list = NULL;
+	sheep_t list;
 
+	list = sheep_make_cons(vm, NULL, NULL);
 	while (nr_args--)
 		list = sheep_make_cons(vm, sheep_vector_pop(&vm->stack), list);
-	return sheep_make_object(vm, &sheep_list_type, list);
+	return list;
+}
+
+/* (head list) */
+static sheep_t eval_head(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list;
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("head", vm, nr_args, "l", &sheep))
+		return NULL;
+
+	list = sheep_list(sheep);
+	if (list->head)
+		return list->head;
+	return sheep;
+}
+
+/* (tail list) */
+static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list;
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("tail", vm, nr_args, "l", &sheep))
+		return NULL;
+
+	list = sheep_list(sheep);
+	if (list->head)
+		return list->tail;
+	return sheep;
 }
 
 /* (map fun list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
-	struct sheep_list *list = NULL, *pos = pos, *seq;
-	sheep_t callable;
+	sheep_t callable, list, pos;
+	struct sheep_list *seq;
 
 	if (sheep_unpack_stack("map", vm, nr_args, "cL", &callable, &seq))
 		return NULL;
 
-	while (seq) {
-		sheep_t item;
+	list = pos = sheep_make_cons(vm, NULL, NULL);
+	while (seq->head) {
+		struct sheep_list *node;
 
-		item = sheep_call(vm, callable, 1, seq->head);
-		if (!item)
+		node = sheep_list(pos);
+		node->head = sheep_call(vm, callable, 1, seq->head);
+		if (!node->head)
 			return NULL;
-
-		if (!list)
-			list = pos = __sheep_make_list(vm, item);
-		else
-			pos = pos->tail = __sheep_make_list(vm, item);
-
-		seq = seq->tail;
+		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
+		seq = sheep_list(seq->tail);
 	}
-
-	return sheep_make_object(vm, &sheep_list_type, list);
+	return list;
 }
 
 void sheep_core_init(struct sheep_vm *vm)
@@ -452,6 +479,10 @@ void sheep_core_init(struct sheep_vm *vm)
 			sheep_make_alien(vm, eval_ddump, "ddump"));
 	sheep_module_shared(vm, &vm->main, "list",
 			sheep_make_alien(vm, eval_list, "list"));
+	sheep_module_shared(vm, &vm->main, "head",
+			sheep_make_alien(vm, eval_head, "head"));
+	sheep_module_shared(vm, &vm->main, "tail",
+			sheep_make_alien(vm, eval_tail, "tail"));
 	sheep_module_shared(vm, &vm->main, "map",
 			sheep_make_alien(vm, eval_map, "map"));
 }

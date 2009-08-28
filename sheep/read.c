@@ -105,28 +105,23 @@ static sheep_t read_sexp(struct sheep_vm *vm, FILE *fp, int c);
 
 static sheep_t read_list(struct sheep_vm *vm, FILE *fp)
 {
-	struct sheep_list *list = NULL, *pos;
+	sheep_t list, pos;
 	int c;
 
+	list = pos = sheep_make_cons(vm, NULL, NULL);
 	for (c = next(fp); c != EOF; c = next(fp)) {
-		sheep_t item;
+		struct sheep_list *node;
 
-		if (c == ')') {
-			if (!list)
-				return sheep_make_list(vm, 0);
-			return sheep_make_object(vm, &sheep_list_type, list);
-		}
+		if (c == ')')
+			return list;
 
-		item = read_sexp(vm, fp, c);
-		if (!item)
+		node = sheep_list(pos);
+		node->head = read_sexp(vm, fp, c);
+		if (!node->head)
 			return NULL;
-		if (item == &sheep_eof)
+		if (node->head == &sheep_eof)
 			break;
-
-		if (!list)
-			list = pos = __sheep_make_list(vm, item);
-		else
-			pos = pos->tail = __sheep_make_list(vm, item);
+		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
 	}
 
 	fprintf(stderr, "EOF while reading list\n");

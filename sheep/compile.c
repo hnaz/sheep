@@ -171,10 +171,11 @@ int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
 			struct sheep_list *form)
 {
-	struct sheep_list *args = form->tail;
+	struct sheep_list *args;
 	int nargs;
 
-	for (nargs = 0; args; args = args->tail, nargs++)
+	args = sheep_list(form->tail);
+	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
 		if (args->head->type->compile(vm, context, args->head))
 			return -1;
 
@@ -198,24 +199,26 @@ static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
 int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
-	struct sheep_list *form;
+	struct sheep_list *list;
 
-	form = sheep_data(expr);
+	list = sheep_list(expr);
 	/* The empty list is a constant */
-	if (!form)
+	if (!list->head)
 		return sheep_compile_constant(vm, context, expr);
-	if (form->head->type == &sheep_name_type) {
+	if (list->head->type == &sheep_name_type) {
 		const char *op;
 		void *entry;
 
-		op = sheep_data(form->head);
+		op = sheep_data(list->head);
 		if (!sheep_map_get(&vm->specials, op, &entry)) {
 			int (*compile_special)(struct sheep_vm *,
 					struct sheep_context *,
 					struct sheep_list *) = entry;
-			
-			return compile_special(vm, context, form->tail);
+			struct sheep_list *args;
+
+			args = sheep_list(list->tail);
+			return compile_special(vm, context, args);
 		}
 	}
-	return compile_call(vm, context, form);
+	return compile_call(vm, context, list);
 }

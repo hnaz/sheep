@@ -20,7 +20,14 @@ static void mark_list(sheep_t sheep)
 	if (!list->head)
 		return;
 	sheep_mark(list->head);
-	sheep_mark(list->tail);
+	/*
+	 * Usually, list->head and list->tail are both NULL or both
+	 * set.  But to facilitate simpler, non-atomic construction
+	 * sites, handle garbage collection cycles between setting the
+	 * head and setting the tail.
+	 */
+	if (list->tail)	
+		sheep_mark(list->tail);
 }
 
 static void free_list(struct sheep_vm *vm, sheep_t sheep)
@@ -91,6 +98,7 @@ sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
 	va_list ap;
 
 	list = pos = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, list);
 
 	va_start(ap, nr);
 	while (nr--) {
@@ -101,5 +109,7 @@ sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
 		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
 	}
 	va_end(ap);
+
+	sheep_unprotect(vm, list);
 	return list;
 }

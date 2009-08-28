@@ -109,11 +109,15 @@ static sheep_t read_list(struct sheep_vm *vm, FILE *fp)
 	int c;
 
 	list = pos = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, list);
+
 	for (c = next(fp); c != EOF; c = next(fp)) {
 		struct sheep_list *node;
 
-		if (c == ')')
+		if (c == ')') {
+			sheep_unprotect(vm, list);
 			return list;
+		}
 
 		node = sheep_list(pos);
 		node->head = read_sexp(vm, fp, c);
@@ -125,6 +129,7 @@ static sheep_t read_list(struct sheep_vm *vm, FILE *fp)
 	}
 
 	fprintf(stderr, "EOF while reading list\n");
+	sheep_unprotect(vm, list);
 	return NULL;
 }
 

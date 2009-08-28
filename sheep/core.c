@@ -405,8 +405,18 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t list;
 
 	list = sheep_make_cons(vm, NULL, NULL);
-	while (nr_args--)
-		list = sheep_make_cons(vm, sheep_vector_pop(&vm->stack), list);
+	sheep_protect(vm, list);
+
+	while (nr_args--) {
+		sheep_t new;
+
+		new = sheep_make_cons(vm, sheep_vector_pop(&vm->stack), list);
+		sheep_unprotect(vm, list);
+		list = new;
+		sheep_protect(vm, list);
+	}
+
+	sheep_unprotect(vm, list);
 	return list;
 }
 
@@ -450,6 +460,8 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 
 	list = pos = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, list);
+
 	while (seq->head) {
 		struct sheep_list *node;
 
@@ -460,6 +472,8 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
 		seq = sheep_list(seq->tail);
 	}
+
+	sheep_unprotect(vm, list);
 	return list;
 }
 

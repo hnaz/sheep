@@ -78,6 +78,7 @@ static void collect(struct sheep_vm *vm)
 				sheep->type->free(vm, sheep);
 
 			sheep->data = (unsigned long)pool->free;
+			sheep->type = NULL;
 			pool->free = &pool->mem[i];
 			pool->nr_used--;
 			moved++;

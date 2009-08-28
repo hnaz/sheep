@@ -98,10 +98,8 @@ static int unpack(const char *caller, struct sheep_list *list,
 			break;
 
 		object = list->head;
-		if (!verify(caller, tolower(*items), object)) {
-			fprintf(stderr, "%s: expected %c\n", caller, *items);
+		if (!verify(caller, tolower(*items), object))
 			goto out;
-		}
 		if (isupper(*items))
 			*va_arg(ap, void **) = sheep_data(object);
 		else

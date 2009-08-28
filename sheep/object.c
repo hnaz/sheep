@@ -45,6 +45,27 @@ static void free_pool(struct sheep_objects *pool)
 	sheep_free(pool);
 }
 
+static void unmark_pools(struct sheep_objects *pool)
+{
+	while (pool) {
+		unsigned int i;
+
+		for (i = 0; i < POOL_SIZE; i++) {
+			struct sheep_object *sheep = &pool->mem[i];
+
+			if (sheep->type)
+				sheep->data &= ~1;
+		}
+		pool = pool->next;
+	}
+}
+
+static void unmark(struct sheep_vm *vm)
+{
+	unmark_pools(vm->parts);
+	unmark_pools(vm->fulls);
+}
+
 static void mark_protected(struct sheep_vector *protected)
 {
 	unsigned long i;
@@ -84,7 +105,8 @@ static void collect(struct sheep_vm *vm)
 
 	if (vm->gc_disabled)
 		goto alloc;
-	
+
+	unmark(vm);
 	sheep_vm_mark(vm);
 	mark_protected(&vm->protected);
 
@@ -138,7 +160,9 @@ sheep_t sheep_make_object(struct sheep_vm *vm, const struct sheep_type *type,
 {
 	struct sheep_object *sheep;
 
+#if 1
 	if (!vm->parts)
+#endif
 		collect(vm);
 
 	sheep = alloc(vm);

@@ -14,7 +14,7 @@ sheep_t sheep_make_string(struct sheep_vm *, const char *);
 
 static inline const char *sheep_rawstring(sheep_t sheep)
 {
-	return (const char *)sheep->data;
+	return sheep_data(sheep);
 }
 
 #endif /* _SHEEP_STRING_H */

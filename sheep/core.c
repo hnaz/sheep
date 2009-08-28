@@ -419,10 +419,13 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 	while (nr_args--) {
 		sheep_t new;
 
-		new = sheep_make_cons(vm, sheep_vector_pop(&vm->stack), list);
+		new = sheep_make_cons(vm, NULL, list);
+		sheep_list(new)->head = sheep_vector_pop(&vm->stack);
+
 		sheep_unprotect(vm, list);
+		sheep_protect(vm, new);
+
 		list = new;
-		sheep_protect(vm, list);
 	}
 
 	sheep_unprotect(vm, list);

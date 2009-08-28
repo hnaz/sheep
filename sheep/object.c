@@ -55,7 +55,7 @@ static void mark_protected(struct sheep_vector *protected)
 
 static void collect(struct sheep_vm *vm)
 {
-	struct sheep_objects *pool, *cache = NULL, *last = NULL;
+	struct sheep_objects *pool, *next, *cache = NULL, *last = NULL;
 
 	if (vm->gc_disabled)
 		goto alloc;
@@ -63,7 +63,7 @@ static void collect(struct sheep_vm *vm)
 	sheep_vm_mark(vm);
 	mark_protected(&vm->protected);
 
-	for (pool = vm->fulls; pool; last = pool, pool = pool->next) {
+	for (pool = vm->fulls; pool; last = pool, pool = next) {
 		unsigned int i, moved;
 
 		for (i = moved = 0; i < POOL_SIZE; i++) {
@@ -83,6 +83,8 @@ static void collect(struct sheep_vm *vm)
 			pool->nr_used--;
 			moved++;
 		}
+
+		next = pool->next;
 
 		if (!moved)
 			continue;

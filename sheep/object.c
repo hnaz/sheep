@@ -53,6 +53,30 @@ static void mark_protected(struct sheep_vector *protected)
 		sheep_mark(protected->items[i]);
 }
 
+static unsigned int collect_pool(struct sheep_vm *vm, struct sheep_objects *pool)
+{
+	unsigned int i, moved;
+
+	for (i = moved = 0; i < POOL_SIZE; i++) {
+		struct sheep_object *sheep = &pool->mem[i];
+
+		if (sheep->data & 1) {
+			sheep->data &= ~1;
+			continue;
+		}
+
+		if (sheep->type->free)
+			sheep->type->free(vm, sheep);
+
+		sheep->data = (unsigned long)pool->free;
+		sheep->type = NULL;
+		pool->free = &pool->mem[i];
+		pool->nr_used--;
+		moved++;
+	}
+	return moved;
+}
+
 static void collect(struct sheep_vm *vm)
 {
 	struct sheep_objects *pool, *next,
@@ -65,26 +89,9 @@ static void collect(struct sheep_vm *vm)
 	mark_protected(&vm->protected);
 
 	for (pool = vm->fulls; pool; pool = next) {
-		unsigned int i, moved;
+		unsigned int moved;
 
-		for (i = moved = 0; i < POOL_SIZE; i++) {
-			struct sheep_object *sheep = &pool->mem[i];
-
-			if (sheep->data & 1) {
-				sheep->data &= ~1;
-				continue;
-			}
-
-			if (sheep->type->free)
-				sheep->type->free(vm, sheep);
-
-			sheep->data = (unsigned long)pool->free;
-			sheep->type = NULL;
-			pool->free = &pool->mem[i];
-			pool->nr_used--;
-			moved++;
-		}
-
+		moved = collect_pool(vm, pool);
 		next = pool->next;
 
 		if (!moved) {

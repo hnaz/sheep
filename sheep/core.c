@@ -453,28 +453,35 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 /* (map fun list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
-	sheep_t callable, list, pos;
-	struct sheep_list *seq;
+	sheep_t mapper, old, new, result = NULL;
+	struct sheep_list *l_old, *l_new;
 
-	if (sheep_unpack_stack("map", vm, nr_args, "cL", &callable, &seq))
+	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old))
 		return NULL;
 
-	list = pos = sheep_make_cons(vm, NULL, NULL);
-	sheep_protect(vm, list);
+	sheep_protect(vm, mapper);
+	sheep_protect(vm, old);
+	l_old = sheep_list(old);
 
-	while (seq->head) {
-		struct sheep_list *node;
+	new = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, new);
+	l_new = sheep_list(new);
 
-		node = sheep_list(pos);
-		node->head = sheep_call(vm, callable, 1, seq->head);
-		if (!node->head)
-			return NULL;
-		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
-		seq = sheep_list(seq->tail);
+	while (l_old->head) {
+		l_new->head = sheep_call(vm, mapper, 1, l_old->head);
+		if (!l_new->head)
+			goto out;
+		l_new->tail = sheep_make_cons(vm, NULL, NULL);
+		l_new = sheep_list(l_new->tail);
+		l_old = sheep_list(l_old->tail);
 	}
 
-	sheep_unprotect(vm, list);
-	return list;
+	result = new;
+out:
+	sheep_unprotect(vm, new);
+	sheep_unprotect(vm, old);
+	sheep_unprotect(vm, mapper);
+	return result;
 }
 
 void sheep_core_init(struct sheep_vm *vm)

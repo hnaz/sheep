@@ -408,6 +408,19 @@ static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_true;
 }
 
+/* (cons item list) */
+static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t item, list, new;
+
+	new = sheep_make_list(vm, NULL, NULL);
+	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
+		return NULL;
+	sheep_list(new)->head = item;
+	sheep_list(new)->tail = list;
+	return new;
+}
+
 /* (list expr*) */
 static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -510,6 +523,8 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_shared(vm, &vm->main, "ddump",
 			sheep_make_alien(vm, eval_ddump, "ddump"));
+	sheep_module_shared(vm, &vm->main, "cons",
+			sheep_make_alien(vm, eval_cons, "cons"));
 	sheep_module_shared(vm, &vm->main, "list",
 			sheep_make_alien(vm, eval_list, "list"));
 	sheep_module_shared(vm, &vm->main, "head",

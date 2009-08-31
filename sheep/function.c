@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/object.h>
+#include <sheep/code.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>
@@ -15,7 +16,6 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
-	sheep_free(function->code.code.items);
 	if (function->foreigns) {
 		struct sheep_vector *foreigns;
 
@@ -33,10 +33,12 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 				if (slot < start || slot >= end)
 					sheep_free(slot);
 			}
-		}
+		} else
+			sheep_free(function->code.code.items);
 		sheep_free(foreigns->items);
 		sheep_free(foreigns);
-	}
+	} else
+		sheep_free(function->code.code.items);
 	sheep_free(function->name);
 	sheep_free(function);
 }

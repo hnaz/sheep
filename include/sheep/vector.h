@@ -33,6 +33,4 @@ static inline void *sheep_vector_pop(struct sheep_vector *vec)
 	return vec->items[--vec->nr_items];
 }
 
-void sheep_vector_concat(struct sheep_vector *, struct sheep_vector *);
-
 #endif /* _SHEEP_VECTOR_H */

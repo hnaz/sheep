@@ -256,7 +256,6 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	unsigned int cslot, bslot = bslot;
 	struct sheep_function *function;
 	struct sheep_list *parms, *body;
-	SHEEP_DEFINE_CODE(code);
 	SHEEP_DEFINE_MAP(env);
 	const char *name;
 	sheep_t sheep;
@@ -295,7 +294,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	}
 
 	sheep_protect(vm, sheep);
-	ret = do_compile_block(vm, &code, function, &env, context, body);
+	ret = do_compile_block(vm, &function->code, function, &env, context, body);
 	sheep_unprotect(vm, sheep);
 	if (ret) {
 		/*
@@ -308,10 +307,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 			sheep_map_del(context->env, name);
 		goto out;
 	}
-
-	sheep_emit(&code, SHEEP_RET, 0);
-	function->offset = vm->code.code.nr_items;
-	sheep_vector_concat(&vm->code.code, &code.code);
+	sheep_emit(&function->code, SHEEP_RET, 0);
 
 	sheep_emit(context->code, SHEEP_CLOSURE, cslot);
 	if (name) {
@@ -324,7 +320,6 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 		}
 	}
 out:
-	sheep_free(code.code.items);
 	sheep_map_drain(&env);
 	return ret;
 }

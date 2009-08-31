@@ -8,10 +8,11 @@
 
 #include <sheep/object.h>
 #include <sheep/vector.h>
+#include <sheep/code.h>
 #include <sheep/vm.h>
 
 struct sheep_function {
-	unsigned long offset;	/* in vm->code */
+	struct sheep_code code;
 	unsigned int nr_parms;
 	unsigned int nr_locals;	/* nr_parms + private slots */
 	/*

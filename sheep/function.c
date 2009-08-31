@@ -15,6 +15,7 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
+	sheep_free(function->code.code.items);
 	if (function->foreigns) {
 		struct sheep_vector *foreigns;
 
@@ -62,6 +63,7 @@ sheep_t sheep_make_function(struct sheep_vm *vm, const char *name)
 	struct sheep_function *function;
 
 	function = sheep_zalloc(sizeof(struct sheep_function));
+	sheep_code_init(&function->code);
 	if (name)
 		function->name = sheep_strdup(name);
 	return sheep_make_object(vm, &sheep_function_type, function);

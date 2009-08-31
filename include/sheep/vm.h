@@ -21,7 +21,6 @@ struct sheep_vm {
 	int gc_disabled;
 
 	struct sheep_vector globals;
-	struct sheep_code code;
 
 	/* Compiler */
 	struct sheep_map specials;

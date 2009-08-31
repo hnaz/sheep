@@ -34,15 +34,3 @@ void sheep_vector_grow(struct sheep_vector *vec, unsigned long delta)
 		vec->items = sheep_realloc(vec->items, next * sizeof(void *));
 	vec->nr_items = want;
 }
-
-void sheep_vector_concat(struct sheep_vector *vec, struct sheep_vector *tail)
-{
-	unsigned long nr;
-
-	nr = vec->nr_items + tail->nr_items;
-	vec->items = sheep_realloc(vec->items, nr * sizeof(void *));
-	memcpy(vec->items + vec->nr_items,
-		tail->items,
-		tail->nr_items * sizeof(void *));
-	vec->nr_items = nr;
-}

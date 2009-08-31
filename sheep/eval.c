@@ -171,13 +171,12 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 {
 	struct sheep_code *current = code;
 	unsigned int nesting = 0;
-	unsigned long basep, pc;
+	unsigned long basep, pc = 0;
 
-	if (function) {
+	if (function)
 		basep = vm->stack.nr_items - function->nr_locals;
-		pc = function->offset;
-	} else
-		basep = pc = 0;
+	else
+		basep = 0;
 
 	for (;;) {
 		enum sheep_opcode op;
@@ -238,8 +237,8 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 
 			function = sheep_data(tmp);
 			basep = vm->stack.nr_items - function->nr_locals;
-			pc = function->offset;
-			current = &vm->code;
+			current = &function->code;
+			pc = 0;
 			nesting++;
 			continue;
 		case SHEEP_RET:
@@ -293,6 +292,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, struct sheep_code *code)
 sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		unsigned int nr_args, ...)
 {
+	struct sheep_function *function;
 	unsigned int nr = nr_args;
 	sheep_t value;
 	va_list ap;
@@ -309,7 +309,8 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		return value;
 	case 0:
 	default:
-		return __sheep_eval(vm, &vm->code, sheep_data(callable));
+		function = sheep_data(callable);
+		return __sheep_eval(vm, &function->code, function);
 	}
 }
 

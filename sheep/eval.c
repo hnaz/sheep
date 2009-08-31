@@ -261,7 +261,9 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
 			pc = (unsigned long)sheep_vector_pop(&vm->calls);
 
-			if (!function)
+			if (function)
+				current = &function->code;
+			else
 				current = code;
 			break;
 		case SHEEP_BRN:

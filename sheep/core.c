@@ -392,6 +392,19 @@ out:
 	return ret;
 }
 
+/* (= a b) */
+static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t a, b;
+
+	if (sheep_unpack_stack("=", vm, nr_args, "oo", &a, &b))
+		return NULL;
+
+	if (sheep_equal(a, b))
+		return &sheep_true;
+	return &sheep_false;
+}
+
 /* (+ &rest numbers) */
 static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -606,6 +619,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
+	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
 	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);

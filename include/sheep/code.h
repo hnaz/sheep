@@ -68,4 +68,6 @@ static inline unsigned long sheep_emit(struct sheep_code *code,
 void sheep_code_dump(struct sheep_vm *, struct sheep_function *,
 		unsigned long, enum sheep_opcode, unsigned int);
 
+void sheep_code_disassemble(struct sheep_code *);
+
 #endif /* _SHEEP_CODE_H */

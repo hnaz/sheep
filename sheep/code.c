@@ -42,3 +42,15 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 	sheep_ddump(sheep);
 }
 
+void sheep_code_disassemble(struct sheep_code *code)
+{
+	unsigned long *codep = (unsigned long *)code->code.items;
+	enum sheep_opcode op;
+	unsigned int arg;
+
+	do {
+		sheep_decode(*codep, &op, &arg);
+		printf("  %-10s %5u\n", opnames[op], arg);
+		codep++;
+	} while (op != SHEEP_RET);
+}

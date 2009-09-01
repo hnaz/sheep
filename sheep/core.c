@@ -471,7 +471,7 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep;
 }
 
-/* (map fun list) */
+/* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t mapper, old, new, result = NULL;
@@ -505,6 +505,41 @@ out:
 	return result;
 }
 
+/* (disassemble function) */
+static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_function *function;
+	unsigned int nr_foreigns;
+	sheep_t callable;
+
+	if (sheep_unpack_stack("disassemble", vm, nr_args, "c", &callable))
+		return NULL;
+	
+	if (callable->type == &sheep_alien_type) {
+		struct sheep_alien *alien;
+
+		alien = sheep_data(callable);
+		printf("disassemble: %s is an alien\n", alien->name);
+		return &sheep_false;
+	}
+
+	function = sheep_data(callable);
+	if (function->foreigns) {
+		nr_foreigns = sheep_foreigns(function)->nr_items;
+		if (!sheep_active_closure(function))
+			nr_foreigns /= 2;
+	} else
+		nr_foreigns = 0;
+
+	__sheep_ddump(callable);
+	printf(", %u parameters, %u local slots, "
+		"%u foreign references\n", function->nr_parms,
+		function->nr_locals, nr_foreigns);
+
+	sheep_code_disassemble(&function->code);
+	return &sheep_true;
+}
+
 void sheep_core_init(struct sheep_vm *vm)
 {
 	sheep_map_set(&vm->specials, "quote", compile_quote);
@@ -529,6 +564,8 @@ void sheep_core_init(struct sheep_vm *vm)
 			sheep_make_alien(vm, eval_tail, "tail"));
 	sheep_module_shared(vm, &vm->main, "map",
 			sheep_make_alien(vm, eval_map, "map"));
+	sheep_module_shared(vm, &vm->main, "disassemble",
+			sheep_make_alien(vm, eval_disassemble, "disassemble"));
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

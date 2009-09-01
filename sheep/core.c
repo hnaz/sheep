@@ -405,57 +405,33 @@ static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_false;
 }
 
-/* (+ &rest numbers) */
+/* (+ a b) */
 static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
 {
-	double value = 0;
+	double value, *a, *b;
 
-	while (nr_args--) {
-		sheep_t sheep;
+	if (sheep_unpack_stack("+", vm, nr_args, "NN", &a, &b))
+		return NULL;
 
-		sheep = sheep_vector_pop(&vm->stack);
-		if (sheep->type != &sheep_number_type) {
-			fprintf(stderr, "+: expected number, got %s\n",
-				sheep->type->name);
-			return NULL;
-		}
-		value += *(double *)sheep_data(sheep);
-	}
-
+	value = *a + *b;
 	return sheep_make_number(vm, value);
 }
 
-/* (- &rest numbers) */
+/* (- a &optional b) */
 static sheep_t eval_minus(struct sheep_vm *vm, unsigned int nr_args)
 {
-	unsigned int nr = nr_args;
-	double value = value;
+	double value, *a, *b;
 
-	if (!nr_args) {
-		fprintf(stderr, "-: too few arguments\n");
-		return NULL;
+	if (nr_args == 1) {
+		if (sheep_unpack_stack("-", vm, nr_args, "N", &a))
+			return NULL;
+		return sheep_make_number(vm, -*a);
 	}
 
-	do {
-		sheep_t sheep;
+	if (sheep_unpack_stack("-", vm, nr_args, "NN", &a, &b))
+		return NULL;
 
-		sheep = vm->stack.items[vm->stack.nr_items - nr];
-		if (sheep->type != &sheep_number_type) {
-			fprintf(stderr, "-: expected number, got %s\n",
-				sheep->type->name);
-			return NULL;
-		}
-
-		if (nr == nr_args)
-			value = *(double *)sheep_data(sheep);
-		else
-			value -= *(double *)sheep_data(sheep);
-	} while (--nr);
-
-	if (nr_args == 1)
-		value = -value;
-
-	vm->stack.nr_items -= nr_args;
+	value = *a - *b;
 	return sheep_make_number(vm, value);
 }
 

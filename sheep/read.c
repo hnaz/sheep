@@ -93,8 +93,8 @@ static sheep_t read_atom(struct sheep_vm *vm, FILE *fp, int c)
 	char buf[512];
 	long number;
 
-	ungetc(c, fp);
-	if (read_token(fp, buf, 512, 0) < 0)
+	buf[0] = c;
+	if (read_token(fp, buf + 1, 511, 0) < 0)
 		return NULL;
 	if (!parse_number(buf, &number))
 		return sheep_make_number(vm, number);

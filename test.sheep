@@ -74,4 +74,7 @@ foo
     ()))
 (relist (list 1 2 3))
 
+(reduce - (list 100 50 20 10 5 2 1 1 1 1 1 1 1 1 1 1 1 1 1))
+(reduce + (list 1 2 3 4 5 6 7 8 9 10))
+
 (ddump (quote success!))

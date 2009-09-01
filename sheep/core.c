@@ -548,6 +548,35 @@ out:
 	return result;
 }
 
+/* (reduce function list) */
+static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t reducer, _list, a, b, value, result = NULL;
+	struct sheep_list *list;
+
+	if (sheep_unpack_stack("reduce", vm, nr_args, "cl", &reducer, &_list))
+		return NULL;
+	list = sheep_list(_list);
+	if (unpack("reduce", list, "oor!", &a, &b, &list))
+		return NULL;
+	sheep_protect(vm, reducer);
+	sheep_protect(vm, _list);
+	value = sheep_call(vm, reducer, 2, a, b);
+	if (!value)
+		goto out;
+	while (list->head) {
+		value = sheep_call(vm, reducer, 2, value, list->head);
+		if (!value)
+			goto out;
+		list = sheep_list(list->tail);
+	}
+	result = value;
+out:
+	sheep_unprotect(vm, _list);
+	sheep_unprotect(vm, reducer);
+	return result;
+}
+
 /* (disassemble function) */
 static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -604,6 +633,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "head", eval_head);
 	sheep_module_function(vm, &vm->main, "tail", eval_tail);
 	sheep_module_function(vm, &vm->main, "map", eval_map);
+	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
 }
 

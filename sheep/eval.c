@@ -117,7 +117,7 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 		else {
 			/*
 			 * The callstack contains
-			 *	[pc basep function]
+			 *	[codep basep function]
 			 * for every frame.
 			 */
 			offset = vm->calls.nr_items - 3 * offset - 1;
@@ -169,9 +169,8 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			struct sheep_function *function)
 {
-	struct sheep_code *current = code;
+	unsigned long basep, *codep = (unsigned long *)code->code.items;
 	unsigned int nesting = 0;
-	unsigned long basep, pc = 0;
 
 	if (function)
 		basep = vm->stack.nr_items - function->nr_locals;
@@ -184,7 +183,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		sheep_t tmp;
 		int done;
 
-		sheep_decode((unsigned long)current->code.items[pc], &op, &arg);
+		sheep_decode(*codep, &op, &arg);
 		/*sheep_code_dump(vm, function, basep, op, arg);*/
 
 		switch (op) {
@@ -231,14 +230,13 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 				break;
 			}
 
-			sheep_vector_push(&vm->calls, (void *)pc);
+			sheep_vector_push(&vm->calls, codep);
 			sheep_vector_push(&vm->calls, (void *)basep);
 			sheep_vector_push(&vm->calls, function);
 
 			function = sheep_data(tmp);
 			basep = vm->stack.nr_items - function->nr_locals;
-			current = &function->code;
-			pc = 0;
+			codep = (unsigned long *)function->code.code.items;
 			nesting++;
 			continue;
 		case SHEEP_RET:
@@ -259,24 +257,19 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 
 			function = sheep_vector_pop(&vm->calls);
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
-			pc = (unsigned long)sheep_vector_pop(&vm->calls);
-
-			if (function)
-				current = &function->code;
-			else
-				current = code;
+			codep = sheep_vector_pop(&vm->calls);
 			break;
 		case SHEEP_BRN:
 			tmp = sheep_vector_pop(&vm->stack);
 			if (sheep_test(tmp))
 				break;
 		case SHEEP_BR:
-			pc += arg;
+			codep += arg;
 			continue;
 		default:
 			abort();
 		}
-		pc++;
+		codep++;
 	}
 out:
 	return sheep_vector_pop(&vm->stack);

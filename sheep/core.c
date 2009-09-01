@@ -392,6 +392,19 @@ out:
 	return ret;
 }
 
+/* (bool object) */
+static sheep_t eval_bool(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("bool", vm, nr_args, "o", &sheep))
+		return NULL;
+
+	if (sheep_test(sheep))
+		return &sheep_true;
+	return &sheep_false;
+}
+
 /* (= a b) */
 static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -624,6 +637,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
+	sheep_module_function(vm, &vm->main, "bool", eval_bool);
 	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);

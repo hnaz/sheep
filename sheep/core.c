@@ -412,6 +412,40 @@ static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_make_number(vm, value);
 }
 
+/* (- &rest numbers) */
+static sheep_t eval_minus(struct sheep_vm *vm, unsigned int nr_args)
+{
+	unsigned int nr = nr_args;
+	double value = value;
+
+	if (!nr_args) {
+		fprintf(stderr, "-: too few arguments\n");
+		return NULL;
+	}
+
+	do {
+		sheep_t sheep;
+
+		sheep = vm->stack.items[vm->stack.nr_items - nr];
+		if (sheep->type != &sheep_number_type) {
+			fprintf(stderr, "-: expected number, got %s\n",
+				sheep->type->name);
+			return NULL;
+		}
+
+		if (nr == nr_args)
+			value = *(double *)sheep_data(sheep);
+		else
+			value -= *(double *)sheep_data(sheep);
+	} while (--nr);
+
+	if (nr_args == 1)
+		value = -value;
+
+	vm->stack.nr_items -= nr_args;
+	return sheep_make_number(vm, value);
+}
+
 /* (ddump expr) */
 static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -573,6 +607,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
+	sheep_module_function(vm, &vm->main, "-", eval_minus);
 	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
 	sheep_module_function(vm, &vm->main, "cons", eval_cons);
 	sheep_module_function(vm, &vm->main, "list", eval_list);

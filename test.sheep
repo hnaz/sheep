@@ -67,4 +67,11 @@ foo
        (list x x))
      (list 1 2 3 4))
 
+(function relist (list)
+  (if list
+    (cons (head list)
+          (relist (tail list)))
+    ()))
+(relist (list 1 2 3))
+
 (ddump (quote success!))

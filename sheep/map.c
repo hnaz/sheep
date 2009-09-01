@@ -30,12 +30,12 @@ enum access {
 	MAP_DELETE,
 };
 
-static struct sheep_map_entry **
-find(struct sheep_map *map, const char *name, int create)
+static struct sheep_map_entry **find(struct sheep_map *map,
+				const char *name, int create)
 {
 	struct sheep_map_entry **pentry, *entry;
 	int index;
-	
+
 	index = hash(name) % SHEEP_MAP_SIZE;
 	pentry = &map->entries[index];
 	while (*pentry) {

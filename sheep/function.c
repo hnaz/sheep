@@ -25,11 +25,11 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 
 			for (i = 0; i < foreigns->nr_items; i++) {
 				sheep_t *start, *end, *slot;
-				
+
 				start = (sheep_t *)vm->stack.items;
 				end = start + vm->stack.nr_items;
 				slot = foreigns->items[i];
-				
+
 				if (slot < start || slot >= end)
 					sheep_free(slot);
 			}

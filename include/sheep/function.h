@@ -64,8 +64,7 @@ static inline int sheep_active_closure(struct sheep_function *function)
 	return value & 1;
 }
 
-static inline struct sheep_vector *
-sheep_foreigns(struct sheep_function *function)
+static inline struct sheep_vector *sheep_foreigns(struct sheep_function *function)
 {
 	unsigned long value;
 

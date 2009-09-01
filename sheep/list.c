@@ -25,7 +25,7 @@ static void mark_list(sheep_t sheep)
 	 * sites, handle garbage collection cycles between setting the
 	 * head and setting the tail.
 	 */
-	if (list->tail)	
+	if (list->tail)
 		sheep_mark(list->tail);
 }
 

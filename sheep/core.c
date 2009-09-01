@@ -294,7 +294,8 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 	}
 
 	sheep_protect(vm, sheep);
-	ret = do_compile_block(vm, &function->code, function, &env, context, body);
+	ret = do_compile_block(vm, &function->code, function,
+			&env, context, body);
 	sheep_unprotect(vm, sheep);
 	if (ret) {
 		/*

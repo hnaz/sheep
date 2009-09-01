@@ -43,8 +43,7 @@ static inline void sheep_code_init(struct sheep_code *code)
 	*code = (struct sheep_code)SHEEP_CODE_INITIALIZER;
 }
 
-static inline unsigned long
-sheep_encode(enum sheep_opcode op, unsigned int arg)
+static inline unsigned long sheep_encode(enum sheep_opcode op, unsigned int arg)
 {
 	unsigned long code;
 
@@ -53,15 +52,15 @@ sheep_encode(enum sheep_opcode op, unsigned int arg)
 	return code;
 }
 
-static inline void
-sheep_decode(unsigned long code, enum sheep_opcode *op, unsigned int *arg)
+static inline void sheep_decode(unsigned long code, enum sheep_opcode *op,
+				unsigned int *arg)
 {
 	*op = code >> SHEEP_OPCODE_SHIFT;
 	*arg = code & ((1UL << SHEEP_OPCODE_SHIFT) - 1);
 }
 
-static inline unsigned long
-sheep_emit(struct sheep_code *code, enum sheep_opcode op, unsigned int arg)
+static inline unsigned long sheep_emit(struct sheep_code *code,
+				enum sheep_opcode op, unsigned int arg)
 {
 	return sheep_vector_push(&code->code, (void *)sheep_encode(op, arg));
 }

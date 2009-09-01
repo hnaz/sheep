@@ -41,4 +41,4 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 	printf("; ");
 	sheep_ddump(sheep);
 }
-		
+

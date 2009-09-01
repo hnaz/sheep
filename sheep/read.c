@@ -72,32 +72,26 @@ static sheep_t read_string(struct sheep_vm *vm, FILE *fp)
 	return sheep_make_string(vm, buf);
 }
 
-static int parse_number(const char *buf, long *number)
+static int parse_number(const char *buf, double *valuep)
 {
 	char *end;
-	long val;
 
-	val = strtol(buf, &end, 0);
+	*valuep = strtod(buf, &end);
 	if (*end)
 		return -1;
-	if (val < (LONG_MIN >> 1))
-		return -1;
-	if (val > (LONG_MAX >> 1))
-		return -1;
-	*number = val;
 	return 0;
 }
 
 static sheep_t read_atom(struct sheep_vm *vm, FILE *fp, int c)
 {
 	char buf[512];
-	long number;
+	double value;
 
 	buf[0] = c;
 	if (read_token(fp, buf + 1, 511, 0) < 0)
 		return NULL;
-	if (!parse_number(buf, &number))
-		return sheep_make_number(vm, number);
+	if (!parse_number(buf, &value))
+		return sheep_make_number(vm, value);
 	return sheep_make_name(vm, buf);
 }
 

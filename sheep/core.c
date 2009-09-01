@@ -392,6 +392,26 @@ out:
 	return ret;
 }
 
+/* (+ &rest numbers) */
+static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
+{
+	double value = 0;
+
+	while (nr_args--) {
+		sheep_t sheep;
+
+		sheep = sheep_vector_pop(&vm->stack);
+		if (sheep->type != &sheep_number_type) {
+			fprintf(stderr, "+: expected number, got %s\n",
+				sheep->type->name);
+			return NULL;
+		}
+		value += *(double *)sheep_data(sheep);
+	}
+
+	return sheep_make_number(vm, value);
+}
+
 /* (ddump expr) */
 static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -552,20 +572,14 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
 
-	sheep_module_shared(vm, &vm->main, "ddump",
-			sheep_make_alien(vm, eval_ddump, "ddump"));
-	sheep_module_shared(vm, &vm->main, "cons",
-			sheep_make_alien(vm, eval_cons, "cons"));
-	sheep_module_shared(vm, &vm->main, "list",
-			sheep_make_alien(vm, eval_list, "list"));
-	sheep_module_shared(vm, &vm->main, "head",
-			sheep_make_alien(vm, eval_head, "head"));
-	sheep_module_shared(vm, &vm->main, "tail",
-			sheep_make_alien(vm, eval_tail, "tail"));
-	sheep_module_shared(vm, &vm->main, "map",
-			sheep_make_alien(vm, eval_map, "map"));
-	sheep_module_shared(vm, &vm->main, "disassemble",
-			sheep_make_alien(vm, eval_disassemble, "disassemble"));
+	sheep_module_function(vm, &vm->main, "+", eval_plus);
+	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
+	sheep_module_function(vm, &vm->main, "cons", eval_cons);
+	sheep_module_function(vm, &vm->main, "list", eval_list);
+	sheep_module_function(vm, &vm->main, "head", eval_head);
+	sheep_module_function(vm, &vm->main, "tail", eval_tail);
+	sheep_module_function(vm, &vm->main, "map", eval_map);
+	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

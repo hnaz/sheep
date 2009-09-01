@@ -10,11 +10,6 @@
 
 extern const struct sheep_type sheep_number_type;
 
-sheep_t sheep_make_number(struct sheep_vm *, long);
-
-static inline long sheep_cnumber(sheep_t sheep)
-{
-	return (long)sheep_data(sheep) >> 1;
-}
+sheep_t sheep_make_number(struct sheep_vm *, double);
 
 #endif /* _SHEEP_NUMBER_H */

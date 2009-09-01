@@ -7,6 +7,7 @@
 #define _SHEEP_MODULE_H
 
 #include <sheep/object.h>
+#include <sheep/alien.h>
 #include <sheep/map.h>
 
 /* We get included by vm.h */
@@ -19,5 +20,13 @@ struct sheep_module {
 
 unsigned int sheep_module_shared(struct sheep_vm *, struct sheep_module *,
 				const char *, sheep_t);
+
+static inline void sheep_module_function(struct sheep_vm *vm,
+					struct sheep_module *module,
+					const char *name, sheep_alien_t alien)
+{
+	sheep_module_shared(vm, module, name,
+			sheep_make_alien(vm, alien, name));
+}
 
 #endif /* _SHEEP_MODULE_H */

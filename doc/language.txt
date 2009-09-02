@@ -1,0 +1,77 @@
+0. sheep language description
+
+1. special operators
+
+(quote expression)
+
+(block
+  &rest body)
+
+(if cond
+  then
+  &optional else)
+
+(with (&rest name-value-pairs)
+  &rest body)
+
+(variable name value)
+
+(set name value)
+
+(function (&rest parameters)
+  &rest body)
+
+(function name (&rest parameters)
+  &rest body)
+
+(load module-name)
+
+2. builtin functions
+
+(bool expression)
+
+(not expression)
+
+XXX: (number expression)
+
+(= a b)
+
+(+ a b)
+
+(- a &optional b)
+
+(* a b)
+
+(/ a b)
+
+(% a b)
+
+IMP: (string expression)
+
+(split delimiter string)
+
+IMP: (join delimiter list-of-strings)
+
+(cons item list)
+
+(list &rest items)
+
+(head list)
+
+(tail list)
+
+(map function list)
+
+(reduce function list)
+
+FIX: (reverse list)
+
+(length sequence)
+
+IMP: (concat sequence)
+
+IMP: (reverse sequence)
+
+THINK: (format expression)
+
+THINK: (print &rest expressions)

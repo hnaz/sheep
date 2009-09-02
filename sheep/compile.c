@@ -128,6 +128,18 @@ static unsigned int slot_foreign(struct sheep_context *context,
 		foreigns = sheep_malloc(sizeof(struct sheep_vector));
 		sheep_vector_init(foreigns, 4);
 		function->foreigns = foreigns;
+	} else {
+		unsigned int i;
+
+		for (i = 0; i < foreigns->nr_items; i += 2) {
+			unsigned int idist, islot;
+
+			idist = (unsigned long)foreigns->items[i];
+			islot = (unsigned long)foreigns->items[i + 1];
+
+			if (idist == dist && islot == slot)
+				return i / 2;
+		}
 	}
 	sheep_vector_push(foreigns, (void *)(unsigned long)dist);
 	sheep_vector_push(foreigns, (void *)(unsigned long)slot);
@@ -167,6 +179,37 @@ int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		break;
 	case ENV_FOREIGN:
 		slot = slot_foreign(context, dist, slot);
+		sheep_emit(context->code, SHEEP_FOREIGN, slot);
+		break;
+	}
+	return 0;
+}
+
+int sheep_compile_set(struct sheep_vm *vm, struct sheep_context *context,
+		sheep_t expr)
+{
+	unsigned int dist, slot;
+	enum env_level level;
+	const char *name;
+
+	name = sheep_cname(expr);
+	if (lookup(context, name, &dist, &slot, &level)) {
+		fprintf(stderr, "unbound name: %s\n", name);
+		return -1;
+	}
+
+	switch (level) {
+	case ENV_LOCAL:
+		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
+		sheep_emit(context->code, SHEEP_LOCAL, slot);
+		break;
+	case ENV_GLOBAL:
+		sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
+		sheep_emit(context->code, SHEEP_GLOBAL, slot);
+		break;
+	case ENV_FOREIGN:
+		slot = slot_foreign(context, dist, slot);
+		sheep_emit(context->code, SHEEP_SET_FOREIGN, slot);
 		sheep_emit(context->code, SHEEP_FOREIGN, slot);
 		break;
 	}

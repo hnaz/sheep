@@ -57,6 +57,7 @@ static inline unsigned int sheep_slot_local(struct sheep_context *context)
 
 int sheep_compile_constant(struct sheep_vm *, struct sheep_context *, sheep_t);
 int sheep_compile_name(struct sheep_vm *, struct sheep_context *, sheep_t);
+int sheep_compile_set(struct sheep_vm *, struct sheep_context *, sheep_t);
 int sheep_compile_list(struct sheep_vm *, struct sheep_context *, sheep_t);
 
 #endif /* _SHEEP_COMPILE_H */

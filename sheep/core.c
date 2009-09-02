@@ -358,6 +358,21 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 	return 0;
 }
 
+/* (set name value) */
+static int compile_set(struct sheep_vm *vm, struct sheep_context *context,
+		struct sheep_list *args)
+{
+	sheep_t name, value;
+
+	if (unpack("set", args, "ao", &name, &value))
+		return -1;
+
+	if (value->type->compile(vm, context, value))
+		return -1;
+
+	return sheep_compile_set(vm, context, name);
+}
+
 int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 		unsigned int nr_args, const char *items, ...)
 {
@@ -725,6 +740,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
 	sheep_map_set(&vm->specials, "if", compile_if);
+	sheep_map_set(&vm->specials, "set", compile_set);
 
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);

@@ -336,14 +336,18 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (unpack("if", args, "oor", &cond, &then, &elseform))
 		return -1;
+
 	if (cond->type->compile(vm, context, cond))
 		return -1;
 	belse = sheep_emit(context->code, SHEEP_BRN, 0);
+
 	if (then->type->compile(vm, context, then))
 		return -1;
 	bend = sheep_emit(context->code, SHEEP_BR, 0);
+
 	context->code->code.items[belse] =
 		(void *)sheep_encode(SHEEP_BRN, bend + 1 - belse);
+
 	if (elseform->head) {
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))
@@ -353,6 +357,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 					sheep_make_name(vm, "false")))
 			return -1;
 	}
+
 	context->code->code.items[bend] =
 		(void *)sheep_encode(SHEEP_BR,
 				context->code->code.nr_items - bend);
@@ -543,10 +548,13 @@ static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t item, list, new;
 
 	new = sheep_make_list(vm, NULL, NULL);
+
 	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
 		return NULL;
+
 	sheep_list(new)->head = item;
 	sheep_list(new)->tail = list;
+
 	return new;
 }
 
@@ -610,22 +618,23 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *l_old;
 	sheep_t old, new;
 
-	new = sheep_make_list(vm, NULL, NULL);
 	if (sheep_unpack_stack("reverse", vm, nr_args, "l", &old))
 		return NULL;
-
 	sheep_protect(vm, old);
+
+	new = sheep_make_list(vm, NULL, NULL);
 	sheep_protect(vm, new);
 
 	l_old = sheep_list(old);
 	while (l_old->head) {
-		sheep_t tmp;
+		sheep_t new_head;
 
-		tmp = sheep_make_list(vm, l_old->head, new);
+		new_head = sheep_make_list(vm, l_old->head, new);
+
 		sheep_unprotect(vm, new);
-		sheep_protect(vm, tmp);
-		new = tmp;
+		sheep_protect(vm, new_head);
 
+		new = new_head;
 		l_old = sheep_list(l_old->tail);
 	}
 
@@ -664,11 +673,11 @@ static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 	sheep_protect(vm, token_);
 
-	token = sheep_rawstring(token_);
-	empty = !strlen(token);
-
 	list_ = sheep_make_list(vm, NULL, NULL);
 	sheep_protect(vm, list_);
+
+	token = sheep_rawstring(token_);
+	empty = !strlen(token);
 
 	list = sheep_list(list_);
 	pos = orig = sheep_strdup(string);
@@ -709,13 +718,13 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 
 	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old))
 		return NULL;
-
 	sheep_protect(vm, mapper);
 	sheep_protect(vm, old);
-	l_old = sheep_list(old);
 
 	new = sheep_make_list(vm, NULL, NULL);
 	sheep_protect(vm, new);
+
+	l_old = sheep_list(old);
 	l_new = sheep_list(new);
 
 	while (l_old->head) {
@@ -726,31 +735,35 @@ static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 		l_new = sheep_list(l_new->tail);
 		l_old = sheep_list(l_old->tail);
 	}
-
 	result = new;
 out:
 	sheep_unprotect(vm, new);
 	sheep_unprotect(vm, old);
 	sheep_unprotect(vm, mapper);
+
 	return result;
 }
 
 /* (reduce function list) */
 static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
 {
-	sheep_t reducer, _list, a, b, value, result = NULL;
+	sheep_t reducer, list_, a, b, value, result = NULL;
 	struct sheep_list *list;
 
-	if (sheep_unpack_stack("reduce", vm, nr_args, "cl", &reducer, &_list))
+	if (sheep_unpack_stack("reduce", vm, nr_args, "cl", &reducer, &list_))
 		return NULL;
-	list = sheep_list(_list);
+
+	sheep_protect(vm, reducer);
+	sheep_protect(vm, list_);
+
+	list = sheep_list(list_);
 	if (unpack("reduce", list, "oor!", &a, &b, &list))
 		return NULL;
-	sheep_protect(vm, reducer);
-	sheep_protect(vm, _list);
+
 	value = sheep_call(vm, reducer, 2, a, b);
 	if (!value)
 		goto out;
+
 	while (list->head) {
 		value = sheep_call(vm, reducer, 2, value, list->head);
 		if (!value)
@@ -759,8 +772,9 @@ static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
 	}
 	result = value;
 out:
-	sheep_unprotect(vm, _list);
+	sheep_unprotect(vm, list_);
 	sheep_unprotect(vm, reducer);
+
 	return result;
 }
 

@@ -50,7 +50,7 @@ void sheep_code_disassemble(struct sheep_code *code)
 
 	do {
 		sheep_decode(*codep, &op, &arg);
-		printf("  %-10s %5u\n", opnames[op], arg);
+		printf("  %-12s %5u\n", opnames[op], arg);
 		codep++;
 	} while (op != SHEEP_RET);
 }

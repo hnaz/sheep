@@ -431,34 +431,82 @@ static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_false;
 }
 
-/* (+ a b) */
-static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
+			const char *operation)
 {
 	double value, *a, *b;
 
-	if (sheep_unpack_stack("+", vm, nr_args, "NN", &a, &b))
+	if (sheep_unpack_stack(operation, vm, nr_args, "NN", &a, &b))
 		return NULL;
 
-	value = *a + *b;
+	switch (*operation) {
+	case '+':
+		value = *a + *b;
+		break;
+	case '-':
+		value = *a - *b;
+		break;
+	case '*':
+		value = *a * *b;
+		break;
+	case '/':
+		value = *a / *b;
+		break;
+	case '%': {
+		long la, lb;
+
+		la = *a;
+		lb = *b;
+		if (la != *a || lb != *b) {
+			fprintf(stderr, "%%: having problems...\n");
+			return NULL;
+		}
+		value = la % lb;
+		break;
+	}
+	default:
+		sheep_bug("unknown arithmetic operation");
+	}
+
 	return sheep_make_number(vm, value);
+}
+
+/* (+ a b) */
+static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_arith(vm, nr_args, "+");
 }
 
 /* (- a &optional b) */
 static sheep_t eval_minus(struct sheep_vm *vm, unsigned int nr_args)
 {
-	double value, *a, *b;
-
 	if (nr_args == 1) {
-		if (sheep_unpack_stack("-", vm, nr_args, "N", &a))
+		double *num;
+
+		if (sheep_unpack_stack("-", vm, nr_args, "N", &num))
 			return NULL;
-		return sheep_make_number(vm, -*a);
+		return sheep_make_number(vm, -*num);
 	}
 
-	if (sheep_unpack_stack("-", vm, nr_args, "NN", &a, &b))
-		return NULL;
+	return do_arith(vm, nr_args, "-");
+}
 
-	value = *a - *b;
-	return sheep_make_number(vm, value);
+/* (* a b) */
+static sheep_t eval_multiply(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_arith(vm, nr_args, "*");
+}
+
+/* (/ a b) */
+static sheep_t eval_divide(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_arith(vm, nr_args, "/");
+}
+
+/* (% a b) */
+static sheep_t eval_modulo(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_arith(vm, nr_args, "%");
 }
 
 /* (ddump expr) */
@@ -655,6 +703,9 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
+	sheep_module_function(vm, &vm->main, "*", eval_multiply);
+	sheep_module_function(vm, &vm->main, "/", eval_divide);
+	sheep_module_function(vm, &vm->main, "%", eval_modulo);
 	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
 	sheep_module_function(vm, &vm->main, "cons", eval_cons);
 	sheep_module_function(vm, &vm->main, "list", eval_list);

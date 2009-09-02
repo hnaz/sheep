@@ -19,6 +19,7 @@
 #include <sheep/map.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
+#include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -634,6 +635,72 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	return new;
 }
 
+static char *do_split(char **stringp, const char *delim)
+{
+	char *match, *result;
+
+	match = strstr(*stringp, delim);
+	result = *stringp;
+	if (!match) {
+		*stringp = NULL;
+		return result;
+	}
+
+	*match = 0;
+	*stringp = match + strlen(delim);
+	return result;
+}
+
+/* (split string string) */
+static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
+{
+	const char *string, *token;
+	struct sheep_list *list;
+	sheep_t list_, token_;
+	char *pos, *orig;
+	int empty;
+
+	if (sheep_unpack_stack("split", vm, nr_args, "sS", &token_, &string))
+		return NULL;
+	sheep_protect(vm, token_);
+
+	token = sheep_rawstring(token_);
+	empty = !strlen(token);
+
+	list_ = sheep_make_list(vm, NULL, NULL);
+	sheep_protect(vm, list_);
+
+	list = sheep_list(list_);
+	pos = orig = sheep_strdup(string);
+	while (pos) {
+		sheep_t item;
+		/*
+		 * Empty splitting separates out every single
+		 * character: (split "" "foo") => ("f" "o" "o")
+		 */
+		if (empty) {
+			char str[2] = { *pos, 0 };
+
+			item = sheep_make_string(vm, str);
+			if (!pos[0] || !pos[1])
+				pos = NULL;
+			else
+				pos++;
+		} else
+			item = sheep_make_string(vm, do_split(&pos, token));
+
+		list->head = item;
+		list->tail = sheep_make_list(vm, NULL, NULL);
+		list = sheep_list(list->tail);
+	}
+	sheep_free(orig);
+
+	sheep_unprotect(vm, list_);
+	sheep_unprotect(vm, token_);
+
+	return list_;
+}
+
 /* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -759,6 +826,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "head", eval_head);
 	sheep_module_function(vm, &vm->main, "tail", eval_tail);
 	sheep_module_function(vm, &vm->main, "reverse", eval_reverse);
+	sheep_module_function(vm, &vm->main, "split", eval_split);
 	sheep_module_function(vm, &vm->main, "map", eval_map);
 	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);

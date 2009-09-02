@@ -1,0 +1,14 @@
+(function make-ring (items)
+  (with (pos items)
+    (function ()
+      (if (not pos)
+        (set pos items))
+      (with (item (head pos))
+        (set pos (tail pos))
+        item))))
+
+# example usage:
+(with (ring (make-ring (list 2 4)))
+  (map (function (n)
+         (* n (ring)))
+       (list 1 2 3 4)))

@@ -588,6 +588,37 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep;
 }
 
+/* (reverse list) */
+static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *l_old;
+	sheep_t old, new;
+
+	new = sheep_make_list(vm, NULL, NULL);
+	if (sheep_unpack_stack("reverse", vm, nr_args, "l", &old))
+		return NULL;
+
+	sheep_protect(vm, old);
+	sheep_protect(vm, new);
+
+	l_old = sheep_list(old);
+	while (l_old->head) {
+		sheep_t tmp;
+
+		tmp = sheep_make_list(vm, l_old->head, new);
+		sheep_unprotect(vm, new);
+		sheep_protect(vm, tmp);
+		new = tmp;
+
+		l_old = sheep_list(l_old->tail);
+	}
+
+	sheep_unprotect(vm, new);
+	sheep_unprotect(vm, old);
+
+	return new;
+}
+
 /* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -711,6 +742,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "list", eval_list);
 	sheep_module_function(vm, &vm->main, "head", eval_head);
 	sheep_module_function(vm, &vm->main, "tail", eval_tail);
+	sheep_module_function(vm, &vm->main, "reverse", eval_reverse);
 	sheep_module_function(vm, &vm->main, "map", eval_map);
 	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);

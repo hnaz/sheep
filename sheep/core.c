@@ -778,6 +778,27 @@ out:
 	return result;
 }
 
+/* (length sequence) */
+static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
+{
+	unsigned int len;
+	sheep_t seq;
+	
+	if (sheep_unpack_stack("length", vm, nr_args, "q", &seq))
+		return NULL;
+
+	if (seq->type == &sheep_string_type)
+		len = strlen(sheep_rawstring(seq));
+	else {
+		struct sheep_list *list;
+
+		list = sheep_list(seq);
+		for (len = 0; list->head; list = sheep_list(list->tail))
+			len++;
+	}
+	return sheep_make_number(vm, len);
+}
+
 /* (disassemble function) */
 static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -843,6 +864,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "split", eval_split);
 	sheep_module_function(vm, &vm->main, "map", eval_map);
 	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
+	sheep_module_function(vm, &vm->main, "length", eval_length);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
 }
 

@@ -5,7 +5,10 @@
 
 (function diff-multiple (n mult)
   "Difference between N and the next multiple of MULT."
-  (- mult (% n mult)))
+  (with (rest (% n mult))
+    (if rest
+      (- mult rest)
+      rest)))
 
 (function digits (n)
   "Make a list of digits in the number N."

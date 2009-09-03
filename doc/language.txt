@@ -32,7 +32,7 @@
 
 (not expression)
 
-XXX: (number expression)
+(number expression)
 
 (= a b)
 
@@ -46,7 +46,9 @@ XXX: (number expression)
 
 (% a b)
 
-IMP: (string expression)
+(string number-or-string)
+
+XXX: (string everything)
 
 (split delimiter string)
 
@@ -69,7 +71,5 @@ IMP: (join delimiter list-of-strings)
 (concat sequence)
 
 (reverse sequence)
-
-THINK: (format expression)
 
 THINK: (print &rest expressions)

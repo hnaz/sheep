@@ -19,6 +19,7 @@
 #include <sheep/map.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -452,6 +453,34 @@ static sheep_t eval_not(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_true;
 }
 
+/* (number expression) */
+static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("number", vm, nr_args, "o", &sheep))
+		return NULL;
+
+	if (sheep->type == &sheep_number_type)
+		return sheep;
+
+	if (sheep->type == &sheep_string_type) {
+		double value;
+		char *end;
+
+		value = strtod(sheep_rawstring(sheep), &end);
+		if (*end) {
+			fprintf(stderr, "number: can not convert \"%s\"\n",
+				sheep_rawstring(sheep));
+			return NULL;
+		}
+		return sheep_make_number(vm, value);
+	}
+
+	fprintf(stderr, "number: can not convert %s\n", sheep->type->name);
+	return NULL;
+}
+
 static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
 			const char *operation)
 {
@@ -528,6 +557,28 @@ static sheep_t eval_divide(struct sheep_vm *vm, unsigned int nr_args)
 static sheep_t eval_modulo(struct sheep_vm *vm, unsigned int nr_args)
 {
 	return do_arith(vm, nr_args, "%");
+}
+
+/* (string expression) */
+static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
+		return NULL;
+
+	if (sheep->type == &sheep_string_type)
+		return sheep;
+
+	if (sheep->type == &sheep_number_type) {
+		char buf[32];
+
+		sprintf(buf, "%.14g", *(double *)sheep_data(sheep));
+		return sheep_make_string(vm, buf);
+	}
+
+	fprintf(stderr, "string: can not convert %s\n", sheep->type->name);
+	return NULL;
 }
 
 static char *do_split(char **stringp, const char *delim)
@@ -837,6 +888,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "bool", eval_bool);
 	sheep_module_function(vm, &vm->main, "not", eval_not);
 
+	sheep_module_function(vm, &vm->main, "number", eval_number);
 	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
@@ -844,6 +896,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "/", eval_divide);
 	sheep_module_function(vm, &vm->main, "%", eval_modulo);
 
+	sheep_module_function(vm, &vm->main, "string", eval_string);
 	sheep_module_function(vm, &vm->main, "split", eval_split);
 
 	sheep_module_function(vm, &vm->main, "cons", eval_cons);

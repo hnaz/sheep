@@ -35,4 +35,11 @@ take the difference from the next multiple of ten."
                            (reverse (digits ean))))
                  10))
 
-(ddump (ean-checksum 12345))
+(function ean-checksum-range (base count)
+  (if count
+    (block
+      (ddump (number (concat (string base)
+                             (string (ean-checksum base)))))
+      (ean-checksum-range (+ base 1) (- count 1)))))
+
+(ean-checksum-range 12345 50)

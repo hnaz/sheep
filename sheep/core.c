@@ -609,6 +609,7 @@ static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("split", vm, nr_args, "sS", &token_, &string))
 		return NULL;
 	sheep_protect(vm, token_);
+	pos = orig = sheep_strdup(string);
 
 	list_ = sheep_make_list(vm, NULL, NULL);
 	sheep_protect(vm, list_);
@@ -617,7 +618,6 @@ static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
 	empty = !strlen(token);
 
 	list = sheep_list(list_);
-	pos = orig = sheep_strdup(string);
 	while (pos) {
 		sheep_t item;
 		/*

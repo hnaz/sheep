@@ -11,6 +11,85 @@
 
 #include <sheep/list.h>
 
+static unsigned long list_length(sheep_t sheep)
+{
+	struct sheep_list *list;
+	unsigned long len;
+
+	list = sheep_list(sheep);
+	for (len = 0; list->head; list = sheep_list(list->tail))
+		len++;
+	return len;
+}
+
+static sheep_t do_list_concat(struct sheep_vm *vm, sheep_t base, sheep_t tail)
+{
+	struct sheep_list *pos;
+
+	for (pos = sheep_list(tail); pos->head; pos = sheep_list(pos->tail)) {
+		struct sheep_list *node;
+
+		node = sheep_list(base);
+		node->head = pos->head;
+		node->tail = sheep_make_list(vm, NULL, NULL);
+		base = node->tail;
+	}
+	return base;
+}
+
+static sheep_t list_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
+{
+	sheep_t result, pos;
+
+	sheep_protect(vm, a);
+	sheep_protect(vm, b);
+
+	result = pos = sheep_make_list(vm, NULL, NULL);
+	sheep_protect(vm, result);
+
+	pos = do_list_concat(vm, result, a);
+	do_list_concat(vm, pos, b);
+
+	sheep_unprotect(vm, result);
+	sheep_unprotect(vm, b);
+	sheep_unprotect(vm, a);
+
+	return result;
+}
+
+static sheep_t list_reverse(struct sheep_vm *vm, sheep_t sheep)
+{
+	struct sheep_list *old;
+	sheep_t new;
+
+	sheep_protect(vm, sheep);
+
+	new = sheep_make_list(vm, NULL, NULL);
+	sheep_protect(vm, new);
+
+	for (old = sheep_list(sheep); old->head; old = sheep_list(old->tail)) {
+		sheep_t new_head;
+
+		new_head = sheep_make_list(vm, old->head, new);
+
+		sheep_unprotect(vm, new);
+		sheep_protect(vm, new_head);
+
+		new = new_head;
+	}
+
+	sheep_unprotect(vm, new);
+	sheep_unprotect(vm, sheep);
+
+	return new;
+}
+
+static const struct sheep_sequence list_sequence = {
+	.length = list_length,
+	.concat = list_concat,
+	.reverse = list_reverse,
+};
+
 static void mark_list(sheep_t sheep)
 {
 	struct sheep_list *list;
@@ -78,6 +157,7 @@ const struct sheep_type sheep_list_type = {
 	.compile = sheep_compile_list,
 	.test = test_list,
 	.equal = equal_list,
+	.sequence = &list_sequence,
 	.ddump = ddump_list,
 };
 

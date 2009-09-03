@@ -666,38 +666,6 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep;
 }
 
-/* (reverse list) */
-static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
-{
-	struct sheep_list *l_old;
-	sheep_t old, new;
-
-	if (sheep_unpack_stack("reverse", vm, nr_args, "l", &old))
-		return NULL;
-	sheep_protect(vm, old);
-
-	new = sheep_make_list(vm, NULL, NULL);
-	sheep_protect(vm, new);
-
-	l_old = sheep_list(old);
-	while (l_old->head) {
-		sheep_t new_head;
-
-		new_head = sheep_make_list(vm, l_old->head, new);
-
-		sheep_unprotect(vm, new);
-		sheep_protect(vm, new_head);
-
-		new = new_head;
-		l_old = sheep_list(l_old->tail);
-	}
-
-	sheep_unprotect(vm, new);
-	sheep_unprotect(vm, old);
-
-	return new;
-}
-
 /* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -775,16 +743,36 @@ static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("length", vm, nr_args, "q", &seq))
 		return NULL;
 
-	if (seq->type == &sheep_string_type)
-		len = strlen(sheep_rawstring(seq));
-	else {
-		struct sheep_list *list;
-
-		list = sheep_list(seq);
-		for (len = 0; list->head; list = sheep_list(list->tail))
-			len++;
-	}
+	len = seq->type->sequence->length(seq);
 	return sheep_make_number(vm, len);
+}
+
+/* (concat a b) */
+static sheep_t eval_concat(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t a, b;
+
+	if (sheep_unpack_stack("concat", vm, nr_args, "qq", &a, &b))
+		return NULL;
+
+	if (a->type != b->type) {
+		fprintf(stderr, "concat: can not concat %s and %s\n",
+			a->type->name, b->type->name);
+		return NULL;
+	}
+
+	return a->type->sequence->concat(vm, a, b);
+}
+
+/* (reverse sequence) */
+static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("reverse", vm, nr_args, "q", &sheep))
+		return NULL;
+
+	return sheep->type->sequence->reverse(vm, sheep);
 }
 
 /* (ddump expr) */
@@ -846,25 +834,30 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
-
 	sheep_module_function(vm, &vm->main, "bool", eval_bool);
 	sheep_module_function(vm, &vm->main, "not", eval_not);
+
 	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
 	sheep_module_function(vm, &vm->main, "*", eval_multiply);
 	sheep_module_function(vm, &vm->main, "/", eval_divide);
 	sheep_module_function(vm, &vm->main, "%", eval_modulo);
-	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
+
+	sheep_module_function(vm, &vm->main, "split", eval_split);
+
 	sheep_module_function(vm, &vm->main, "cons", eval_cons);
 	sheep_module_function(vm, &vm->main, "list", eval_list);
 	sheep_module_function(vm, &vm->main, "head", eval_head);
 	sheep_module_function(vm, &vm->main, "tail", eval_tail);
+
+	sheep_module_function(vm, &vm->main, "length", eval_length);
+	sheep_module_function(vm, &vm->main, "concat", eval_concat);
 	sheep_module_function(vm, &vm->main, "reverse", eval_reverse);
-	sheep_module_function(vm, &vm->main, "split", eval_split);
 	sheep_module_function(vm, &vm->main, "map", eval_map);
 	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
-	sheep_module_function(vm, &vm->main, "length", eval_length);
+
+	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
 }
 

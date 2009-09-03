@@ -13,6 +13,12 @@ typedef struct sheep_object * sheep_t;
 struct sheep_context;
 struct sheep_vm;
 
+struct sheep_sequence {
+	unsigned long (*length)(sheep_t);
+	sheep_t (*concat)(struct sheep_vm *, sheep_t, sheep_t);
+	sheep_t (*reverse)(struct sheep_vm *, sheep_t);
+};
+
 struct sheep_type {
 	const char *name;
 
@@ -23,6 +29,8 @@ struct sheep_type {
 
 	int (*test)(sheep_t);
 	int (*equal)(sheep_t, sheep_t);
+
+	const struct sheep_sequence *sequence;
 
 	void (*ddump)(sheep_t);
 };

@@ -64,13 +64,11 @@ IMP: (join delimiter list-of-strings)
 
 (reduce function list)
 
-FIX: (reverse list)
-
 (length sequence)
 
-IMP: (concat sequence)
+(concat sequence)
 
-IMP: (reverse sequence)
+(reverse sequence)
 
 THINK: (format expression)
 

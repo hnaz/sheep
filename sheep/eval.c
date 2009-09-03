@@ -71,6 +71,24 @@ static void close_pending(struct sheep_vm *vm, unsigned long basep)
 		struct sheep_pending *next;
 		sheep_t value;
 
+		/*
+		 * there is a problem... pushing to the stack could
+		 * mean realloc, could mean moving the whole thing
+		 * while we have pointers into it.
+		 *
+		 * two possibilities: make the stack static and don't
+		 * move it around, thereby imposing an artificial
+		 * limit -- OR -- handle foreign slots relative to the
+		 * stackbase if open and private if preserved.  both
+		 * suck :(
+		 *
+		 * there is another problem... the foreign slots we
+		 * point to may have become garbage by the time we try
+		 * to close them and we read/write to dead memory.
+		 *
+		 * how to detect if the function is no longer alive?
+		 */
+
 		value = **vm->pending->slotp;
 		*vm->pending->slotp = sheep_malloc(sizeof(sheep_t *));
 		**vm->pending->slotp = value;
@@ -184,7 +202,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		int done;
 
 		sheep_decode(*codep, &op, &arg);
-		/*sheep_code_dump(vm, function, basep, op, arg);*/
+		//sheep_code_dump(vm, function, basep, op, arg);
 
 		switch (op) {
 		case SHEEP_DROP:

@@ -109,7 +109,7 @@ static int lookup(struct sheep_context *context, const char *name,
 
 	if (!current->function)
 		*env_level = ENV_GLOBAL;
-	else if (current == context)
+	else if (!distance)
 		*env_level = ENV_LOCAL;
 	else
 		*env_level = ENV_FOREIGN;

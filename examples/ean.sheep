@@ -1,0 +1,38 @@
+# ean.sheep
+
+(function sum (seq)
+  (reduce + seq))
+
+(function diff-multiple (n mult)
+  "Difference between N and the next multiple of MULT."
+  (- mult (% n mult)))
+
+(function digits (n)
+  "Make a list of digits in the number N."
+  (map number (split "" (string n))))
+
+(function make-ring (items)
+  "Create a ring generator that returns the items in
+ITEMS sequentially in subsequent calls, restarting from
+the beginning when reaching the end."
+  (with (pos items)
+    (function ()
+      (if (not pos)
+        (set pos items))
+      (with (item (head pos))
+        (set pos (tail pos))
+        item))))
+
+(function ean-checksum (ean)
+  "Checksum EAN: multiply each digit in the number
+with 3 and 1 alternatingly, sum up the results and
+take the difference from the next multiple of ten."
+  (function multiplier ()
+    (with (ring (make-ring (list 3 1)))
+      (function (digit)
+        (* digit (ring)))))
+  (diff-multiple (sum (map (multiplier)
+                           (reverse (digits ean))))
+                 10))
+
+(ddump (ean-checksum 12345))

@@ -11,6 +11,26 @@
 
 #include <sheep/function.h>
 
+static void mark_function(sheep_t sheep)
+{
+	struct sheep_function *function;
+
+	function = sheep_data(sheep);
+	if (sheep_active_closure(function)) {
+		struct sheep_vector *foreigns;
+		unsigned int i;
+
+		foreigns = sheep_foreigns(function);
+		/*
+		 * Could skip live stack slot references here, but
+		 * just letting sheep_mark() figure it out is probably
+		 * faster...
+		 */
+		for (i = 0; i < foreigns->nr_items; i++)
+			sheep_mark(*(sheep_t *)foreigns->items[i]);
+	}
+}
+
 static void free_function(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *function;
@@ -56,6 +76,7 @@ static void function_ddump(sheep_t sheep)
 
 const struct sheep_type sheep_function_type = {
 	.name = "function",
+	.mark = mark_function,
 	.free = free_function,
 	.ddump = function_ddump,
 };

@@ -187,13 +187,12 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			struct sheep_function *function)
 {
-	unsigned long basep, *codep = (unsigned long *)code->code.items;
+	unsigned long *codep = (unsigned long *)code->code.items;
+	unsigned long basep = vm->stack.nr_items;
 	unsigned int nesting = 0;
 
 	if (function)
-		basep = vm->stack.nr_items - function->nr_locals;
-	else
-		basep = 0;
+		basep -= function->nr_locals;
 
 	for (;;) {
 		enum sheep_opcode op;

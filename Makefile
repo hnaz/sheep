@@ -1,11 +1,13 @@
-VERSION	= 0.1
-NAME	= Klaatu
+VERSION = 0.1
+NAME = Klaatu
 
-CC	= gcc
-CPP	= cpp
+CC = gcc
+CPP = cpp
+CFLAGS = -Os -pipe
+LDFLAGS =
 
-CFLAGS	= -Os -pipe -Wall -Wextra -Wno-unused-parameter
-LDFLAGS	=
+SCFLAGS = -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
+SLDFLAGS = $(LDFLAGS)
 
 ifeq ($(V),1)
 Q	=
@@ -24,11 +26,11 @@ sheep-clean	:= sheep/sheep $(sheep-obj) include/sheep/config.h	\
 
 sheep/sheep: $(sheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
-		$(CC) -o $@ $^ $(LDFLAGS))
+		$(CC) -o $@ $^ $(SLDFLAGS))
 
 %.o: %.c include/sheep/config.h sheep/make.deps
 	$(Q)$(call cmd, "   CC     $@",					\
-		$(CC) $(CFLAGS) -Iinclude -o $@ -c $<)
+		$(CC) $(SCFLAGS) -Iinclude -o $@ -c $<)
 
 include/sheep/config.h:
 	$(Q)$(call cmd, "   CONF   $@",					\

@@ -12,8 +12,6 @@
 
 #include <sheep/string.h>
 
-static sheep_t make_string(struct sheep_vm *, char *);
-
 static unsigned long string_length(sheep_t sheep)
 {
 	return strlen(sheep_rawstring(sheep));
@@ -35,7 +33,7 @@ static sheep_t string_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
 	memcpy(result, sa, len_a);
 	strcpy(result + len_a, sb);
 
-	return make_string(vm, result);
+	return __sheep_make_string(vm, result);
 }
 
 static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
@@ -52,7 +50,7 @@ static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
 		result[pos] = string[len - pos - 1];
 	result[pos] = 0;
 
-	return make_string(vm, result);
+	return __sheep_make_string(vm, result);
 }
 
 static const struct sheep_sequence string_sequence = {
@@ -91,12 +89,12 @@ const struct sheep_type sheep_string_type = {
 	.ddump = ddump_string,
 };
 
-static sheep_t make_string(struct sheep_vm *vm, char *str)
+sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str)
 {
-	return sheep_make_object(vm, &sheep_string_type, str);
+	return sheep_make_object(vm, &sheep_string_type, (char *)str);
 }
 
 sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 {
-	return make_string(vm, sheep_strdup(str));
+	return __sheep_make_string(vm, sheep_strdup(str));
 }

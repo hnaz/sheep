@@ -647,6 +647,56 @@ static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
 	return list_;
 }
 
+/* (join delimiter list-of-strings) */
+static sheep_t eval_join(struct sheep_vm *vm, unsigned int nr_args)
+{
+	char *new = NULL, *result = NULL;
+	size_t length = 0, dlength;
+	struct sheep_list *list;
+	sheep_t delim_, list_;
+	const char *delim;
+
+	if (sheep_unpack_stack("join", vm, nr_args, "sl", &delim_, &list_))
+		return NULL;
+
+	sheep_protect(vm, delim_);
+	sheep_protect(vm, list_);
+
+	delim = sheep_rawstring(delim_);
+	list = sheep_list(list_);
+
+	dlength = strlen(delim);
+
+	while (list->head) {
+		const char *string;
+		size_t newlength;
+
+		if (unpack("join", list, "Sr", &string, &list))
+			goto out;
+
+		newlength = length + strlen(string);
+		if (list->head)
+			newlength += dlength;
+		new = sheep_realloc(new, newlength + 1);
+		strcpy(new + length, string);
+		if (list->head)
+			strcpy(new + newlength - dlength, delim);
+		length = newlength;
+	}
+
+	if (new)
+		result = new;
+	else
+		result = sheep_strdup("");
+out:
+	sheep_unprotect(vm, list_);
+	sheep_unprotect(vm, delim_);
+
+	if (result)
+		return __sheep_make_string(vm, result);
+	return NULL;
+}
+
 /* (cons item list) */
 static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -898,6 +948,7 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_function(vm, &vm->main, "string", eval_string);
 	sheep_module_function(vm, &vm->main, "split", eval_split);
+	sheep_module_function(vm, &vm->main, "join", eval_join);
 
 	sheep_module_function(vm, &vm->main, "cons", eval_cons);
 	sheep_module_function(vm, &vm->main, "list", eval_list);

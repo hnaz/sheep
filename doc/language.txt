@@ -24,7 +24,7 @@
 (function name (&rest parameters)
   &rest body)
 
-(load module-name)
+IMPL: (load module-name)
 
 2. builtin functions
 
@@ -52,7 +52,7 @@ XXX: (string everything)
 
 (split delimiter string)
 
-IMP: (join delimiter list-of-strings)
+(join delimiter list-of-strings)
 
 (cons item list)
 

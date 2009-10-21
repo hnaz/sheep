@@ -89,7 +89,7 @@ static int unpack(const char *caller, struct sheep_list *list,
 			/*
 			 * "r!" makes sure the rest is non-empty
 			 */
-			if (items[1] == '!' && !list)
+			if (items[1] == '!' && !list->head)
 				break;
 			*va_arg(ap, struct sheep_list **) = list;
 			ret = 0;

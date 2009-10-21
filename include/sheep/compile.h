@@ -40,9 +40,9 @@ static inline struct sheep_code *sheep_compile(struct sheep_vm *vm, sheep_t exp)
 	return __sheep_compile(vm, &vm->main, exp);
 }
 
-static inline unsigned int sheep_slot_constant(struct sheep_vm *vm, void *data)
+static inline unsigned int sheep_slot_constant(struct sheep_vm *vm, sheep_t obj)
 {
-	return sheep_vector_push(&vm->globals, data);
+	return sheep_vector_push(&vm->globals, obj);
 }
 
 static inline unsigned int sheep_slot_global(struct sheep_vm *vm)

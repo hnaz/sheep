@@ -53,12 +53,16 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 				if (slot < start || slot >= end)
 					sheep_free(slot);
 			}
-		} else
+		} else {
 			sheep_free(function->code.code.items);
+			sheep_free(function->code.labels.items);
+		}
 		sheep_free(foreigns->items);
 		sheep_free(foreigns);
-	} else
+	} else {
 		sheep_free(function->code.code.items);
+		sheep_free(function->code.labels.items);
+	}
 	sheep_free(function->name);
 	sheep_free(function);
 }

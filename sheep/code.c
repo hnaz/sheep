@@ -10,6 +10,41 @@
 
 #include <sheep/code.h>
 
+unsigned long sheep_code_jump(struct sheep_code *code)
+{
+	return sheep_vector_push(&code->labels, NULL);
+}
+
+void sheep_code_label(struct sheep_code *code, unsigned long jump)
+{
+	unsigned long offset = code->code.nr_items;
+
+	code->labels.items[jump] = (void *)offset;
+}
+
+void sheep_code_finish(struct sheep_code *code)
+{
+	unsigned long offset;
+
+	sheep_emit(code, SHEEP_RET, 0);
+	for (offset = 0; offset < code->code.nr_items; offset++) {
+		unsigned long label, insn;
+		enum sheep_opcode op;
+		unsigned int arg;
+
+		insn = (unsigned long)code->code.items[offset];
+		sheep_decode(insn, &op, &arg);
+
+		if (op != SHEEP_BRN && op != SHEEP_BR)
+			continue;
+
+		label = (unsigned long)code->labels.items[arg];
+		insn = sheep_encode(op, label - offset);
+
+		code->code.items[offset] = (void *)insn;
+	}
+}
+
 static const char *opnames[] = {
 	"DROP", "LOCAL", "SET_LOCAL", "FOREIGN", "SET_FOREIGN",
 	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "RET", "BRN", "BR",

@@ -35,6 +35,7 @@ static int do_file(const char *path)
 			goto out;
 		val = sheep_eval(&vm, code);
 		sheep_free(code->code.items);
+		sheep_free(code->labels.items);
 		sheep_free(code);
 		if (!val)
 			goto out;
@@ -75,6 +76,7 @@ static int do_stdin(void)
 			continue;
 		val = sheep_eval(&vm, code);
 		sheep_free(code->code.items);
+		sheep_free(code->labels.items);
 		sheep_free(code);
 		if (val)
 			sheep_ddump(val);

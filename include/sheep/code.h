@@ -30,10 +30,12 @@ enum sheep_opcode {
 
 struct sheep_code {
 	struct sheep_vector code;
+	struct sheep_vector labels;
 };
 
 #define SHEEP_CODE_INITIALIZER			\
-	{ .code = SHEEP_VECTOR_INITIALIZER(32) }
+	{ .code = SHEEP_VECTOR_INITIALIZER(32), \
+	  .labels = SHEEP_VECTOR_INITIALIZER(4) }
 
 #define SHEEP_DEFINE_CODE(name)				\
 	struct sheep_code name = SHEEP_CODE_INITIALIZER
@@ -64,6 +66,10 @@ static inline unsigned long sheep_emit(struct sheep_code *code,
 {
 	return sheep_vector_push(&code->code, (void *)sheep_encode(op, arg));
 }
+
+unsigned long sheep_code_jump(struct sheep_code *);
+void sheep_code_label(struct sheep_code *, unsigned long);
+void sheep_code_finish(struct sheep_code *);
 
 void sheep_code_dump(struct sheep_vm *, struct sheep_function *,
 		unsigned long, enum sheep_opcode, unsigned int);

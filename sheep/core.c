@@ -310,7 +310,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_context *context,
 			sheep_map_del(context->env, name);
 		goto out;
 	}
-	sheep_emit(&function->code, SHEEP_RET, 0);
+	sheep_code_finish(&function->code);
 
 	sheep_emit(context->code, SHEEP_CLOSURE, cslot);
 	if (name) {
@@ -340,15 +340,15 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (cond->type->compile(vm, context, cond))
 		return -1;
-	belse = sheep_emit(context->code, SHEEP_BRN, 0);
+	belse = sheep_code_jump(context->code);
+	sheep_emit(context->code, SHEEP_BRN, belse);
 
 	if (then->type->compile(vm, context, then))
 		return -1;
-	bend = sheep_emit(context->code, SHEEP_BR, 0);
+	bend = sheep_code_jump(context->code);
+	sheep_emit(context->code, SHEEP_BR, bend);
 
-	context->code->code.items[belse] =
-		(void *)sheep_encode(SHEEP_BRN, bend + 1 - belse);
-
+	sheep_code_label(context->code, belse);
 	if (elseform->head) {
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))
@@ -359,9 +359,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 			return -1;
 	}
 
-	context->code->code.items[bend] =
-		(void *)sheep_encode(SHEEP_BR,
-				context->code->code.nr_items - bend);
+	sheep_code_label(context->code, bend);
 	return 0;
 }
 

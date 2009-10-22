@@ -48,11 +48,12 @@ struct sheep_code *__sheep_compile(struct sheep_vm *vm,
 
 	if (err) {
 		sheep_free(code->code.items);
+		sheep_free(code->labels.items);
 		sheep_free(code);
 		return NULL;
 	}
 
-	sheep_emit(code, SHEEP_RET, 0);
+	sheep_code_finish(code);
 	return code;
 }
 

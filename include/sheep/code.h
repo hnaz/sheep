@@ -7,6 +7,7 @@
 #define _SHEEP_CODE_H
 
 #include <sheep/vector.h>
+#include <sheep/util.h>
 
 struct sheep_function;
 
@@ -43,6 +44,12 @@ struct sheep_code {
 static inline void sheep_code_init(struct sheep_code *code)
 {
 	*code = (struct sheep_code)SHEEP_CODE_INITIALIZER;
+}
+
+static inline void sheep_code_exit(struct sheep_code *code)
+{
+	sheep_free(code->code.items);
+	sheep_free(code->labels.items);
 }
 
 static inline unsigned long sheep_encode(enum sheep_opcode op, unsigned int arg)

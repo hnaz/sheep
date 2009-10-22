@@ -479,6 +479,66 @@ static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
 	return NULL;
 }
 
+enum relation {
+	LESS,
+	LESSEQ,
+	MOREEQ,
+	MORE,
+};
+
+static sheep_t do_cmp(struct sheep_vm *vm, unsigned int nr_args,
+		const char *name, enum relation relation)
+{
+	int result = result;
+	double *a, *b;
+
+	if (sheep_unpack_stack(name, vm, nr_args, "NN", &a, &b))
+		return NULL;
+
+	switch (relation) {
+	case LESS:
+		result = *a < *b;
+		break;
+	case LESSEQ:
+		result = *a <= *b;
+		break;
+	case MOREEQ:
+		result = *a >= *b;
+		break;
+	case MORE:
+		result = *a > *b;
+		break;
+	}
+
+	if (result)
+		return &sheep_true;
+	return &sheep_false;
+}
+
+/* (< a b) */
+static sheep_t eval_less(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_cmp(vm, nr_args, "<", LESS);
+}
+
+/* (<= a b) */
+static sheep_t eval_lesseq(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_cmp(vm, nr_args, "<=", LESSEQ);
+}
+
+/* (>= a b) */
+static sheep_t eval_moreeq(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_cmp(vm, nr_args, ">=", MOREEQ);
+}
+
+/* (> a b) */
+static sheep_t eval_more(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_cmp(vm, nr_args, ">", MORE);
+}
+
 static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
 			const char *operation)
 {
@@ -938,6 +998,10 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_function(vm, &vm->main, "number", eval_number);
 	sheep_module_function(vm, &vm->main, "=", eval_equal);
+	sheep_module_function(vm, &vm->main, "<", eval_less);
+	sheep_module_function(vm, &vm->main, "<=", eval_lesseq);
+	sheep_module_function(vm, &vm->main, ">=", eval_moreeq);
+	sheep_module_function(vm, &vm->main, ">", eval_more);
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
 	sheep_module_function(vm, &vm->main, "*", eval_multiply);

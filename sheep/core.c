@@ -993,11 +993,12 @@ void sheep_core_init(struct sheep_vm *vm)
 
 	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
 	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
+
+	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "bool", eval_bool);
 	sheep_module_function(vm, &vm->main, "not", eval_not);
 
 	sheep_module_function(vm, &vm->main, "number", eval_number);
-	sheep_module_function(vm, &vm->main, "=", eval_equal);
 	sheep_module_function(vm, &vm->main, "<", eval_less);
 	sheep_module_function(vm, &vm->main, "<=", eval_lesseq);
 	sheep_module_function(vm, &vm->main, ">=", eval_moreeq);

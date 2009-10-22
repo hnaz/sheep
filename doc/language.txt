@@ -32,13 +32,21 @@ IMPL: (load module-name)
 
 2. builtin functions
 
+(= a b)
+
 (bool expression)
 
 (not expression)
 
 (number expression)
 
-(= a b)
+(< a b)
+
+(<= a b)
+
+(>= a b)
+
+(> a b)
 
 (+ a b)
 
@@ -52,7 +60,7 @@ IMPL: (load module-name)
 
 (string number-or-string)
 
-XXX: (string everything)
+IMPL: (string everything)
 
 (split delimiter string)
 
@@ -75,5 +83,7 @@ XXX: (string everything)
 (concat sequence)
 
 (reverse sequence)
+
+IMPL: (sort predicate sequence)
 
 THINK: (print &rest expressions)

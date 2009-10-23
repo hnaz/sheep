@@ -17,121 +17,75 @@
 
 #include <sheep/eval.h>
 
-/*
- * How closures are implemented
- *
- * The distance between a free variable reference and its binding
- * lexical environment is a compile time constant which the compiler
- * remembers in function->foreigns (see compile.c:slot_foreign())
- *
- * When the evaluator instantiates a closure by means of the CLOSURE
- * instruction, it creates a new function object and sets its foreign
- * slots in turn to point to live stack slots.  They can be determined
- * by means of the call stack and the relative lexical distance (see
- * closure()).
- *
- * Since these foreign slots are now pointing to value references on
- * the stack, those references will get preserved before the stack is
- * unwound.  The runtime notes those live references when
- * instantiating the closure (see note_pending()) and preserves the
- * references when the RET instruction is about to tear down a stack
- * frame that has live references (see close_pending()).
- */
-
-struct sheep_pending {
-	sheep_t **slotp;
-	unsigned long basep;
-	struct sheep_pending *next;
-};
-
-static void note_pending(struct sheep_vm *vm, sheep_t **slotp,
-			unsigned long basep)
+static void note_pending(struct sheep_vm *vm, struct sheep_foreign *foreign)
 {
-	struct sheep_pending *prev = NULL, *next, *new;
+	struct sheep_foreign *prev = NULL, *next = vm->pending;
 
-	new = sheep_malloc(sizeof(struct sheep_pending));
-	new->slotp = slotp;
-	new->basep = basep;
-
-	for (next = vm->pending; next && next->basep > basep; next = next->next)
+	while (next) {
+		if (foreign->value.live.index >= next->value.live.index)
+			break;
 		prev = next;
-
-	if (!prev) {
-		new->next = next;
-		vm->pending = new;
-	} else {
-		new->next = prev->next;
-		prev->next = new;
+		next = next->value.live.next;
 	}
+
+	foreign->value.live.next = next;
+	if (prev)
+		prev->value.live.next = foreign;
+	else
+		vm->pending = foreign;
 }
 
 static void close_pending(struct sheep_vm *vm, unsigned long basep)
 {
-	while (vm->pending && vm->pending->basep == basep) {
-		struct sheep_pending *next;
+	while (vm->pending) {
+		struct sheep_foreign *foreign = vm->pending;
 		sheep_t value;
 
-		/*
-		 * there is a problem... pushing to the stack could
-		 * mean realloc, could mean moving the whole thing
-		 * while we have pointers into it.
-		 *
-		 * two possibilities: make the stack static and don't
-		 * move it around, thereby imposing an artificial
-		 * limit -- OR -- handle foreign slots relative to the
-		 * stackbase if open and private if preserved.  both
-		 * suck :(
-		 *
-		 * there is another problem... the foreign slots we
-		 * point to may have become garbage by the time we try
-		 * to close them and we read/write to dead memory.
-		 *
-		 * how to detect if the function is no longer alive?
-		 */
+		if (foreign->value.live.index < basep)
+			break;
 
-		value = **vm->pending->slotp;
-		*vm->pending->slotp = sheep_malloc(sizeof(sheep_t *));
-		**vm->pending->slotp = value;
+		vm->pending = foreign->value.live.next;
 
-		next = vm->pending->next;
-		sheep_free(vm->pending);
-		vm->pending = next;
+		value = vm->stack.items[foreign->value.live.index];
+		foreign->state = SHEEP_FOREIGN_CLOSED;
+		foreign->value.closed = value;
 	}
 }
 
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 {
-	struct sheep_vector *foreigns, *distinfo;
-	struct sheep_function *old, *new;
+	struct sheep_function *function, *closure;
+	struct sheep_vector *template, *foreigns;
 	unsigned int i;
 
 	sheep_bug_on(sheep->type != &sheep_function_type);
-	old = sheep_data(sheep);
+	function = sheep_data(sheep);
 
-	if (!old->foreigns)
+	if (!function->foreigns)
 		return sheep;
 
 	foreigns = sheep_malloc(sizeof(struct sheep_vector));
 	sheep_vector_init(foreigns, 4);
 
-	distinfo = sheep_foreigns(old);
-	sheep_bug_on(distinfo->nr_items % 2);
-	for (i = 0; i < distinfo->nr_items; i += 2) {
-		unsigned long fbasep, offset;
+	template = function->foreigns;
+	for (i = 0; i < template->nr_items; i++) {
+		struct sheep_foreign *foreign;
+		unsigned long owner, offset;
 		unsigned int dist, slot;
-		sheep_t *foreignp;
 
-		dist = (unsigned long)distinfo->items[i];
-		slot = (unsigned long)distinfo->items[i + 1];
+		foreign = template->items[i];
+		dist = foreign->value.template.dist;
+		slot = foreign->value.template.slot;
 		/*
-		 * Closure instantiation happens in the outer
-		 * function, thus if the owner distance is 1, it
-		 * refers to the current base pointer.  Otherwise, it
-		 * refers to a base pointer on the call stack.
+		 * Closure instantiation happens in the owner scope,
+		 * thus if the owner distance is 1, the current frame
+		 * is the owner.
+		 *
+		 * Otherwise, the frame is on the call stack.
 		 */
 		offset = dist - 1;
 		if (!offset)
-			fbasep = basep;
+			owner = basep;
 		else {
 			/*
 			 * The callstack contains
@@ -139,18 +93,20 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 			 * for every frame.
 			 */
 			offset = vm->calls.nr_items - 3 * offset - 1;
-			fbasep = (unsigned long)vm->calls.items[offset];
+			owner = (unsigned long)vm->calls.items[offset];
 		}
 
-		foreignp = (sheep_t *)vm->stack.items + fbasep;
-		slot = sheep_vector_push(foreigns, foreignp + slot);
-		note_pending(vm, (sheep_t **)foreigns->items + slot, fbasep);
+		foreign = sheep_malloc(sizeof(struct sheep_foreign));
+		foreign->state = SHEEP_FOREIGN_LIVE;
+		foreign->value.live.index = owner + slot;
+
+		sheep_vector_push(foreigns, foreign);
+		note_pending(vm, foreign);
 	}
 
-	sheep = sheep_copy_function(vm, old);
-	new = sheep_data(sheep);
-	new->foreigns = foreigns;
-	sheep_activate_closure(new);
+	sheep = sheep_copy_function(vm, function);
+	closure = sheep_data(sheep);
+	closure->foreigns = foreigns;
 
 	return sheep;
 }
@@ -195,6 +151,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 		basep -= function->nr_locals;
 
 	for (;;) {
+		struct sheep_foreign *forin;
 		enum sheep_opcode op;
 		unsigned int arg;
 		sheep_t tmp;
@@ -216,12 +173,20 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			vm->stack.items[basep + arg] = tmp;
 			break;
 		case SHEEP_FOREIGN:
-			tmp = sheep_foreigns(function)->items[arg];
-			sheep_vector_push(&vm->stack, *(sheep_t *)tmp);
+			forin = function->foreigns->items[arg];
+			if (forin->state == SHEEP_FOREIGN_LIVE)
+				tmp = vm->stack.items[forin->value.live.index];
+			else
+				tmp = forin->value.closed;
+			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_SET_FOREIGN:
 			tmp = sheep_vector_pop(&vm->stack);
-			*(sheep_t *)sheep_foreigns(function)->items[arg] = tmp;
+			forin = function->foreigns->items[arg];
+			if (forin->state == SHEEP_FOREIGN_LIVE)
+				vm->stack.items[forin->value.live.index] = tmp;
+			else
+				forin->value.closed = tmp;
 			break;
 		case SHEEP_GLOBAL:
 			tmp = vm->globals.items[arg];

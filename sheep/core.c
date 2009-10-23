@@ -965,11 +965,9 @@ static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 	}
 
 	function = sheep_data(callable);
-	if (function->foreigns) {
-		nr_foreigns = sheep_foreigns(function)->nr_items;
-		if (!sheep_active_closure(function))
-			nr_foreigns /= 2;
-	} else
+	if (function->foreigns)
+		nr_foreigns = function->foreigns->nr_items;
+	else
 		nr_foreigns = 0;
 
 	__sheep_ddump(callable);

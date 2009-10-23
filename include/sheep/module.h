@@ -10,7 +10,6 @@
 #include <sheep/alien.h>
 #include <sheep/map.h>
 
-/* We get included by vm.h */
 struct sheep_vm;
 
 struct sheep_module {

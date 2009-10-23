@@ -6,12 +6,11 @@
 #ifndef _SHEEP_VM_H
 #define _SHEEP_VM_H
 
+#include <sheep/function.h>
 #include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/vector.h>
-#include <sheep/code.h>
-
-struct sheep_pending;
+#include <sheep/map.h>
 
 struct sheep_vm {
 	/* Object management */
@@ -27,7 +26,7 @@ struct sheep_vm {
 	struct sheep_module main;
 
 	/* Evaluator */
-	struct sheep_pending *pending;
+	struct sheep_foreign *pending;
 	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };

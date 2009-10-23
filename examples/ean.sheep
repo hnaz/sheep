@@ -45,4 +45,4 @@ take the difference from the next multiple of ten."
                              (string (ean-checksum base)))))
       (ean-checksum-range (+ base 1) (- count 1)))))
 
-(ean-checksum-range 12345 50)
+(ean-checksum-range 12345 2000)

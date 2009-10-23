@@ -7,7 +7,8 @@
 #define _SHEEP_LIST_H
 
 #include <sheep/object.h>
-#include <sheep/vm.h>
+
+struct sheep_vm;
 
 struct sheep_list {
 	sheep_t head;

@@ -14,49 +14,72 @@
 static void mark_function(sheep_t sheep)
 {
 	struct sheep_function *function;
+	unsigned int i;
 
 	function = sheep_data(sheep);
-	if (sheep_active_closure(function)) {
-		struct sheep_vector *foreigns;
-		unsigned int i;
+	if (!function->foreigns)
+		return;
 
-		foreigns = sheep_foreigns(function);
+	for (i = 0; i < function->foreigns->nr_items; i++) {
+		struct sheep_foreign *foreign;
+
+		foreign = function->foreigns->items[i];
 		/*
-		 * Could skip live stack slot references here, but
-		 * just letting sheep_mark() figure it out is probably
-		 * faster...
+		 * Live and closed do not mix with template.
 		 */
-		for (i = 0; i < foreigns->nr_items; i++)
-			sheep_mark(*(sheep_t *)foreigns->items[i]);
+		if (foreign->state == SHEEP_FOREIGN_TEMPLATE)
+			return;
+		if (foreign->state == SHEEP_FOREIGN_CLOSED)
+			sheep_mark(foreign->value.closed);
 	}
+}
+
+static void unlink_pending(struct sheep_vm *vm, struct sheep_foreign *foreign)
+{
+	struct sheep_foreign *prev = NULL, *this = vm->pending;
+
+	while (this) {
+		struct sheep_foreign *next;
+
+		next = this->value.live.next;
+		if (this == foreign) {
+			if (prev)
+				prev->value.live.next = next;
+			else
+				vm->pending = next;
+			break;
+		}
+		prev = this;
+		this = next;
+	}
+	sheep_bug("unqueued live foreign reference");
 }
 
 static void free_function(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *function;
+	struct sheep_code *code = NULL;
+	struct sheep_vector *foreigns;
 
 	function = sheep_data(sheep);
-	if (function->foreigns) {
-		struct sheep_vector *foreigns;
+	foreigns = function->foreigns;
+	if (foreigns) {
+		unsigned int i;
 
-		foreigns = sheep_foreigns(function);
-		if (sheep_active_closure(function)) {
-			unsigned int i;
+		for (i = 0; i < foreigns->nr_items; i++) {
+			struct sheep_foreign *foreign;
 
-			for (i = 0; i < foreigns->nr_items; i++) {
-				sheep_t *start, *end, *slot;
-
-				start = (sheep_t *)vm->stack.items;
-				end = start + vm->stack.nr_items;
-				slot = foreigns->items[i];
-
-				if (slot < start || slot >= end)
-					sheep_free(slot);
-			}
-		} else
-			sheep_code_exit(&function->code);
+			foreign = foreigns->items[i];
+			if (foreign->state == SHEEP_FOREIGN_TEMPLATE)
+				code = &function->code;
+			else if (foreign->state == SHEEP_FOREIGN_LIVE)
+				unlink_pending(vm, foreign);
+			sheep_free(foreign);
+		}
 		sheep_free(foreigns->items);
 		sheep_free(foreigns);
+		if (code)
+			sheep_code_exit(code);
 	} else
 		sheep_code_exit(&function->code);
 	sheep_free(function->name);

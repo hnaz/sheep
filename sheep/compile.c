@@ -121,9 +121,9 @@ static unsigned int slot_foreign(struct sheep_context *context,
 				unsigned int dist, unsigned int slot)
 {
 	struct sheep_function *function = context->function;
-	struct sheep_vector *foreigns;
+	struct sheep_vector *foreigns = function->foreigns;
+	struct sheep_foreign *foreign;
 
-	foreigns = sheep_foreigns(function);
 	if (!foreigns) {
 		foreigns = sheep_malloc(sizeof(struct sheep_vector));
 		sheep_vector_init(foreigns, 4);
@@ -131,19 +131,22 @@ static unsigned int slot_foreign(struct sheep_context *context,
 	} else {
 		unsigned int i;
 
-		for (i = 0; i < foreigns->nr_items; i += 2) {
-			unsigned int idist, islot;
-
-			idist = (unsigned long)foreigns->items[i];
-			islot = (unsigned long)foreigns->items[i + 1];
-
-			if (idist == dist && islot == slot)
-				return i / 2;
+		for (i = 0; i < foreigns->nr_items; i++) {
+			foreign = foreigns->items[i];
+			if (foreign->value.template.dist != dist)
+				continue;
+			if (foreign->value.template.slot != slot)
+				continue;
+			return i;
 		}
 	}
-	sheep_vector_push(foreigns, (void *)(unsigned long)dist);
-	sheep_vector_push(foreigns, (void *)(unsigned long)slot);
-	return (foreigns->nr_items - 1) / 2;
+
+	foreign = sheep_malloc(sizeof(struct sheep_foreign));
+	foreign->state = SHEEP_FOREIGN_TEMPLATE;
+	foreign->value.template.dist = dist;
+	foreign->value.template.slot = slot;
+
+	return sheep_vector_push(foreigns, foreign);
 }
 
 /**

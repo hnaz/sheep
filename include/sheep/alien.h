@@ -7,7 +7,8 @@
 #define _SHEEP_ALIEN_H
 
 #include <sheep/object.h>
-#include <sheep/vm.h>
+
+struct sheep_vm;
 
 typedef sheep_t (*sheep_alien_t)(struct sheep_vm *, unsigned int);
 

@@ -242,7 +242,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_code *code,
 			codep = sheep_vector_pop(&vm->calls);
 			break;
 		case SHEEP_BRN:
-			tmp = sheep_vector_pop(&vm->stack);
+			tmp = vm->stack.items[vm->stack.nr_items - 1];
 			if (sheep_test(tmp))
 				break;
 		case SHEEP_BR:

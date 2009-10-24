@@ -332,7 +332,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 		struct sheep_list *args)
 {
 	struct sheep_list *elseform;
-	unsigned long belse, bend;
+	unsigned long belse;
 	sheep_t cond, then;
 
 	if (unpack("if", args, "oor", &cond, &then, &elseform))
@@ -343,23 +343,26 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 	belse = sheep_code_jump(context->code);
 	sheep_emit(context->code, SHEEP_BRN, belse);
 
+	sheep_emit(context->code, SHEEP_DROP, 0);
 	if (then->type->compile(vm, context, then))
 		return -1;
-	bend = sheep_code_jump(context->code);
-	sheep_emit(context->code, SHEEP_BR, bend);
 
-	sheep_code_label(context->code, belse);
 	if (elseform->head) {
+		unsigned long bend;
+
+		bend = sheep_code_jump(context->code);
+		sheep_emit(context->code, SHEEP_BR, bend);
+
+		sheep_code_label(context->code, belse);
+
+		sheep_emit(context->code, SHEEP_DROP, 0);
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))
 			return -1;
-	} else {
-		if (sheep_compile_name(vm, context,
-					sheep_make_name(vm, "false")))
-			return -1;
-	}
+		sheep_code_label(context->code, bend);
+	} else
+		sheep_code_label(context->code, belse);
 
-	sheep_code_label(context->code, bend);
 	return 0;
 }
 

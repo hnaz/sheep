@@ -9,7 +9,7 @@
 
 IMPL: (or &rest expressions)
 
-IMPL: (and &rest expressions)
+(and one two &rest expressions)
 
 (if condition
   then

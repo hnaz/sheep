@@ -327,41 +327,81 @@ out:
 	return ret;
 }
 
+/* (and one two three*?) */
+static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
+		struct sheep_list *args)
+{
+	unsigned long Lend;
+	sheep_t one, two;
+
+	if (unpack("and", args, "oor", &one, &two, &args))
+		return -1;
+
+	Lend = sheep_code_jump(context->code);
+
+	if (one->type->compile(vm, context, one))
+		return -1;
+	sheep_emit(context->code, SHEEP_BRN, Lend);
+
+	sheep_emit(context->code, SHEEP_DROP, 0);
+
+	if (two->type->compile(vm, context, two))
+		return -1;
+	sheep_emit(context->code, SHEEP_BRN, Lend);
+
+	while (args->head) {
+		if (unpack("and", args, "or", &one, &args))
+			return -1;
+
+		sheep_emit(context->code, SHEEP_DROP, 0);
+
+		if (one->type->compile(vm, context, one))
+			return -1;
+		if (args->head)
+			sheep_emit(context->code, SHEEP_BRN, Lend);
+	}
+
+	sheep_code_label(context->code, Lend);
+	return 0;
+}
+
 /* (if cond then else*?) */
 static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 		struct sheep_list *args)
 {
 	struct sheep_list *elseform;
-	unsigned long belse;
+	unsigned long Lelse;
 	sheep_t cond, then;
 
 	if (unpack("if", args, "oor", &cond, &then, &elseform))
 		return -1;
 
+	Lelse = sheep_code_jump(context->code);
+
 	if (cond->type->compile(vm, context, cond))
 		return -1;
-	belse = sheep_code_jump(context->code);
-	sheep_emit(context->code, SHEEP_BRN, belse);
+	sheep_emit(context->code, SHEEP_BRN, Lelse);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
+
 	if (then->type->compile(vm, context, then))
 		return -1;
 
 	if (elseform->head) {
-		unsigned long bend;
+		unsigned long Lend;
 
-		bend = sheep_code_jump(context->code);
-		sheep_emit(context->code, SHEEP_BR, bend);
+		Lend = sheep_code_jump(context->code);
+		sheep_emit(context->code, SHEEP_BR, Lend);
 
-		sheep_code_label(context->code, belse);
-
+		sheep_code_label(context->code, Lelse);
 		sheep_emit(context->code, SHEEP_DROP, 0);
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))
 			return -1;
-		sheep_code_label(context->code, bend);
+
+		sheep_code_label(context->code, Lend);
 	} else
-		sheep_code_label(context->code, belse);
+		sheep_code_label(context->code, Lelse);
 
 	return 0;
 }
@@ -989,6 +1029,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "with", compile_with);
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
+	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);
 

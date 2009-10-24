@@ -22,8 +22,9 @@ enum sheep_opcode {
 	/* 7*/SHEEP_CLOSURE,
 	/* 8*/SHEEP_CALL,
 	/* 9*/SHEEP_RET,
-	/*10*/SHEEP_BRN,
-	/*11*/SHEEP_BR,
+	/*10*/SHEEP_BRT,
+	/*11*/SHEEP_BRF,
+	/*12*/SHEEP_BR,
 };
 
 #define SHEEP_OPCODE_BITS	5

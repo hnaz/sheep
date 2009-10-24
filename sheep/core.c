@@ -327,6 +327,43 @@ out:
 	return ret;
 }
 
+/* (or one two three*?) */
+static int compile_or(struct sheep_vm *vm, struct sheep_context *context,
+		struct sheep_list *args)
+{
+	unsigned long Lend;
+	sheep_t one, two;
+
+	if (unpack("or", args, "oor", &one, &two, &args))
+		return -1;
+
+	Lend = sheep_code_jump(context->code);
+
+	if (one->type->compile(vm, context, one))
+		return -1;
+	sheep_emit(context->code, SHEEP_BRT, Lend);
+
+	sheep_emit(context->code, SHEEP_DROP, 0);
+
+	if (two->type->compile(vm, context, two))
+		return -1;
+
+	while (args->head) {
+		sheep_emit(context->code, SHEEP_BRT, Lend);
+
+		if (unpack("or", args, "or", &one, &args))
+			return -1;
+
+		sheep_emit(context->code, SHEEP_DROP, 0);
+
+		if (one->type->compile(vm, context, one))
+			return -1;
+	}
+
+	sheep_code_label(context->code, Lend);
+	return 0;
+}
+
 /* (and one two three*?) */
 static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
 		struct sheep_list *args)
@@ -341,15 +378,16 @@ static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (one->type->compile(vm, context, one))
 		return -1;
-	sheep_emit(context->code, SHEEP_BRN, Lend);
+	sheep_emit(context->code, SHEEP_BRF, Lend);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
 
 	if (two->type->compile(vm, context, two))
 		return -1;
-	sheep_emit(context->code, SHEEP_BRN, Lend);
 
 	while (args->head) {
+		sheep_emit(context->code, SHEEP_BRF, Lend);
+
 		if (unpack("and", args, "or", &one, &args))
 			return -1;
 
@@ -357,8 +395,6 @@ static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
 
 		if (one->type->compile(vm, context, one))
 			return -1;
-		if (args->head)
-			sheep_emit(context->code, SHEEP_BRN, Lend);
 	}
 
 	sheep_code_label(context->code, Lend);
@@ -380,7 +416,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 
 	if (cond->type->compile(vm, context, cond))
 		return -1;
-	sheep_emit(context->code, SHEEP_BRN, Lelse);
+	sheep_emit(context->code, SHEEP_BRF, Lelse);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
 
@@ -1029,6 +1065,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "with", compile_with);
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
+	sheep_map_set(&vm->specials, "or", compile_or);
 	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);

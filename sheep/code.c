@@ -35,7 +35,7 @@ void sheep_code_finish(struct sheep_code *code)
 		insn = (unsigned long)code->code.items[offset];
 		sheep_decode(insn, &op, &arg);
 
-		if (op != SHEEP_BRN && op != SHEEP_BR)
+		if (op != SHEEP_BRT && op != SHEEP_BRF && op != SHEEP_BR)
 			continue;
 
 		label = (unsigned long)code->labels.items[arg];
@@ -47,7 +47,7 @@ void sheep_code_finish(struct sheep_code *code)
 
 static const char *opnames[] = {
 	"DROP", "LOCAL", "SET_LOCAL", "FOREIGN", "SET_FOREIGN",
-	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "RET", "BRN", "BR",
+	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "RET", "BRT", "BRF", "BR",
 };
 
 void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,

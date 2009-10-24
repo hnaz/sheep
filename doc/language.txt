@@ -7,7 +7,7 @@
 (block
   &rest body)
 
-IMPL: (or &rest expressions)
+(or one two &rest expressions)
 
 (and one two &rest expressions)
 

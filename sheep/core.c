@@ -344,7 +344,6 @@ static int compile_or(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_emit(context->code, SHEEP_BRT, Lend);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
-
 	if (two->type->compile(vm, context, two))
 		return -1;
 
@@ -355,7 +354,6 @@ static int compile_or(struct sheep_vm *vm, struct sheep_context *context,
 			return -1;
 
 		sheep_emit(context->code, SHEEP_DROP, 0);
-
 		if (one->type->compile(vm, context, one))
 			return -1;
 	}
@@ -381,7 +379,6 @@ static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_emit(context->code, SHEEP_BRF, Lend);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
-
 	if (two->type->compile(vm, context, two))
 		return -1;
 
@@ -392,7 +389,6 @@ static int compile_and(struct sheep_vm *vm, struct sheep_context *context,
 			return -1;
 
 		sheep_emit(context->code, SHEEP_DROP, 0);
-
 		if (one->type->compile(vm, context, one))
 			return -1;
 	}
@@ -419,7 +415,6 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 	sheep_emit(context->code, SHEEP_BRF, Lelse);
 
 	sheep_emit(context->code, SHEEP_DROP, 0);
-
 	if (then->type->compile(vm, context, then))
 		return -1;
 
@@ -430,6 +425,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_emit(context->code, SHEEP_BR, Lend);
 
 		sheep_code_label(context->code, Lelse);
+
 		sheep_emit(context->code, SHEEP_DROP, 0);
 		if (do_compile_block(vm, context->code, context->function,
 					context->env, context, elseform))

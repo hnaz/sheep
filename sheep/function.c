@@ -47,7 +47,7 @@ static void unlink_pending(struct sheep_vm *vm, struct sheep_foreign *foreign)
 				prev->value.live.next = next;
 			else
 				vm->pending = next;
-			break;
+			return;
 		}
 		prev = this;
 		this = next;

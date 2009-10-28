@@ -42,8 +42,9 @@ struct sheep_function {
 };
 
 extern const struct sheep_type sheep_function_type;
+extern const struct sheep_type sheep_closure_type;
 
 sheep_t sheep_make_function(struct sheep_vm *, const char *);
-sheep_t sheep_copy_function(struct sheep_vm *, struct sheep_function *);
+sheep_t sheep_closure_function(struct sheep_vm *, struct sheep_function *);
 
 #endif /* _SHEEP_FUNCTION_H */

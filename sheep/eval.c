@@ -104,7 +104,7 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 		note_pending(vm, foreign);
 	}
 
-	sheep = sheep_copy_function(vm, function);
+	sheep = sheep_closure_function(vm, function);
 	closure = sheep_data(sheep);
 	closure->foreigns = foreigns;
 
@@ -123,8 +123,6 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 		*value = alien->function(vm, nr_args);
 		return 1 - 2 * !*value;
 	}
-
-	sheep_bug_on(callable->type != &sheep_function_type);
 
 	function = sheep_data(callable);
 	if (function->nr_parms != nr_args) {

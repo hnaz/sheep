@@ -46,7 +46,8 @@ static int do_verify(const char *caller, char control, sheep_t object)
 			object->type == &sheep_list_type;
 	case 'c':
 		return object->type == &sheep_alien_type ||
-			object->type == &sheep_function_type;
+			object->type == &sheep_function_type ||
+			object->type == &sheep_closure_type;
 	}
 	sheep_bug("unexpected unpack control %c", control);
 }

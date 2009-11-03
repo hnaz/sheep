@@ -11,6 +11,7 @@
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -149,6 +150,41 @@ static unsigned int slot_foreign(struct sheep_context *context,
 	return sheep_vector_push(foreigns, foreign);
 }
 
+static int __sheep_compile_name(struct sheep_vm *vm,
+				struct sheep_context *context,
+				sheep_t expr, int set)
+{
+	unsigned int dist, slot;
+	enum env_level level;
+	const char *name;
+
+	name = sheep_cname(expr);
+	if (lookup(context, name, &dist, &slot, &level)) {
+		fprintf(stderr, "unbound name: %s\n", name);
+		return -1;
+	}
+
+	switch (level) {
+	case ENV_LOCAL:
+		if (set)
+			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
+		sheep_emit(context->code, SHEEP_LOCAL, slot);
+		break;
+	case ENV_GLOBAL:
+		if (set)
+			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
+		sheep_emit(context->code, SHEEP_GLOBAL, slot);
+		break;
+	case ENV_FOREIGN:
+		slot = slot_foreign(context, dist, slot);
+		if (set)
+			sheep_emit(context->code, SHEEP_SET_FOREIGN, slot);
+		sheep_emit(context->code, SHEEP_FOREIGN, slot);
+		break;
+	}
+	return 0;
+}
+
 /**
  * sheep_compile_name - compile a name reference
  * @vm: runtime
@@ -163,60 +199,13 @@ static unsigned int slot_foreign(struct sheep_context *context,
 int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
-	unsigned int dist, slot;
-	enum env_level level;
-	const char *name;
-
-	name = sheep_cname(expr);
-	if (lookup(context, name, &dist, &slot, &level)) {
-		fprintf(stderr, "unbound name: %s\n", name);
-		return -1;
-	}
-
-	switch (level) {
-	case ENV_LOCAL:
-		sheep_emit(context->code, SHEEP_LOCAL, slot);
-		break;
-	case ENV_GLOBAL:
-		sheep_emit(context->code, SHEEP_GLOBAL, slot);
-		break;
-	case ENV_FOREIGN:
-		slot = slot_foreign(context, dist, slot);
-		sheep_emit(context->code, SHEEP_FOREIGN, slot);
-		break;
-	}
-	return 0;
+	return __sheep_compile_name(vm, context, expr, 0);
 }
 
 int sheep_compile_set(struct sheep_vm *vm, struct sheep_context *context,
 		sheep_t expr)
 {
-	unsigned int dist, slot;
-	enum env_level level;
-	const char *name;
-
-	name = sheep_cname(expr);
-	if (lookup(context, name, &dist, &slot, &level)) {
-		fprintf(stderr, "unbound name: %s\n", name);
-		return -1;
-	}
-
-	switch (level) {
-	case ENV_LOCAL:
-		sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
-		sheep_emit(context->code, SHEEP_LOCAL, slot);
-		break;
-	case ENV_GLOBAL:
-		sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
-		sheep_emit(context->code, SHEEP_GLOBAL, slot);
-		break;
-	case ENV_FOREIGN:
-		slot = slot_foreign(context, dist, slot);
-		sheep_emit(context->code, SHEEP_SET_FOREIGN, slot);
-		sheep_emit(context->code, SHEEP_FOREIGN, slot);
-		break;
-	}
-	return 0;
+	return __sheep_compile_name(vm, context, expr, 1);
 }
 
 static int compile_call(struct sheep_vm *vm, struct sheep_context *context,

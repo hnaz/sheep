@@ -27,9 +27,9 @@ unsigned int sheep_module_shared(struct sheep_vm *vm,
 				struct sheep_module *module,
 				const char *name, sheep_t sheep)
 {
-	unsigned long slot;
+	unsigned int slot;
 
 	slot = sheep_vector_push(&vm->globals, sheep);
-	sheep_map_set(&module->env, name, (void *)slot);
+	sheep_map_set(&module->env, name, (void *)(unsigned long)slot);
 	return slot;
 }

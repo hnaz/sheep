@@ -3,7 +3,7 @@ NAME = Klaatu
 
 CC = gcc
 CPP = cpp
-CFLAGS = -Os -pipe
+CFLAGS = -O2 -pipe
 LDFLAGS =
 
 SCFLAGS = -Wall -Wextra -Wno-unused-parameter $(CFLAGS)

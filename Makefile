@@ -33,13 +33,13 @@ sheep/sheep: $(sheep-obj)
 		$(CC) $(SCFLAGS) -Iinclude -o $@ -c $<)
 
 include/sheep/config.h:
-	$(Q)$(call cmd, "   CONF   $@",					\
+	$(Q)$(call cmd, "   CF     $@",					\
 		rm -f $@;						\
 		echo "#define SHEEP_VERSION \"$(VERSION)\"" >> $@;	\
 		echo "#define SHEEP_NAME \"$(NAME)\"" >> $@)
 
 sheep/make.deps:
-	$(Q)$(call cmd, "   DEPS   $@",					\
+	$(Q)$(call cmd, "   MK     $@",					\
 		rm -f $@;						\
 		$(foreach obj,$(sheep-obj),				\
 			$(CPP) -Iinclude -MM -MT $(obj)			\
@@ -51,5 +51,5 @@ endif
 
 clean:
 	$(Q)$(foreach subdir,$(sort $(dir $(sheep-clean))),		\
-		$(call cmd, "   CLEAN   $(subdir)",			\
+		$(call cmd, "   CL     $(subdir)",			\
 			rm -f $(filter $(subdir)%,$(sheep-clean)); ))

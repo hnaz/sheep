@@ -31,9 +31,6 @@ void sheep_vm_mark(struct sheep_vm *vm)
 void sheep_vm_init(struct sheep_vm *vm)
 {
 	memset(vm, 0, sizeof(*vm));
-	vm->protected.blocksize = 32;
-	vm->globals.blocksize = 32;
-	sheep_evaluator_init(vm);
 	sheep_core_init(vm);
 }
 

@@ -127,7 +127,7 @@ static unsigned int slot_foreign(struct sheep_context *context,
 
 	if (!foreigns) {
 		foreigns = sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(foreigns, 4);
+		sheep_vector_init(foreigns);
 		function->foreigns = foreigns;
 	} else {
 		unsigned int i;

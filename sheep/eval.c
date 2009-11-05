@@ -65,7 +65,7 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 		return sheep;
 
 	foreigns = sheep_malloc(sizeof(struct sheep_vector));
-	sheep_vector_init(foreigns, 4);
+	sheep_vector_init(foreigns);
 
 	template = function->foreigns;
 	for (i = 0; i < template->nr_items; i++) {
@@ -293,12 +293,6 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		function = sheep_data(callable);
 		return __sheep_eval(vm, &function->code, function);
 	}
-}
-
-void sheep_evaluator_init(struct sheep_vm *vm)
-{
-	vm->stack.blocksize = 32;
-	vm->calls.blocksize = 16;
 }
 
 void sheep_evaluator_exit(struct sheep_vm *vm)

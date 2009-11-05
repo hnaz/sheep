@@ -36,8 +36,8 @@ struct sheep_code {
 };
 
 #define SHEEP_CODE_INITIALIZER			\
-	{ .code = SHEEP_VECTOR_INITIALIZER(32), \
-	  .labels = SHEEP_VECTOR_INITIALIZER(4) }
+	{ .code = SHEEP_VECTOR_INITIALIZER,	\
+	  .labels = SHEEP_VECTOR_INITIALIZER }
 
 #define SHEEP_DEFINE_CODE(name)				\
 	struct sheep_code name = SHEEP_CODE_INITIALIZER

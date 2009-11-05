@@ -14,7 +14,6 @@
 sheep_t sheep_eval(struct sheep_vm *, struct sheep_code *);
 sheep_t sheep_call(struct sheep_vm *, sheep_t, unsigned int, ...);
 
-void sheep_evaluator_init(struct sheep_vm *);
 void sheep_evaluator_exit(struct sheep_vm *);
 
 #endif /* _SHEEP_EVAL_H */

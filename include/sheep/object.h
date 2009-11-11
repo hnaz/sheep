@@ -11,6 +11,7 @@
 typedef struct sheep_object * sheep_t;
 
 struct sheep_context;
+struct sheep_unit;
 struct sheep_vm;
 
 struct sheep_sequence {
@@ -25,7 +26,8 @@ struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(struct sheep_vm *, sheep_t);
 
-	int (*compile)(struct sheep_vm *, struct sheep_context *, sheep_t);
+	int (*compile)(struct sheep_vm *, struct sheep_unit *,
+		struct sheep_context *, sheep_t);
 
 	int (*test)(sheep_t);
 	int (*equal)(sheep_t, sheep_t);

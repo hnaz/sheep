@@ -9,7 +9,9 @@
 #include <sheep/vector.h>
 #include <sheep/util.h>
 
-struct sheep_function;
+/* the sheep_code_dump bastard */
+struct sheep_unit;
+struct sheep_vm;
 
 enum sheep_opcode {
 	/* 0*/SHEEP_DROP,
@@ -79,7 +81,7 @@ unsigned long sheep_code_jump(struct sheep_code *);
 void sheep_code_label(struct sheep_code *, unsigned long);
 void sheep_code_finish(struct sheep_code *);
 
-void sheep_code_dump(struct sheep_vm *, struct sheep_function *,
+void sheep_code_dump(struct sheep_vm *, struct sheep_unit *,
 		unsigned long, enum sheep_opcode, unsigned int);
 
 void sheep_code_disassemble(struct sheep_code *);

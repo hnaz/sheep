@@ -3,7 +3,6 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
-#include <sheep/function.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -11,67 +10,43 @@
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
-#include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
 
 #include <sheep/compile.h>
 
-/**
- * __sheep_compile - compile an expression
- * @vm: runtime
- * @module: module namespace
- * @exp: expression to compile
- *
- * Compiles @exp to bytecode, using @module as the namespace to
- * establish and resolve bindings.
- *
- * Returns a code object that can be executed by sheep_eval() with the
- * same @vm argument.
- */
-struct sheep_code *__sheep_compile(struct sheep_vm *vm,
+struct sheep_unit *__sheep_compile(struct sheep_vm *vm,
 				struct sheep_module *module, sheep_t expr)
 {
-	struct sheep_context context;
-	struct sheep_code *code;
+	struct sheep_context context = {
+		.env = &module->env,
+	};
+	struct sheep_unit *unit;
 	int err;
 
-	code = sheep_malloc(sizeof(struct sheep_code));
-	sheep_code_init(code);
-
-	memset(&context, 0, sizeof(context));
-	context.code = code;
-	context.env = &module->env;
+	unit = sheep_zalloc(sizeof(struct sheep_unit));
+	sheep_code_init(&unit->code);
 
 	sheep_protect(vm, expr);
-	err = expr->type->compile(vm, &context, expr);
+	err = expr->type->compile(vm, unit, &context, expr);
 	sheep_unprotect(vm, expr);
 
 	if (err) {
-		sheep_code_exit(code);
-		sheep_free(code);
+		sheep_code_exit(&unit->code);
+		sheep_free(unit);
 		return NULL;
 	}
 
-	sheep_code_finish(code);
-	return code;
+	sheep_code_finish(&unit->code);
+	return unit;
 }
 
-/**
- * sheep_compile_constant - compile a constant reference
- * @vm: runtime
- * @context: compilation context
- * @exp: constant expression
- *
- * Compilation helper that emits a direct load for a constant value.
- */
-int sheep_compile_constant(struct sheep_vm *vm, struct sheep_context *context,
-			sheep_t expr)
+int sheep_compile_constant(struct sheep_vm *vm, struct sheep_unit *unit,
+			struct sheep_context *context, sheep_t expr)
 {
 	unsigned int slot;
 
 	slot = sheep_slot_constant(vm, expr);
-	sheep_emit(context->code, SHEEP_GLOBAL, slot);
+	sheep_emit(&unit->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
 
@@ -85,7 +60,6 @@ static int lookup(struct sheep_context *context, const char *name,
 		unsigned int *dist, unsigned int *slot,
 		enum env_level *env_level)
 {
-	struct sheep_function *last = context->function;
 	struct sheep_context *current = context;
 	unsigned int distance = 0;
 	void *entry;
@@ -93,22 +67,15 @@ static int lookup(struct sheep_context *context, const char *name,
 	while (sheep_map_get(current->env, name, &entry)) {
 		if (!current->parent)
 			return -1;
-		current = current->parent;
-		/*
-		 * There can be several environment nestings within
-		 * one function level, but for foreign slots we are
-		 * only interested in the latter.
-		 */
-		if (current->function != last) {
-			last = current->function;
+		if (current->flags & SHEEP_CONTEXT_FUNCTION)
 			distance++;
-		}
+		current = current->parent;
 	}
 
 	*dist = distance;
 	*slot = (unsigned long)entry;
 
-	if (!current->function)
+	if (!current->parent)
 		*env_level = ENV_GLOBAL;
 	else if (!distance)
 		*env_level = ENV_LOCAL;
@@ -118,17 +85,16 @@ static int lookup(struct sheep_context *context, const char *name,
 	return 0;
 }
 
-static unsigned int slot_foreign(struct sheep_context *context,
+static unsigned int slot_foreign(struct sheep_unit *unit,
 				unsigned int dist, unsigned int slot)
 {
-	struct sheep_function *function = context->function;
-	struct sheep_vector *foreigns = function->foreigns;
+	struct sheep_vector *foreigns = unit->foreigns;
 	struct sheep_foreign *foreign;
 
 	if (!foreigns) {
 		foreigns = sheep_malloc(sizeof(struct sheep_vector));
 		sheep_vector_init(foreigns);
-		function->foreigns = foreigns;
+		unit->foreigns = foreigns;
 	} else {
 		unsigned int i;
 
@@ -151,6 +117,7 @@ static unsigned int slot_foreign(struct sheep_context *context,
 }
 
 static int __sheep_compile_name(struct sheep_vm *vm,
+				struct sheep_unit *unit,
 				struct sheep_context *context,
 				sheep_t expr, int set)
 {
@@ -167,84 +134,62 @@ static int __sheep_compile_name(struct sheep_vm *vm,
 	switch (level) {
 	case ENV_LOCAL:
 		if (set)
-			sheep_emit(context->code, SHEEP_SET_LOCAL, slot);
-		sheep_emit(context->code, SHEEP_LOCAL, slot);
+			sheep_emit(&unit->code, SHEEP_SET_LOCAL, slot);
+		sheep_emit(&unit->code, SHEEP_LOCAL, slot);
 		break;
 	case ENV_GLOBAL:
 		if (set)
-			sheep_emit(context->code, SHEEP_SET_GLOBAL, slot);
-		sheep_emit(context->code, SHEEP_GLOBAL, slot);
+			sheep_emit(&unit->code, SHEEP_SET_GLOBAL, slot);
+		sheep_emit(&unit->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = slot_foreign(context, dist, slot);
+		slot = slot_foreign(unit, dist, slot);
 		if (set)
-			sheep_emit(context->code, SHEEP_SET_FOREIGN, slot);
-		sheep_emit(context->code, SHEEP_FOREIGN, slot);
+			sheep_emit(&unit->code, SHEEP_SET_FOREIGN, slot);
+		sheep_emit(&unit->code, SHEEP_FOREIGN, slot);
 		break;
 	}
 	return 0;
 }
 
-/**
- * sheep_compile_name - compile a name reference
- * @vm: runtime
- * @context: compilation context
- * @exp: name expression
- *
- * Compilation helper that emits an appropriate load for the slot
- * bound to the name in @exp, given that a binding exists.
- *
- * Returns 0 on success, -1 otherwise.
- */
-int sheep_compile_name(struct sheep_vm *vm, struct sheep_context *context,
-		sheep_t expr)
+int sheep_compile_name(struct sheep_vm *vm, struct sheep_unit *unit,
+		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, context, expr, 0);
+	return __sheep_compile_name(vm, unit, context, expr, 0);
 }
 
-int sheep_compile_set(struct sheep_vm *vm, struct sheep_context *context,
-		sheep_t expr)
+int sheep_compile_set(struct sheep_vm *vm, struct sheep_unit *unit,
+		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, context, expr, 1);
+	return __sheep_compile_name(vm, unit, context, expr, 1);
 }
 
-static int compile_call(struct sheep_vm *vm, struct sheep_context *context,
-			struct sheep_list *form)
+static int compile_call(struct sheep_vm *vm, struct sheep_unit *unit,
+			struct sheep_context *context, struct sheep_list *form)
 {
 	struct sheep_list *args;
 	int nargs;
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
-		if (args->head->type->compile(vm, context, args->head))
+		if (args->head->type->compile(vm, unit, context, args->head))
 			return -1;
 
-	if (form->head->type->compile(vm, context, form->head))
+	if (form->head->type->compile(vm, unit, context, form->head))
 		return -1;
-	sheep_emit(context->code, SHEEP_CALL, nargs);
+	sheep_emit(&unit->code, SHEEP_CALL, nargs);
 	return 0;
 }
 
-/**
- * sheep_compile_list - compile a list form
- * @vm: runtime
- * @context: compilation context
- * @expr: list
- *
- * Compilation helper for list expressions, which can be the empty
- * list constant, a special form or a function call.
- *
- * Returns 0 on success, -1 otherwise.
- */
-int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
-		sheep_t expr)
+int sheep_compile_list(struct sheep_vm *vm, struct sheep_unit *unit,
+		struct sheep_context *context, sheep_t expr)
 {
 	struct sheep_list *list;
 
 	list = sheep_list(expr);
 	/* The empty list is a constant */
 	if (!list->head)
-		return sheep_compile_constant(vm, context, expr);
+		return sheep_compile_constant(vm, unit, context, expr);
 	if (list->head->type == &sheep_name_type) {
 		const char *op;
 		void *entry;
@@ -252,13 +197,14 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_context *context,
 		op = sheep_data(list->head);
 		if (!sheep_map_get(&vm->specials, op, &entry)) {
 			int (*compile_special)(struct sheep_vm *,
+					struct sheep_unit *,
 					struct sheep_context *,
 					struct sheep_list *) = entry;
 			struct sheep_list *args;
 
 			args = sheep_list(list->tail);
-			return compile_special(vm, context, args);
+			return compile_special(vm, unit, context, args);
 		}
 	}
-	return compile_call(vm, context, list);
+	return compile_call(vm, unit, context, list);
 }

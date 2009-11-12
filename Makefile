@@ -6,9 +6,6 @@ CPP = cpp
 CFLAGS = -O2 -pipe
 LDFLAGS =
 
-SCFLAGS = -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
-SLDFLAGS = $(LDFLAGS)
-
 ifeq ($(V),1)
 Q	=
 cmd	= $(2)
@@ -17,7 +14,18 @@ Q	= @
 cmd	= echo $(1); $(2)
 endif
 
+DESTDIR =
+prefix = /usr
+bindir = $(prefix)/bin
+
+SCFLAGS = -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
+SLDFLAGS = $(LDFLAGS)
+
 all: sheep/sheep
+
+install: sheep/sheep
+	mkdir -p $(DESTDIR)$(bindir)
+	cp sheep/sheep $(DESTDIR)$(bindir)
 
 include sheep/Makefile
 sheep-obj	:= $(addprefix sheep/, $(sheep-obj))

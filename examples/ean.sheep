@@ -1,4 +1,6 @@
 # ean.sheep
+#
+# Copyright (c) 2009 Johannes Weiner
 
 (function sum (seq)
   (reduce + seq))
@@ -14,7 +16,7 @@
   "Make a list of digits in the number N."
   (map number (split "" (string n))))
 
-(function make-ring (items)
+(function ring-generator (items)
   "Create a ring generator that returns the items in
 ITEMS sequentially in subsequent calls, restarting from
 the beginning when reaching the end."
@@ -26,23 +28,33 @@ the beginning when reaching the end."
         (set pos (tail pos))
         item))))
 
+(function ring-multiplier (items)
+  "Create a ring-multiplier, which is a function that
+multiplies its sole argument with an item from ITEMS,
+starting from the first and advancing the ring with
+each subsequent invocation."
+  (with (ring (ring-generator items))
+    (function (n)
+      (* n (ring)))))
+
 (function ean-checksum (ean)
   "Checksum EAN: multiply each digit in the number
 with 3 and 1 alternatingly, sum up the results and
 take the difference from the next multiple of ten."
-  (function multiplier ()
-    (with (ring (make-ring (list 3 1)))
-      (function (digit)
-        (* digit (ring)))))
-  (diff-multiple (sum (map (multiplier)
-                           (reverse (digits ean))))
-                 10))
+  (diff-multiple
+    (sum (map (ring-multiplier (list 3 1))
+              (reverse (digits ean))))
+    10))
+
+(function concat-numbers (a b)
+  "Make a number that consists of the digits in
+A concatenated with the digits in B."
+  (number (concat (string a) (string b))))
 
 (function ean-checksum-range (base count)
   (if count
     (block
-      (ddump (number (concat (string base)
-                             (string (ean-checksum base)))))
+      (ddump (concat-numbers base (ean-checksum base)))
       (ean-checksum-range (+ base 1) (- count 1)))))
 
 (ean-checksum-range 12345 2000)

@@ -15,6 +15,7 @@
 struct sheep_context {
 	struct sheep_map *env;
 #define SHEEP_CONTEXT_FUNCTION	1
+#define SHEEP_CONTEXT_TAILFORM	2
 	unsigned int flags;
 	struct sheep_context *parent;
 };

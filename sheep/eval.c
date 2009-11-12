@@ -110,11 +110,10 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	return sheep;
 }
 
-static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
+static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 		sheep_t *value)
 {
 	struct sheep_function *function;
-	unsigned int nr_slots;
 
 	if (callable->type == &sheep_alien_type) {
 		struct sheep_alien *alien;
@@ -131,12 +130,18 @@ static int call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 			function->nr_parms < nr_args ? "many" : "few");
 		return -1;
 	}
-
-	nr_slots = function->unit.nr_locals - nr_args;
-	if (nr_slots)
-		sheep_vector_grow(&vm->stack, nr_slots);
-
 	return 0;
+}
+
+static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
+			unsigned int nr_args)
+{
+	unsigned int t;
+
+	for (t = nr_args; t; t--)
+		vm->stack.items[basep + nr_args - t] =
+			vm->stack.items[vm->stack.nr_items - t];
+	vm->stack.nr_items = basep + nr_args;
 }
 
 static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_unit *unit)
@@ -196,26 +201,49 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_unit *unit)
 			tmp = closure(vm, basep, tmp);
 			sheep_vector_push(&vm->stack, tmp);
 			break;
+		case SHEEP_TAILCALL:
+			tmp = sheep_vector_pop(&vm->stack);
+
+			done = precall(vm, tmp, arg, &tmp);
+			switch (done) {
+			case -1:
+				goto err;
+			case 1:
+				sheep_vector_push(&vm->stack, tmp);
+				break;
+			default:
+				splice_arguments(vm, basep, arg);
+				unit = &sheep_function(tmp)->unit;
+				codep = (unsigned long *)unit->code.code.items;
+				sheep_vector_grow(&vm->stack,
+						unit->nr_locals - arg);
+				continue;
+			}
+			break;
 		case SHEEP_CALL:
 			tmp = sheep_vector_pop(&vm->stack);
 
-			done = call(vm, tmp, arg, &tmp);
-			if (done < 0)
+			done = precall(vm, tmp, arg, &tmp);
+			switch (done) {
+			case -1:
 				goto err;
-			else if (done) {
+			case 1:
 				sheep_vector_push(&vm->stack, tmp);
 				break;
+			default:
+				sheep_vector_push(&vm->calls, codep);
+				sheep_vector_push(&vm->calls, (void *)basep);
+				sheep_vector_push(&vm->calls, unit);
+
+				unit = &sheep_function(tmp)->unit;
+				codep = (unsigned long *)unit->code.code.items;
+				sheep_vector_grow(&vm->stack,
+						unit->nr_locals - arg);
+				basep = vm->stack.nr_items - unit->nr_locals;
+				nesting++;
+				continue;
 			}
-
-			sheep_vector_push(&vm->calls, codep);
-			sheep_vector_push(&vm->calls, (void *)basep);
-			sheep_vector_push(&vm->calls, unit);
-
-			unit = &sheep_function(tmp)->unit;
-			basep = vm->stack.nr_items - unit->nr_locals;
-			codep = (unsigned long *)unit->code.code.items;
-			nesting++;
-			continue;
+			break;
 		case SHEEP_RET:
 			sheep_bug_on(vm->stack.nr_items -
 				basep - unit->nr_locals != 1);
@@ -282,7 +310,7 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		sheep_vector_push(&vm->stack, va_arg(ap, sheep_t));
 	va_end(ap);
 
-	switch (call(vm, callable, nr_args, &value)) {
+	switch (precall(vm, callable, nr_args, &value)) {
 	case -1:
 		return NULL;
 	case 1:
@@ -290,6 +318,8 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 	case 0:
 	default:
 		function = sheep_data(callable);
+		sheep_vector_grow(&vm->stack,
+				function->unit.nr_locals - nr_args);
 		return __sheep_eval(vm, &function->unit);
 	}
 }

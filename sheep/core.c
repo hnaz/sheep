@@ -139,22 +139,36 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_unit *unit,
 	return 0;
 }
 
-static int do_compile_block(struct sheep_vm *vm, struct sheep_unit *unit,
-			struct sheep_context *parent, struct sheep_map *env,
-			struct sheep_list *args, int function)
+static int tailposition(struct sheep_context *context, struct sheep_list *block)
 {
-	struct sheep_context context = {
-		.env = env,
-		.parent = parent,
-	};
+	struct sheep_list *next;
 
-	if (function)
-		context.flags |= SHEEP_CONTEXT_FUNCTION;
+	next = sheep_list(block->tail);
+	if (next->head)
+		return 0;
 
+	if (context->flags & SHEEP_CONTEXT_FUNCTION)
+		return 1;
+
+	if (!context->parent)
+		return 0;
+
+	if (context->parent->flags & SHEEP_CONTEXT_TAILFORM)
+		return 1;
+
+	return 0;
+}
+
+static int do_compile_forms(struct sheep_vm *vm, struct sheep_unit *unit,
+			struct sheep_context *context, struct sheep_list *args)
+{
 	for (;;) {
 		sheep_t value = args->head;
 
-		if (value->type->compile(vm, unit, &context, value))
+		if (tailposition(context, args))
+			context->flags |= SHEEP_CONTEXT_TAILFORM;
+
+		if (value->type->compile(vm, unit, context, value))
 			return -1;
 
 		args = sheep_list(args->tail);
@@ -168,6 +182,21 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_unit *unit,
 		sheep_emit(&unit->code, SHEEP_DROP, 0);
 	}
 	return 0;
+}
+
+static int do_compile_block(struct sheep_vm *vm, struct sheep_unit *unit,
+			struct sheep_context *parent, struct sheep_map *env,
+			struct sheep_list *args, int function)
+{
+	struct sheep_context context = {
+		.env = env,
+		.parent = parent,
+	};
+
+	if (function)
+		context.flags |= SHEEP_CONTEXT_FUNCTION;
+
+	return do_compile_forms(vm, unit, &context, args);
 }
 
 /* (block expr*) */
@@ -193,6 +222,10 @@ static int compile_with(struct sheep_vm *vm, struct sheep_unit *unit,
 {
 	struct sheep_list *bindings, *body;
 	SHEEP_DEFINE_MAP(env);
+	struct sheep_context block = {
+		.env = &env,
+		.parent = context,
+	};
 	int ret = -1;
 
 	if (unpack("with", args, "Lr!", &bindings, &body))
@@ -206,7 +239,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_unit *unit,
 		if (unpack("with", bindings, "Aor", &name, &value, &bindings))
 			goto out;
 
-		if (value->type->compile(vm, unit, context, value))
+		if (value->type->compile(vm, unit, &block, value))
 			goto out;
 
 		slot = sheep_slot_local(unit);
@@ -214,7 +247,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_unit *unit,
 		sheep_map_set(&env, name, (void *)(unsigned long)slot);
 	}
 
-	ret = do_compile_block(vm, unit, context, &env, body, 0);
+	ret = do_compile_forms(vm, unit, &block, body);
 out:
 	sheep_map_drain(&env);
 	return ret;
@@ -345,6 +378,8 @@ static int compile_or(struct sheep_vm *vm, struct sheep_unit *unit,
 	sheep_emit(&unit->code, SHEEP_BRT, Lend);
 
 	sheep_emit(&unit->code, SHEEP_DROP, 0);
+	if (tailposition(context, args))
+		block.flags |= SHEEP_CONTEXT_TAILFORM;
 	if (two->type->compile(vm, unit, &block, two))
 		goto out;
 
@@ -355,6 +390,8 @@ static int compile_or(struct sheep_vm *vm, struct sheep_unit *unit,
 			goto out;
 
 		sheep_emit(&unit->code, SHEEP_DROP, 0);
+		if (tailposition(context, args))
+			block.flags |= SHEEP_CONTEXT_TAILFORM;
 		if (one->type->compile(vm, unit, &block, one))
 			goto out;
 	}
@@ -389,6 +426,8 @@ static int compile_and(struct sheep_vm *vm, struct sheep_unit *unit,
 	sheep_emit(&unit->code, SHEEP_BRF, Lend);
 
 	sheep_emit(&unit->code, SHEEP_DROP, 0);
+	if (tailposition(context, args))
+		block.flags |= SHEEP_CONTEXT_TAILFORM;
 	if (two->type->compile(vm, unit, &block, two))
 		goto out;
 
@@ -399,6 +438,8 @@ static int compile_and(struct sheep_vm *vm, struct sheep_unit *unit,
 			goto out;
 
 		sheep_emit(&unit->code, SHEEP_DROP, 0);
+		if (tailposition(context, args))
+			block.flags |= SHEEP_CONTEXT_TAILFORM;
 		if (one->type->compile(vm, unit, &block, one))
 			goto out;
 	}
@@ -434,8 +475,11 @@ static int compile_if(struct sheep_vm *vm, struct sheep_unit *unit,
 	sheep_emit(&unit->code, SHEEP_BRF, Lelse);
 
 	sheep_emit(&unit->code, SHEEP_DROP, 0);
+	if (context->flags & SHEEP_CONTEXT_TAILFORM)
+		block.flags |= SHEEP_CONTEXT_TAILFORM;
 	if (then->type->compile(vm, unit, &block, then))
 		goto out;
+	block.flags &= ~SHEEP_CONTEXT_TAILFORM;
 
 	if (elseform->head) {
 		unsigned long Lend;
@@ -446,7 +490,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_unit *unit,
 		sheep_code_label(&unit->code, Lelse);
 
 		sheep_emit(&unit->code, SHEEP_DROP, 0);
-		if (do_compile_block(vm, unit, context, &env, elseform, 0))
+		if (do_compile_forms(vm, unit, &block, elseform))
 			goto out;
 
 		sheep_code_label(&unit->code, Lend);

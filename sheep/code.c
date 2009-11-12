@@ -47,7 +47,8 @@ void sheep_code_finish(struct sheep_code *code)
 
 static const char *opnames[] = {
 	"DROP", "LOCAL", "SET_LOCAL", "FOREIGN", "SET_FOREIGN",
-	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "RET", "BRT", "BRF", "BR",
+	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "TAILCALL", "RET",
+	"BRT", "BRF", "BR",
 };
 
 void sheep_code_dump(struct sheep_vm *vm, struct sheep_unit *unit,

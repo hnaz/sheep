@@ -167,18 +167,31 @@ int sheep_compile_set(struct sheep_vm *vm, struct sheep_unit *unit,
 static int compile_call(struct sheep_vm *vm, struct sheep_unit *unit,
 			struct sheep_context *context, struct sheep_list *form)
 {
+	SHEEP_DEFINE_MAP(env);
+	struct sheep_context block = {
+		.env = &env,
+		.parent = context,
+	};
 	struct sheep_list *args;
-	int nargs;
+	int nargs, ret = -1;
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
-		if (args->head->type->compile(vm, unit, context, args->head))
-			return -1;
+		if (args->head->type->compile(vm, unit, &block, args->head))
+			goto out;
 
 	if (form->head->type->compile(vm, unit, context, form->head))
-		return -1;
-	sheep_emit(&unit->code, SHEEP_CALL, nargs);
-	return 0;
+		goto out;
+
+	if (context->flags & SHEEP_CONTEXT_TAILFORM) {
+		printf("** tailcall to "), sheep_ddump(form->head);
+		sheep_emit(&unit->code, SHEEP_TAILCALL, nargs);
+	} else
+		sheep_emit(&unit->code, SHEEP_CALL, nargs);
+	ret = 0;
+out:
+	sheep_map_drain(&env);
+	return ret;
 }
 
 int sheep_compile_list(struct sheep_vm *vm, struct sheep_unit *unit,

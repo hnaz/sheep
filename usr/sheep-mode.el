@@ -45,7 +45,8 @@
     (modify-syntax-entry ?\" "\"   " table)
     ;; Parenthesis
     (modify-syntax-entry ?\( "()  " table)
-    (modify-syntax-entry ?\) ")(  " table)))
+    (modify-syntax-entry ?\) ")(  " table)
+    table))
 
 (defvar sheep-font-lock-keywords
   `(,(rx symbol-start

@@ -355,9 +355,9 @@ out:
 	return ret;
 }
 
-/* (or one two three*?) */
-static int compile_or(struct sheep_vm *vm, struct sheep_unit *unit,
-		struct sheep_context *context, struct sheep_list *args)
+static int do_compile_chain(struct sheep_vm *vm, struct sheep_unit *unit,
+			struct sheep_context *context, struct sheep_list *args,
+			const char *name, enum sheep_opcode endbranch)
 {
 	SHEEP_DEFINE_MAP(env);
 	struct sheep_context block = {
@@ -365,35 +365,29 @@ static int compile_or(struct sheep_vm *vm, struct sheep_unit *unit,
 		.parent = context,
 	};
 	unsigned long Lend;
-	sheep_t one, two;
 	int ret = -1;
 
-	if (unpack("or", args, "oor", &one, &two, &args))
+	if (unpack(name, args, "r!", &args))
 		goto out;
 
 	Lend = sheep_code_jump(&unit->code);
+	for (;;) {
+		sheep_t exp;
 
-	if (one->type->compile(vm, unit, &block, one))
-		goto out;
-	sheep_emit(&unit->code, SHEEP_BRT, Lend);
-
-	sheep_emit(&unit->code, SHEEP_DROP, 0);
-	if (tailposition(context, args))
-		block.flags |= SHEEP_CONTEXT_TAILFORM;
-	if (two->type->compile(vm, unit, &block, two))
-		goto out;
-
-	while (args->head) {
-		sheep_emit(&unit->code, SHEEP_BRT, Lend);
-
-		if (unpack("or", args, "or", &one, &args))
-			goto out;
-
-		sheep_emit(&unit->code, SHEEP_DROP, 0);
 		if (tailposition(context, args))
 			block.flags |= SHEEP_CONTEXT_TAILFORM;
-		if (one->type->compile(vm, unit, &block, one))
+
+		if (unpack(name, args, "or", &exp, &args))
 			goto out;
+
+		if (exp->type->compile(vm, unit, &block, exp))
+			goto out;
+
+		if (!args->head)
+			break;
+
+		sheep_emit(&unit->code, endbranch, Lend);
+		sheep_emit(&unit->code, SHEEP_DROP, 0);
 	}
 
 	sheep_code_label(&unit->code, Lend);
@@ -403,52 +397,18 @@ out:
 	return ret;
 }
 
+/* (or one two three*?) */
+static int compile_or(struct sheep_vm *vm, struct sheep_unit *unit,
+		struct sheep_context *context, struct sheep_list *args)
+{
+	return do_compile_chain(vm, unit, context, args, "or", SHEEP_BRT);
+}
+
 /* (and one two three*?) */
 static int compile_and(struct sheep_vm *vm, struct sheep_unit *unit,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	SHEEP_DEFINE_MAP(env);
-	struct sheep_context block = {
-		.env = &env,
-		.parent = context,
-	};
-	unsigned long Lend;
-	sheep_t one, two;
-	int ret = -1;
-
-	if (unpack("and", args, "oor", &one, &two, &args))
-		goto out;
-
-	Lend = sheep_code_jump(&unit->code);
-
-	if (one->type->compile(vm, unit, &block, one))
-		goto out;
-	sheep_emit(&unit->code, SHEEP_BRF, Lend);
-
-	sheep_emit(&unit->code, SHEEP_DROP, 0);
-	if (tailposition(context, args))
-		block.flags |= SHEEP_CONTEXT_TAILFORM;
-	if (two->type->compile(vm, unit, &block, two))
-		goto out;
-
-	while (args->head) {
-		sheep_emit(&unit->code, SHEEP_BRF, Lend);
-
-		if (unpack("and", args, "or", &one, &args))
-			goto out;
-
-		sheep_emit(&unit->code, SHEEP_DROP, 0);
-		if (tailposition(context, args))
-			block.flags |= SHEEP_CONTEXT_TAILFORM;
-		if (one->type->compile(vm, unit, &block, one))
-			goto out;
-	}
-
-	sheep_code_label(&unit->code, Lend);
-	ret = 0;
-out:
-	sheep_map_drain(&env);
-	return ret;
+	return do_compile_chain(vm, unit, context, args, "and", SHEEP_BRF);
 }
 
 /* (if cond then else*?) */

@@ -9,6 +9,7 @@
 #include <sheep/module.h>
 #include <sheep/number.h>
 #include <sheep/string.h>
+#include <sheep/unpack.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
@@ -27,101 +28,33 @@
 
 #include <sheep/core.h>
 
-static int do_verify(const char *caller, char control, sheep_t object)
-{
-	switch (control) {
-	case 'o':
-		return 1;
-	case 'b':
-		return object->type == &sheep_bool_type;
-	case 'n':
-		return object->type == &sheep_number_type;
-	case 'a':
-		return object->type == &sheep_name_type;
-	case 's':
-		return object->type == &sheep_string_type;
-	case 'l':
-		return object->type == &sheep_list_type;
-	case 'q':
-		return object->type == &sheep_string_type ||
-			object->type == &sheep_list_type;
-	case 'c':
-		return object->type == &sheep_alien_type ||
-			object->type == &sheep_function_type ||
-			object->type == &sheep_closure_type;
-	}
-	sheep_bug("unexpected unpack control %c", control);
-}
-
-static const char *map_control(char control)
-{
-	static const char *controlnames[] = {
-		"bbool", "nnumber", "aname", "sstring",
-		"llist", "qsequence", "ccallable", NULL
-	};
-	const char **p;
-
-	for (p = controlnames; *p; p++)
-		if (*p[0] == control)
-			return p[0] + 1;
-
-	sheep_bug("incomplete controlnames table");
-}
-
-static int verify(const char *caller, char control, sheep_t object)
-{
-	if (do_verify(caller, control, object))
-		return 1;
-
-	fprintf(stderr, "%s: expected %s, got %s\n",
-		caller, map_control(control), object->type->name);
-	return 0;
-}
-
 static int unpack(const char *caller, struct sheep_list *list,
 		const char *items, ...)
 {
-	struct sheep_object *object;
-	int ret = -1;
+	enum sheep_unpack status;
+	const char *wanted;
+	sheep_t mismatch;
 	va_list ap;
 
 	va_start(ap, items);
-	while (*items) {
-		if (*items == 'r') {
-			/*
-			 * "r!" makes sure the rest is non-empty
-			 */
-			if (items[1] == '!' && !list->head)
-				break;
-			*va_arg(ap, struct sheep_list **) = list;
-			ret = 0;
-			goto out;
-		}
-
-		if (!list->head)
-			break;
-
-		object = list->head;
-		if (!verify(caller, tolower(*items), object))
-			goto out;
-		if (isupper(*items))
-			*va_arg(ap, void **) = sheep_data(object);
-		else
-			*va_arg(ap, sheep_t *) = object;
-
-		items++;
-		list = sheep_list(list->tail);
-	}
-
-	if (*items)
-		fprintf(stderr, "%s: too few arguments\n", caller);
-	else if (list->head)
-		fprintf(stderr, "%s: too many arguments\n", caller);
-	else
-		ret = 0;
-out:
+	status = __sheep_unpack_list(&wanted, &mismatch, list, items, ap);
 	va_end(ap);
-	return ret;
+
+	switch (status) {
+	case SHEEP_UNPACK_OK:
+		return 0;
+	case SHEEP_UNPACK_MISMATCH:
+		fprintf(stderr, "%s: expected %s, got %s\n",
+			caller, wanted, mismatch->type->name);
+		return -1;
+	case SHEEP_UNPACK_TOO_MANY:
+		fprintf(stderr, "%s: too few arguments\n", caller);
+		return -1;
+	case SHEEP_UNPACK_TOO_FEW:
+		fprintf(stderr, "%s: too many arguments\n", caller);
+	default: /* weird compiler... */
+		return -1;
+	}
 }
 
 /* (quote expr) */
@@ -481,35 +414,31 @@ static int compile_set(struct sheep_vm *vm, struct sheep_unit *unit,
 int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 		unsigned int nr_args, const char *items, ...)
 {
-	unsigned int nr = nr_args;
-	int ret = -1;
+	enum sheep_unpack status;
+	const char *wanted;
+	sheep_t mismatch;
 	va_list ap;
 
-	va_start(ap, items);
-	while (*items && nr) {
-		struct sheep_object *object;
+	if (strlen(items) != nr_args) {
+		fprintf(stderr, "%s: too %s arguments\n", caller,
+			strlen(items) > nr_args ? "few" : "many");
+		return -1;
+	}
 
-		object = vm->stack.items[vm->stack.nr_items - nr];
-		if (!verify(caller, tolower(*items), object))
-			goto out;
-		if (isupper(*items))
-			*va_arg(ap, void **) = sheep_data(object);
-		else
-			*va_arg(ap, sheep_t *) = object;
-		items++;
-		nr--;
-	}
-	if (*items)
-		fprintf(stderr, "%s: too few arguments\n", caller);
-	else if (nr)
-		fprintf(stderr, "%s: too many arguments\n", caller);
-	else {
-		vm->stack.nr_items -= nr_args;
-		ret = 0;
-	}
-out:
+	va_start(ap, items);
+	status = __sheep_unpack_stack(&wanted, &mismatch, &vm->stack, items,ap);
 	va_end(ap);
-	return ret;
+
+	switch (status) {
+	case SHEEP_UNPACK_OK:
+		return 0;
+	case SHEEP_UNPACK_MISMATCH:
+		fprintf(stderr, "%s: expected %s, got %s\n",
+			caller, wanted, mismatch->type->name);
+		return -1;
+	default: /* should not happen, nr_args is trustworthy */
+		return -1;
+	}
 }
 
 /* (= a b) */

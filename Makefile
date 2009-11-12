@@ -1,25 +1,29 @@
-VERSION = 0.1
-NAME = Klaatu
+VERSION		= 0.1
+NAME		= Klaatu
 
-CC = gcc
-CPP = cpp
-CFLAGS = -O2 -pipe
-LDFLAGS =
+CC		= gcc
+CPP		= cpp
+CFLAGS		= -O2 -pipe
+LDFLAGS		=
 
 ifeq ($(V),1)
-Q	=
-cmd	= $(2)
+Q		=
+cmd		= $(2)
 else
-Q	= @
-cmd	= echo $(1); $(2)
+Q		= @
+cmd		= echo $(1); $(2)
 endif
 
-DESTDIR =
-prefix = /usr
-bindir = $(prefix)/bin
+DESTDIR		=
+prefix		= /usr
+bindir		= $(prefix)/bin
 
-SCFLAGS = -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
-SLDFLAGS = $(LDFLAGS)
+SCFLAGS		= -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
+SLDFLAGS	= $(LDFLAGS)
+
+ifeq ($(D),1)
+SCFLAGS		+= -O0 -g
+endif
 
 all: sheep/sheep
 

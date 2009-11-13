@@ -82,3 +82,12 @@ foo
 (map not alternating)
 
 (ddump (quote success!))
+
+(function << (n b)
+    (function shift (b ac)
+      (if b
+        (shift (- b 1) (* ac n))
+        ac))
+    (shift b 1))
+(<< 1 1)
+(<< 7 2)

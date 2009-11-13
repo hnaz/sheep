@@ -212,6 +212,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_unit *unit)
 				sheep_vector_push(&vm->stack, tmp);
 				break;
 			default:
+				close_pending(vm, basep);
 				splice_arguments(vm, basep, arg);
 				unit = &sheep_function(tmp)->unit;
 				codep = (unsigned long *)unit->code.code.items;

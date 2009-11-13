@@ -150,6 +150,12 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, struct sheep_unit *unit)
 	unsigned long basep = vm->stack.nr_items - unit->nr_locals;
 	unsigned int nesting = 0;
 
+	/*
+	 * XXX: The current calling convention means that the
+	 * executing closure is not on the stack.  A garbage
+	 * collection cycle can actually free it!!!
+	 */
+
 	for (;;) {
 		struct sheep_foreign *forin;
 		enum sheep_opcode op;

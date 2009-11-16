@@ -32,6 +32,7 @@
 	(i 0))
     (while (< i 256)
       (modify-syntax-entry i "_   " table)
+      (modify-syntax-entry i "w   " table)
       (setq i (1+ i)))
     ;; Whitespace
     (modify-syntax-entry ?\t "    " table)
@@ -39,18 +40,20 @@
     (modify-syntax-entry ?\f "    " table)
     (modify-syntax-entry ?\r "    " table)
     (modify-syntax-entry ?\s "    " table)
-    ;; Comment
-    (modify-syntax-entry ?\# "<   " table)
-    ;; String
-    (modify-syntax-entry ?\" "\"   " table)
+    ;; Punctuation
+    (modify-syntax-entry ?: ".   " table)
     ;; Parenthesis
     (modify-syntax-entry ?\( "()  " table)
     (modify-syntax-entry ?\) ")(  " table)
+    ;; String
+    (modify-syntax-entry ?\" "\"   " table)
+    ;; Comment
+    (modify-syntax-entry ?\# "<   " table)
     table))
 
 (defvar sheep-font-lock-keywords
   `(,(rx symbol-start
-	 (or "quote" "block" "if" "with" "variable" "set" "function")
+	 (or "quote" "block" "or" "and" "if" "with" "variable" "set" "function")
 	 symbol-end)))
 
 (provide 'sheep-mode)

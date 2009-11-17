@@ -133,8 +133,8 @@ static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 	return 0;
 }
 
-static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
-			unsigned int nr_args)
+static void
+splice_arguments(struct sheep_vm *vm, unsigned long basep, unsigned int nr_args)
 {
 	unsigned int t;
 
@@ -144,14 +144,33 @@ static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
 	vm->stack.nr_items = basep + nr_args;
 }
 
-static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
+static unsigned long
+finalize_frame(struct sheep_vm *vm, struct sheep_function *function)
 {
-	struct sheep_function *current = sheep_function(function);
-	unsigned long *codep = (unsigned long *)current->code.code.items;
-	unsigned long basep = vm->stack.nr_items - current->nr_locals;
+	unsigned int nr;
+
+	nr = function->nr_locals - function->nr_parms;
+	if (nr)
+		sheep_vector_grow(&vm->stack, nr);
+	return vm->stack.nr_items - function->nr_locals;
+}
+
+static unsigned long *function_codep(struct sheep_function *function)
+{
+	return (unsigned long *)function->code.code.items;
+}
+
+sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
+{
+	struct sheep_function *current;
+	unsigned long basep, *codep;
 	unsigned int nesting = 0;
 
 	sheep_protect(vm, function);
+
+	current = sheep_function(function);
+	codep = function_codep(current);
+	basep = finalize_frame(vm, current);
 
 	for (;;) {
 		struct sheep_indirect *indirect;
@@ -217,13 +236,15 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
 			default:
 				close_pending(vm, basep);
 				splice_arguments(vm, basep, arg);
+
 				sheep_unprotect(vm, function);
 				function = tmp;
 				sheep_protect(vm, function);
+
 				current = sheep_function(function);
-				codep = (unsigned long *)current->code.code.items;
-				sheep_vector_grow(&vm->stack,
-						current->nr_locals - arg);
+				codep = function_codep(current);
+
+				finalize_frame(vm, current);
 				continue;
 			}
 			break;
@@ -244,11 +265,11 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
 
 				function = tmp;
 				sheep_protect(vm, function);
+
 				current = sheep_function(function);
-				codep = (unsigned long *)current->code.code.items;
-				sheep_vector_grow(&vm->stack,
-						current->nr_locals - arg);
-				basep = vm->stack.nr_items - current->nr_locals;
+				codep = function_codep(current);
+				basep = finalize_frame(vm, current);
+
 				nesting++;
 				continue;
 			}
@@ -302,19 +323,9 @@ err:
 	return NULL;
 }
 
-sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
+sheep_t
+sheep_call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args, ...)
 {
-	struct sheep_function *current = sheep_function(function);
-
-	if (current->nr_locals)
-		sheep_vector_grow(&vm->stack, current->nr_locals);
-	return __sheep_eval(vm, function);
-}
-
-sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
-		unsigned int nr_args, ...)
-{
-	struct sheep_function *current;
 	unsigned int nr = nr_args;
 	sheep_t value;
 	va_list ap;
@@ -331,11 +342,7 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 		return value;
 	case 0:
 	default:
-		current = sheep_function(callable);
-		if (current->nr_locals)
-			sheep_vector_grow(&vm->stack,
-					current->nr_locals - nr_args);
-		return __sheep_eval(vm, callable);
+		return sheep_eval(vm, callable);
 	}
 }
 

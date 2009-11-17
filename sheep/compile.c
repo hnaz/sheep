@@ -179,10 +179,9 @@ static int compile_call(struct sheep_vm *vm, struct sheep_function *function,
 	if (form->head->type->compile(vm, function, context, form->head))
 		goto out;
 
-	if (context->flags & SHEEP_CONTEXT_TAILFORM) {
-		printf("** tailcall to "), sheep_ddump(form->head);
+	if (context->flags & SHEEP_CONTEXT_TAILFORM)
 		sheep_emit(&function->code, SHEEP_TAILCALL, nargs);
-	} else
+	else
 		sheep_emit(&function->code, SHEEP_CALL, nargs);
 	ret = 0;
 out:

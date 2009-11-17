@@ -56,4 +56,7 @@
 	 (or "quote" "block" "or" "and" "if" "with" "variable" "set" "function")
 	 symbol-end)))
 
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.sheep\\'" . sheep-mode))
+
 (provide 'sheep-mode)

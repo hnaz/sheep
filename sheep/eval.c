@@ -17,64 +17,65 @@
 
 #include <sheep/eval.h>
 
-static void note_pending(struct sheep_vm *vm, struct sheep_foreign *foreign)
+static void note_pending(struct sheep_vm *vm, struct sheep_indirect *indirect)
 {
-	struct sheep_foreign *prev = NULL, *next = vm->pending;
+	struct sheep_indirect *prev = NULL, *next = vm->pending;
 
 	while (next) {
-		if (foreign->value.live.index >= next->value.live.index)
+		if (indirect->value.live.index >= next->value.live.index)
 			break;
 		prev = next;
 		next = next->value.live.next;
 	}
 
-	foreign->value.live.next = next;
+	indirect->value.live.next = next;
 	if (prev)
-		prev->value.live.next = foreign;
+		prev->value.live.next = indirect;
 	else
-		vm->pending = foreign;
+		vm->pending = indirect;
 }
 
 static void close_pending(struct sheep_vm *vm, unsigned long basep)
 {
 	while (vm->pending) {
-		struct sheep_foreign *foreign = vm->pending;
+		struct sheep_indirect *indirect = vm->pending;
 		sheep_t value;
 
-		if (foreign->value.live.index < basep)
+		if (indirect->value.live.index < basep)
 			break;
 
-		vm->pending = foreign->value.live.next;
-		value = vm->stack.items[foreign->value.live.index];
-		foreign->state = SHEEP_FOREIGN_CLOSED;
-		foreign->value.closed = value;
+		vm->pending = indirect->value.live.next;
+		value = vm->stack.items[indirect->value.live.index];
+		indirect->closed = 1;
+		indirect->value.closed = value;
 	}
 }
 
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 {
 	struct sheep_function *function, *closure;
-	struct sheep_vector *template, *foreigns;
+	struct sheep_vector *freevars, *indirects;
 	unsigned int i;
 
 	sheep_bug_on(sheep->type != &sheep_function_type);
 	function = sheep_data(sheep);
 
-	if (!function->foreigns)
+	if (!function->foreign)
 		return sheep;
 
-	foreigns = sheep_malloc(sizeof(struct sheep_vector));
-	sheep_vector_init(foreigns);
+	indirects = sheep_malloc(sizeof(struct sheep_vector));
+	sheep_vector_init(indirects);
 
-	template = function->foreigns;
-	for (i = 0; i < template->nr_items; i++) {
-		struct sheep_foreign *foreign;
+	freevars = function->foreign;
+	for (i = 0; i < freevars->nr_items; i++) {
+		struct sheep_indirect *indirect;
+		struct sheep_freevar *freevar;
 		unsigned long owner, offset;
 		unsigned int dist, slot;
 
-		foreign = template->items[i];
-		dist = foreign->value.template.dist;
-		slot = foreign->value.template.slot;
+		freevar = freevars->items[i];
+		dist = freevar->dist;
+		slot = freevar->slot;
 		/*
 		 * Closure instantiation happens in the owner scope,
 		 * thus if the owner distance is 1, the current frame
@@ -95,17 +96,16 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 			owner = (unsigned long)vm->calls.items[offset];
 		}
 
-		foreign = sheep_malloc(sizeof(struct sheep_foreign));
-		foreign->state = SHEEP_FOREIGN_LIVE;
-		foreign->value.live.index = owner + slot;
+		indirect = sheep_zalloc(sizeof(struct sheep_indirect));
+		indirect->value.live.index = owner + slot;
 
-		sheep_vector_push(foreigns, foreign);
-		note_pending(vm, foreign);
+		sheep_vector_push(indirects, indirect);
+		note_pending(vm, indirect);
 	}
 
 	sheep = sheep_closure_function(vm, function);
 	closure = sheep_data(sheep);
-	closure->foreigns = foreigns;
+	closure->foreign = indirects;
 
 	return sheep;
 }
@@ -154,7 +154,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
 	sheep_protect(vm, function);
 
 	for (;;) {
-		struct sheep_foreign *forin;
+		struct sheep_indirect *indirect;
 		enum sheep_opcode op;
 		unsigned int arg;
 		sheep_t tmp;
@@ -176,20 +176,20 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
 			vm->stack.items[basep + arg] = tmp;
 			break;
 		case SHEEP_FOREIGN:
-			forin = current->foreigns->items[arg];
-			if (forin->state == SHEEP_FOREIGN_LIVE)
-				tmp = vm->stack.items[forin->value.live.index];
+			indirect = current->foreign->items[arg];
+			if (indirect->closed)
+				tmp = indirect->value.closed;
 			else
-				tmp = forin->value.closed;
+				tmp = vm->stack.items[indirect->value.live.index];
 			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_SET_FOREIGN:
 			tmp = sheep_vector_pop(&vm->stack);
-			forin = current->foreigns->items[arg];
-			if (forin->state == SHEEP_FOREIGN_LIVE)
-				vm->stack.items[forin->value.live.index] = tmp;
+			indirect = current->foreign->items[arg];
+			if (indirect->closed)
+				indirect->value.closed = tmp;
 			else
-				forin->value.closed = tmp;
+				vm->stack.items[indirect->value.live.index] = tmp;
 			break;
 		case SHEEP_GLOBAL:
 			tmp = vm->globals.items[arg];

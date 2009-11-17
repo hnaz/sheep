@@ -54,7 +54,7 @@ static const char *opnames[] = {
 void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		unsigned long basep, enum sheep_opcode op, unsigned int arg)
 {
-	struct sheep_foreign *foreign;
+	struct sheep_indirect *indirect;
 	sheep_t sheep;
 
 	printf("  %-10s %5u ", opnames[op], arg);
@@ -64,11 +64,11 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		sheep = vm->stack.items[basep + arg];
 		break;
 	case SHEEP_FOREIGN:
-		foreign = function->foreigns->items[arg];
-		if (foreign->state == SHEEP_FOREIGN_LIVE)
-			sheep = vm->stack.items[foreign->value.live.index];
+		indirect = function->foreign->items[arg];
+		if (indirect->closed)
+			sheep = indirect->value.closed;
 		else
-			sheep = foreign->value.closed;
+			sheep = vm->stack.items[indirect->value.live.index];
 		break;
 	case SHEEP_GLOBAL:
 	case SHEEP_CLOSURE:

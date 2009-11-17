@@ -85,32 +85,31 @@ static int lookup(struct sheep_context *context, const char *name,
 static unsigned int slot_foreign(struct sheep_function *function,
 				unsigned int dist, unsigned int slot)
 {
-	struct sheep_vector *foreigns = function->foreigns;
-	struct sheep_foreign *foreign;
+	struct sheep_vector *foreign = function->foreign;
+	struct sheep_freevar *freevar;
 
-	if (!foreigns) {
-		foreigns = sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(foreigns);
-		function->foreigns = foreigns;
+	if (!foreign) {
+		foreign = sheep_malloc(sizeof(struct sheep_vector));
+		sheep_vector_init(foreign);
+		function->foreign = foreign;
 	} else {
 		unsigned int i;
 
-		for (i = 0; i < foreigns->nr_items; i++) {
-			foreign = foreigns->items[i];
-			if (foreign->value.template.dist != dist)
+		for (i = 0; i < foreign->nr_items; i++) {
+			freevar = foreign->items[i];
+			if (freevar->dist != dist)
 				continue;
-			if (foreign->value.template.slot != slot)
+			if (freevar->slot != slot)
 				continue;
 			return i;
 		}
 	}
 
-	foreign = sheep_malloc(sizeof(struct sheep_foreign));
-	foreign->state = SHEEP_FOREIGN_TEMPLATE;
-	foreign->value.template.dist = dist;
-	foreign->value.template.slot = slot;
+	freevar = sheep_malloc(sizeof(struct sheep_freevar));
+	freevar->dist = dist;
+	freevar->slot = slot;
 
-	return sheep_vector_push(foreigns, foreign);
+	return sheep_vector_push(foreign, freevar);
 }
 
 static int __sheep_compile_name(struct sheep_vm *vm,

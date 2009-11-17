@@ -11,41 +11,14 @@
 
 #include <sheep/function.h>
 
-static void unlink_pending(struct sheep_vm *vm, struct sheep_foreign *foreign)
-{
-	struct sheep_foreign *prev = NULL, *this = vm->pending;
-
-	while (this) {
-		struct sheep_foreign *next;
-
-		next = this->value.live.next;
-		if (this == foreign) {
-			if (prev)
-				prev->value.live.next = next;
-			else
-				vm->pending = next;
-			return;
-		}
-		prev = this;
-		this = next;
-	}
-	sheep_bug("unqueued live foreign reference");
-}
-
-static void free_foreigns(struct sheep_vm *vm, struct sheep_vector *foreigns)
+static void free_freevar(struct sheep_vector *foreign)
 {
 	unsigned int i;
 
-	for (i = 0; i < foreigns->nr_items; i++) {
-		struct sheep_foreign *foreign;
-
-		foreign = foreigns->items[i];
-		if (foreign->state == SHEEP_FOREIGN_LIVE)
-			unlink_pending(vm, foreign);
-		sheep_free(foreign);
-	}
-	sheep_free(foreigns->items);
-	sheep_free(foreigns);
+	for (i = 0; i < foreign->nr_items; i++)
+		sheep_free(foreign->items[i]);
+	sheep_free(foreign->items);
+	sheep_free(foreign);
 }
 
 static void free_function(struct sheep_vm *vm, sheep_t sheep)
@@ -53,8 +26,8 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
-	if (function->foreigns)
-		free_foreigns(vm, function->foreigns);
+	if (function->foreign)
+		free_freevar(function->foreign);
 	sheep_code_exit(&function->code);
 	sheep_free(function->name);
 	sheep_free(function);
@@ -77,16 +50,16 @@ const struct sheep_type sheep_function_type = {
 	.ddump = ddump_function,
 };
 
-static void mark_foreigns(struct sheep_vector *foreigns)
+static void mark_indirect(struct sheep_vector *foreign)
 {
 	unsigned int i;
 
-	for (i = 0; i < foreigns->nr_items; i++) {
-		struct sheep_foreign *foreign;
+	for (i = 0; i < foreign->nr_items; i++) {
+		struct sheep_indirect *indirect;
 
-		foreign = foreigns->items[i];
-		if (foreign->state == SHEEP_FOREIGN_CLOSED)
-			sheep_mark(foreign->value.closed);
+		indirect = foreign->items[i];
+		if (indirect->closed)
+			sheep_mark(indirect->value.closed);
 	}
 }
 
@@ -95,16 +68,52 @@ static void mark_closure(sheep_t sheep)
 	struct sheep_function *closure;
 
 	closure = sheep_data(sheep);
-	mark_foreigns(closure->foreigns);
+	mark_indirect(closure->foreign);
 }
 
+static void unlink_pending(struct sheep_vm *vm, struct sheep_indirect *indirect)
+{
+	struct sheep_indirect *prev = NULL, *this = vm->pending;
+
+	while (this) {
+		struct sheep_indirect *next;
+
+		next = this->value.live.next;
+		if (this == indirect) {
+			if (prev)
+				prev->value.live.next = next;
+			else
+				vm->pending = next;
+			return;
+		}
+		prev = this;
+		this = next;
+	}
+	sheep_bug("unqueued live foreign reference");
+}
+
+static void free_indirect(struct sheep_vm *vm, struct sheep_vector *foreign)
+{
+	unsigned int i;
+
+	for (i = 0; i < foreign->nr_items; i++) {
+		struct sheep_indirect *indirect;
+
+		indirect = foreign->items[i];
+		if (!indirect->closed)
+			unlink_pending(vm, indirect);
+		sheep_free(indirect);
+	}
+	sheep_free(foreign->items);
+	sheep_free(foreign);
+}
 
 static void free_closure(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *closure;
 
 	closure = sheep_data(sheep);
-	free_foreigns(vm, closure->foreigns);
+	free_indirect(vm, closure->foreign);
 	sheep_free(closure->name);
 	sheep_free(closure);
 }

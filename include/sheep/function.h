@@ -12,22 +12,17 @@
 
 struct sheep_vm;
 
-enum sheep_foreign_state {
-	SHEEP_FOREIGN_TEMPLATE,
-	SHEEP_FOREIGN_LIVE,
-	SHEEP_FOREIGN_CLOSED,
+struct sheep_freevar {
+	unsigned int dist;
+	unsigned int slot;
 };
 
-struct sheep_foreign {
-	enum sheep_foreign_state state;
+struct sheep_indirect {
+	unsigned int closed;
 	union {
 		struct {
-			unsigned int dist;
-			unsigned int slot;
-		} template;
-		struct {
 			unsigned int index;
-			struct sheep_foreign *next;
+			struct sheep_indirect *next;
 		} live;
 		sheep_t closed;
 	} value;
@@ -39,7 +34,7 @@ struct sheep_function {
 
 	const char *name;
 	unsigned int nr_parms;
-	struct sheep_vector *foreigns;
+	struct sheep_vector *foreign;
 };
 
 extern const struct sheep_type sheep_function_type;

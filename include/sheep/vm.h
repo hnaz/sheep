@@ -26,7 +26,7 @@ struct sheep_vm {
 	struct sheep_module main;
 
 	/* Evaluator */
-	struct sheep_foreign *pending;
+	struct sheep_indirect *pending;
 	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };

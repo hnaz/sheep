@@ -5,7 +5,6 @@
  */
 #include <sheep/function.h>
 #include <sheep/compile.h>
-#include <sheep/config.h>
 #include <sheep/module.h>
 #include <sheep/number.h>
 #include <sheep/string.h>
@@ -22,7 +21,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdio.h>
 
 #include <sheep/core.h>

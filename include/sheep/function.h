@@ -7,14 +7,39 @@
 #define _SHEEP_FUNCTION_H
 
 #include <sheep/object.h>
-#include <sheep/unit.h>
+#include <sheep/vector.h>
+#include <sheep/code.h>
 
 struct sheep_vm;
 
+enum sheep_foreign_state {
+	SHEEP_FOREIGN_TEMPLATE,
+	SHEEP_FOREIGN_LIVE,
+	SHEEP_FOREIGN_CLOSED,
+};
+
+struct sheep_foreign {
+	enum sheep_foreign_state state;
+	union {
+		struct {
+			unsigned int dist;
+			unsigned int slot;
+		} template;
+		struct {
+			unsigned int index;
+			struct sheep_foreign *next;
+		} live;
+		sheep_t closed;
+	} value;
+};
+
 struct sheep_function {
-	struct sheep_unit unit;
-	unsigned int nr_parms;
+	struct sheep_code code;
+	unsigned int nr_locals;
+
 	const char *name;
+	unsigned int nr_parms;
+	struct sheep_vector *foreigns;
 };
 
 extern const struct sheep_type sheep_function_type;

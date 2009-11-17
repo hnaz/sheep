@@ -2,7 +2,6 @@
 #include <sheep/config.h>
 #include <sheep/eval.h>
 #include <sheep/read.h>
-#include <sheep/unit.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <sys/time.h>
@@ -23,20 +22,17 @@ static int do_file(const char *path)
 
 	sheep_vm_init(&vm);
 	while (1) {
-		struct sheep_unit *unit;
-		sheep_t exp, val;
+		sheep_t exp, fun, val;
 
 		exp = sheep_read(&vm, in);
 		if (!exp)
 			goto out;
 		if (exp == &sheep_eof)
 			break;
-		unit = sheep_compile(&vm, exp);
-		if (!unit)
+		fun = sheep_compile(&vm, exp);
+		if (!fun)
 			goto out;
-		val = sheep_eval(&vm, unit);
-		sheep_code_exit(&unit->code);
-		sheep_free(unit);
+		val = sheep_eval(&vm, fun);
 		if (!val)
 			goto out;
 	}
@@ -61,8 +57,7 @@ static int do_stdin(void)
 		SHEEP_VERSION, SHEEP_NAME, diff.tv_sec, diff.tv_usec);
 
 	while (1) {
-		struct sheep_unit *unit;
-		sheep_t exp, val;
+		sheep_t exp, fun, val;
 
 		printf("> ");
 		fflush(stdout);
@@ -71,12 +66,10 @@ static int do_stdin(void)
 			continue;
 		if (exp == &sheep_eof)
 			break;
-		unit = sheep_compile(&vm, exp);
-		if (!unit)
+		fun = sheep_compile(&vm, exp);
+		if (!fun)
 			continue;
-		val = sheep_eval(&vm, unit);
-		sheep_code_exit(&unit->code);
-		sheep_free(unit);
+		val = sheep_eval(&vm, fun);
 		if (val)
 			sheep_ddump(val);
 	}

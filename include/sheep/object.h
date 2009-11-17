@@ -6,12 +6,10 @@
 #ifndef _SHEEP_OBJECT_H
 #define _SHEEP_OBJECT_H
 
-#include <sheep/vector.h>
-
 typedef struct sheep_object * sheep_t;
 
+struct sheep_function;
 struct sheep_context;
-struct sheep_unit;
 struct sheep_vm;
 
 struct sheep_sequence {
@@ -26,7 +24,7 @@ struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(struct sheep_vm *, sheep_t);
 
-	int (*compile)(struct sheep_vm *, struct sheep_unit *,
+	int (*compile)(struct sheep_vm *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 
 	int (*test)(sheep_t);

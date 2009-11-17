@@ -7,11 +7,10 @@
 #define _SHEEP_EVAL_H
 
 #include <sheep/object.h>
-#include <sheep/unit.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
 
-sheep_t sheep_eval(struct sheep_vm *, struct sheep_unit *);
+sheep_t sheep_eval(struct sheep_vm *, sheep_t);
 sheep_t sheep_call(struct sheep_vm *, sheep_t, unsigned int, ...);
 
 void sheep_evaluator_exit(struct sheep_vm *);

@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/function.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -14,39 +15,35 @@
 
 #include <sheep/compile.h>
 
-struct sheep_unit *__sheep_compile(struct sheep_vm *vm,
-				struct sheep_module *module, sheep_t expr)
+sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
+			sheep_t expr)
 {
+	struct sheep_function *function;
 	struct sheep_context context = {
 		.env = &module->env,
 	};
-	struct sheep_unit *unit;
 	int err;
 
-	unit = sheep_zalloc(sizeof(struct sheep_unit));
-	sheep_code_init(&unit->code);
+	function = sheep_zalloc(sizeof(struct sheep_function));
+	sheep_code_init(&function->code);
 
-	sheep_protect(vm, expr);
-	err = expr->type->compile(vm, unit, &context, expr);
-	sheep_unprotect(vm, expr);
-
+	err = expr->type->compile(vm, function, &context, expr);
 	if (err) {
-		sheep_code_exit(&unit->code);
-		sheep_free(unit);
+		sheep_code_exit(&function->code);
+		sheep_free(function);
 		return NULL;
 	}
-
-	sheep_code_finish(&unit->code);
-	return unit;
+	sheep_code_finish(&function->code);
+	return sheep_make_object(vm, &sheep_function_type, function);
 }
 
-int sheep_compile_constant(struct sheep_vm *vm, struct sheep_unit *unit,
+int sheep_compile_constant(struct sheep_vm *vm, struct sheep_function *function,
 			struct sheep_context *context, sheep_t expr)
 {
 	unsigned int slot;
 
 	slot = sheep_slot_constant(vm, expr);
-	sheep_emit(&unit->code, SHEEP_GLOBAL, slot);
+	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
 
@@ -85,16 +82,16 @@ static int lookup(struct sheep_context *context, const char *name,
 	return 0;
 }
 
-static unsigned int slot_foreign(struct sheep_unit *unit,
+static unsigned int slot_foreign(struct sheep_function *function,
 				unsigned int dist, unsigned int slot)
 {
-	struct sheep_vector *foreigns = unit->foreigns;
+	struct sheep_vector *foreigns = function->foreigns;
 	struct sheep_foreign *foreign;
 
 	if (!foreigns) {
 		foreigns = sheep_malloc(sizeof(struct sheep_vector));
 		sheep_vector_init(foreigns);
-		unit->foreigns = foreigns;
+		function->foreigns = foreigns;
 	} else {
 		unsigned int i;
 
@@ -117,7 +114,7 @@ static unsigned int slot_foreign(struct sheep_unit *unit,
 }
 
 static int __sheep_compile_name(struct sheep_vm *vm,
-				struct sheep_unit *unit,
+				struct sheep_function *function, 
 				struct sheep_context *context,
 				sheep_t expr, int set)
 {
@@ -134,37 +131,37 @@ static int __sheep_compile_name(struct sheep_vm *vm,
 	switch (level) {
 	case ENV_LOCAL:
 		if (set)
-			sheep_emit(&unit->code, SHEEP_SET_LOCAL, slot);
-		sheep_emit(&unit->code, SHEEP_LOCAL, slot);
+			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
+		sheep_emit(&function->code, SHEEP_LOCAL, slot);
 		break;
 	case ENV_GLOBAL:
 		if (set)
-			sheep_emit(&unit->code, SHEEP_SET_GLOBAL, slot);
-		sheep_emit(&unit->code, SHEEP_GLOBAL, slot);
+			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
+		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = slot_foreign(unit, dist, slot);
+		slot = slot_foreign(function, dist, slot);
 		if (set)
-			sheep_emit(&unit->code, SHEEP_SET_FOREIGN, slot);
-		sheep_emit(&unit->code, SHEEP_FOREIGN, slot);
+			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
+		sheep_emit(&function->code, SHEEP_FOREIGN, slot);
 		break;
 	}
 	return 0;
 }
 
-int sheep_compile_name(struct sheep_vm *vm, struct sheep_unit *unit,
+int sheep_compile_name(struct sheep_vm *vm, struct sheep_function *function,
 		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, unit, context, expr, 0);
+	return __sheep_compile_name(vm, function, context, expr, 0);
 }
 
-int sheep_compile_set(struct sheep_vm *vm, struct sheep_unit *unit,
+int sheep_compile_set(struct sheep_vm *vm, struct sheep_function *function,
 		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, unit, context, expr, 1);
+	return __sheep_compile_name(vm, function, context, expr, 1);
 }
 
-static int compile_call(struct sheep_vm *vm, struct sheep_unit *unit,
+static int compile_call(struct sheep_vm *vm, struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *form)
 {
 	SHEEP_DEFINE_MAP(env);
@@ -177,24 +174,24 @@ static int compile_call(struct sheep_vm *vm, struct sheep_unit *unit,
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
-		if (args->head->type->compile(vm, unit, &block, args->head))
+		if (args->head->type->compile(vm, function, &block, args->head))
 			goto out;
 
-	if (form->head->type->compile(vm, unit, context, form->head))
+	if (form->head->type->compile(vm, function, context, form->head))
 		goto out;
 
 	if (context->flags & SHEEP_CONTEXT_TAILFORM) {
 		printf("** tailcall to "), sheep_ddump(form->head);
-		sheep_emit(&unit->code, SHEEP_TAILCALL, nargs);
+		sheep_emit(&function->code, SHEEP_TAILCALL, nargs);
 	} else
-		sheep_emit(&unit->code, SHEEP_CALL, nargs);
+		sheep_emit(&function->code, SHEEP_CALL, nargs);
 	ret = 0;
 out:
 	sheep_map_drain(&env);
 	return ret;
 }
 
-int sheep_compile_list(struct sheep_vm *vm, struct sheep_unit *unit,
+int sheep_compile_list(struct sheep_vm *vm, struct sheep_function *function,
 		struct sheep_context *context, sheep_t expr)
 {
 	struct sheep_list *list;
@@ -202,7 +199,7 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_unit *unit,
 	list = sheep_list(expr);
 	/* The empty list is a constant */
 	if (!list->head)
-		return sheep_compile_constant(vm, unit, context, expr);
+		return sheep_compile_constant(vm, function, context, expr);
 	if (list->head->type == &sheep_name_type) {
 		const char *op;
 		void *entry;
@@ -210,14 +207,14 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_unit *unit,
 		op = sheep_data(list->head);
 		if (!sheep_map_get(&vm->specials, op, &entry)) {
 			int (*compile_special)(struct sheep_vm *,
-					struct sheep_unit *,
+					struct sheep_function *,
 					struct sheep_context *,
 					struct sheep_list *) = entry;
 			struct sheep_list *args;
 
 			args = sheep_list(list->tail);
-			return compile_special(vm, unit, context, args);
+			return compile_special(vm, function, context, args);
 		}
 	}
-	return compile_call(vm, unit, context, list);
+	return compile_call(vm, function, context, list);
 }

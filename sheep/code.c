@@ -51,7 +51,7 @@ static const char *opnames[] = {
 	"BRT", "BRF", "BR",
 };
 
-void sheep_code_dump(struct sheep_vm *vm, struct sheep_unit *unit,
+void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		unsigned long basep, enum sheep_opcode op, unsigned int arg)
 {
 	struct sheep_foreign *foreign;
@@ -64,7 +64,7 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_unit *unit,
 		sheep = vm->stack.items[basep + arg];
 		break;
 	case SHEEP_FOREIGN:
-		foreign = unit->foreigns->items[arg];
+		foreign = function->foreigns->items[arg];
 		if (foreign->state == SHEEP_FOREIGN_LIVE)
 			sheep = vm->stack.items[foreign->value.live.index];
 		else

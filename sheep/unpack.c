@@ -14,6 +14,7 @@
 #include <sheep/name.h>
 #include <sheep/util.h>
 #include <stdarg.h>
+#include <string.h>
 #include <ctype.h>
 
 #include <sheep/unpack.h>
@@ -106,17 +107,18 @@ enum sheep_unpack __sheep_unpack_stack(const char **wanted, sheep_t *mismatch,
 				struct sheep_vector *stack,
 				const char *items, va_list ap)
 {
-	unsigned long top = stack->nr_items;
+	unsigned long base = stack->nr_items - strlen(items);
+	unsigned long index = base;
 
 	while (*items) {
 		sheep_t object;
 		char type;
 
-		if (!top)
+		if (index == stack->nr_items)
 			break;
 
 		type = tolower(*items);
-		object = stack->items[top - 1];
+		object = stack->items[index];
 
 		if (!verify(type, object)) {
 			*wanted = map_type(type);
@@ -130,12 +132,12 @@ enum sheep_unpack __sheep_unpack_stack(const char **wanted, sheep_t *mismatch,
 			*va_arg(ap, sheep_t *) = object;
 
 		items++;
-		top--;
+		index++;
 	}
 
 	if (*items)
 		return SHEEP_UNPACK_TOO_MANY;
 
-	stack->nr_items = top;
+	stack->nr_items = base;
 	return SHEEP_UNPACK_OK;
 }

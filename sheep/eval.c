@@ -161,7 +161,7 @@ static sheep_t __sheep_eval(struct sheep_vm *vm, sheep_t function)
 		int done;
 
 		sheep_decode(*codep, &op, &arg);
-		sheep_code_dump(vm, current, basep, op, arg);
+		//sheep_code_dump(vm, current, basep, op, arg);
 
 		switch (op) {
 		case SHEEP_DROP:

@@ -268,7 +268,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 			sheep_map_del(context->env, name);
 		goto out;
 	}
-	sheep_code_finish(&childfun->code);
+	sheep_code_finalize(&childfun->code);
 
 	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
 	if (name) {

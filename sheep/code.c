@@ -22,7 +22,7 @@ void sheep_code_label(struct sheep_code *code, unsigned long jump)
 	code->labels.items[jump] = (void *)offset;
 }
 
-void sheep_code_finish(struct sheep_code *code)
+void sheep_code_finalize(struct sheep_code *code)
 {
 	unsigned long offset;
 

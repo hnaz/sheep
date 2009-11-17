@@ -33,7 +33,7 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 		sheep_free(function);
 		return NULL;
 	}
-	sheep_code_finish(&function->code);
+	sheep_code_finalize(&function->code);
 	return sheep_make_object(vm, &sheep_function_type, function);
 }
 

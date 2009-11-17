@@ -80,7 +80,7 @@ static inline unsigned long sheep_emit(struct sheep_code *code,
 
 unsigned long sheep_code_jump(struct sheep_code *);
 void sheep_code_label(struct sheep_code *, unsigned long);
-void sheep_code_finish(struct sheep_code *);
+void sheep_code_finalize(struct sheep_code *);
 
 void sheep_code_dump(struct sheep_vm *, struct sheep_function *,
 		unsigned long, enum sheep_opcode, unsigned int);

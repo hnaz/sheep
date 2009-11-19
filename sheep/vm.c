@@ -25,7 +25,8 @@ void sheep_vm_mark(struct sheep_vm *vm)
 			sheep_mark(vm->globals.items[i]);
 
 	for (i = 0; i < vm->stack.nr_items; i++)
-		sheep_mark(vm->stack.items[i]);
+		if (vm->stack.items[i])
+			sheep_mark(vm->stack.items[i]);
 }
 
 void sheep_vm_init(struct sheep_vm *vm)

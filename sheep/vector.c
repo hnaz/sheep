@@ -74,5 +74,6 @@ void sheep_vector_grow(struct sheep_vector *vec, unsigned long delta)
 	want = vec->nr_items + delta;
 	if (want >= vec->nr_alloc)
 		vector_resize(vec, want);
-	vec->nr_items = want;
+	while (vec->nr_items < want)
+		vec->items[vec->nr_items++] = NULL;
 }

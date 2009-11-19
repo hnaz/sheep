@@ -21,26 +21,28 @@
 
 static int verify(char control, sheep_t object)
 {
+	const struct sheep_type *type = sheep_type(object);
+
 	switch (control) {
 	case 'o':
 		return 1;
 	case 'b':
-		return object->type == &sheep_bool_type;
+		return type == &sheep_bool_type;
 	case 'n':
-		return object->type == &sheep_number_type;
+		return type == &sheep_number_type;
 	case 'a':
-		return object->type == &sheep_name_type;
+		return type == &sheep_name_type;
 	case 's':
-		return object->type == &sheep_string_type;
+		return type == &sheep_string_type;
 	case 'l':
-		return object->type == &sheep_list_type;
+		return type == &sheep_list_type;
 	case 'q':
-		return object->type == &sheep_string_type ||
-			object->type == &sheep_list_type;
+		return type == &sheep_string_type ||
+			type == &sheep_list_type;
 	case 'c':
-		return object->type == &sheep_alien_type ||
-			object->type == &sheep_function_type ||
-			object->type == &sheep_closure_type;
+		return type == &sheep_alien_type ||
+			type == &sheep_function_type ||
+			type == &sheep_closure_type;
 	}
 	sheep_bug("unexpected unpack control %c", control);
 }

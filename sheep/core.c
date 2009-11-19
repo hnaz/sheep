@@ -42,7 +42,7 @@ static int unpack(const char *caller, struct sheep_list *list,
 		return 0;
 	case SHEEP_UNPACK_MISMATCH:
 		fprintf(stderr, "%s: expected %s, got %s\n",
-			caller, wanted, mismatch->type->name);
+			caller, wanted, sheep_type(mismatch)->name);
 		return -1;
 	case SHEEP_UNPACK_TOO_MANY:
 		fprintf(stderr, "%s: too few arguments\n", caller);
@@ -98,7 +98,7 @@ static int do_compile_forms(struct sheep_vm *vm, struct sheep_function *function
 		if (tailposition(context, args))
 			context->flags |= SHEEP_CONTEXT_TAILFORM;
 
-		if (value->type->compile(vm, function, context, value))
+		if (sheep_compile_object(vm, function, context, value))
 			return -1;
 
 		args = sheep_list(args->tail);
@@ -169,7 +169,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 		if (unpack("with", bindings, "Aor", &name, &value, &bindings))
 			goto out;
 
-		if (value->type->compile(vm, function, &block, value))
+		if (sheep_compile_object(vm, function, &block, value))
 			goto out;
 
 		slot = sheep_slot_local(function);
@@ -194,7 +194,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 	if (unpack("variable", args, "Ao", &name, &value))
 		return -1;
 
-	if (value->type->compile(vm, function, context, value))
+	if (sheep_compile_object(vm, function, context, value))
 		return -1;
 
 	if (context->parent) {
@@ -222,7 +222,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	sheep_t sheep;
 	int ret = -1;
 
-	if (args->head && args->head->type == &sheep_name_type) {
+	if (args->head && sheep_type(args->head) == &sheep_name_type) {
 		name = sheep_cname(args->head);
 		args = sheep_list(args->tail);
 	} else
@@ -310,7 +310,7 @@ static int do_compile_chain(struct sheep_vm *vm, struct sheep_function *function
 		if (unpack(name, args, "or", &exp, &args))
 			goto out;
 
-		if (exp->type->compile(vm, function, &block, exp))
+		if (sheep_compile_object(vm, function, &block, exp))
 			goto out;
 
 		if (!args->head)
@@ -360,14 +360,14 @@ static int compile_if(struct sheep_vm *vm, struct sheep_function *function,
 
 	Lelse = sheep_code_jump(&function->code);
 
-	if (cond->type->compile(vm, function, &block, cond))
+	if (sheep_compile_object(vm, function, &block, cond))
 		goto out;
 	sheep_emit(&function->code, SHEEP_BRF, Lelse);
 
 	sheep_emit(&function->code, SHEEP_DROP, 0);
 	if (context->flags & SHEEP_CONTEXT_TAILFORM)
 		block.flags |= SHEEP_CONTEXT_TAILFORM;
-	if (then->type->compile(vm, function, &block, then))
+	if (sheep_compile_object(vm, function, &block, then))
 		goto out;
 	block.flags &= ~SHEEP_CONTEXT_TAILFORM;
 
@@ -402,7 +402,7 @@ static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
 	if (unpack("set", args, "ao", &name, &value))
 		return -1;
 
-	if (value->type->compile(vm, function, context, value))
+	if (sheep_compile_object(vm, function, context, value))
 		return -1;
 
 	return sheep_compile_set(vm, function, context, name);
@@ -431,7 +431,7 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 		return 0;
 	case SHEEP_UNPACK_MISMATCH:
 		fprintf(stderr, "%s: expected %s, got %s\n",
-			caller, wanted, mismatch->type->name);
+			caller, wanted, sheep_type(mismatch)->name);
 		return -1;
 	default: /* should not happen, nr_args is trustworthy */
 		return -1;
@@ -485,10 +485,10 @@ static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("number", vm, nr_args, "o", &sheep))
 		return NULL;
 
-	if (sheep->type == &sheep_number_type)
+	if (sheep_type(sheep) == &sheep_number_type)
 		return sheep;
 
-	if (sheep->type == &sheep_string_type) {
+	if (sheep_type(sheep) == &sheep_string_type) {
 		double value;
 		char *end;
 
@@ -501,7 +501,8 @@ static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
 		return sheep_make_number(vm, value);
 	}
 
-	fprintf(stderr, "number: can not convert %s\n", sheep->type->name);
+	fprintf(stderr, "number: can not convert %s\n",
+		sheep_type(sheep)->name);
 	return NULL;
 }
 
@@ -651,17 +652,18 @@ static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
 		return NULL;
 
-	if (sheep->type == &sheep_string_type)
+	if (sheep_type(sheep) == &sheep_string_type)
 		return sheep;
 
-	if (sheep->type == &sheep_number_type) {
+	if (sheep_type(sheep) == &sheep_number_type) {
 		char buf[32];
 
 		sprintf(buf, "%.14g", *(double *)sheep_data(sheep));
 		return sheep_make_string(vm, buf);
 	}
 
-	fprintf(stderr, "string: can not convert %s\n", sheep->type->name);
+	fprintf(stderr, "string: can not convert %s\n",
+		sheep_type(sheep)->name);
 	return NULL;
 }
 
@@ -928,7 +930,7 @@ static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("length", vm, nr_args, "q", &seq))
 		return NULL;
 
-	len = seq->type->sequence->length(seq);
+	len = sheep_sequence(seq)->length(seq);
 	return sheep_make_number(vm, len);
 }
 
@@ -940,13 +942,13 @@ static sheep_t eval_concat(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("concat", vm, nr_args, "qq", &a, &b))
 		return NULL;
 
-	if (a->type != b->type) {
+	if (sheep_type(a) != sheep_type(b)) {
 		fprintf(stderr, "concat: can not concat %s and %s\n",
-			a->type->name, b->type->name);
+			sheep_type(a)->name, sheep_type(b)->name);
 		return NULL;
 	}
 
-	return a->type->sequence->concat(vm, a, b);
+	return sheep_sequence(a)->concat(vm, a, b);
 }
 
 /* (reverse sequence) */
@@ -957,7 +959,7 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("reverse", vm, nr_args, "q", &sheep))
 		return NULL;
 
-	return sheep->type->sequence->reverse(vm, sheep);
+	return sheep_sequence(sheep)->reverse(vm, sheep);
 }
 
 /* (ddump expr) */
@@ -982,7 +984,7 @@ static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("disassemble", vm, nr_args, "c", &callable))
 		return NULL;
 	
-	if (callable->type == &sheep_alien_type) {
+	if (sheep_type(callable) == &sheep_alien_type) {
 		struct sheep_alien *alien;
 
 		alien = sheep_data(callable);

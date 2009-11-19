@@ -174,8 +174,8 @@ sheep_t sheep_make_object(struct sheep_vm *vm, const struct sheep_type *type,
 
 int sheep_test(sheep_t sheep)
 {
-	if (sheep->type->test)
-		return sheep->type->test(sheep);
+	if (sheep_type(sheep)->test)
+		return sheep_type(sheep)->test(sheep);
 	return 1;
 }
 
@@ -183,19 +183,19 @@ int sheep_equal(sheep_t a, sheep_t b)
 {
 	if (a == b)
 		return 1;
-	if (a->type != b->type)
+	if (sheep_type(a) != sheep_type(b))
 		return 0;
-	if (a->type->equal)
-		return a->type->equal(a, b);
+	if (sheep_type(a)->equal)
+		return sheep_type(a)->equal(a, b);
 	return 0;
 }
 
 void __sheep_ddump(sheep_t sheep)
 {
-	if (sheep->type->ddump)
-		sheep->type->ddump(sheep);
+	if (sheep_type(sheep)->ddump)
+		sheep_type(sheep)->ddump(sheep);
 	else
-		printf("#<%s %p>", sheep->type->name, sheep);
+		printf("#<%s %p>", sheep_type(sheep)->name, sheep);
 }
 
 void sheep_ddump(sheep_t sheep)
@@ -209,8 +209,8 @@ void sheep_mark(sheep_t sheep)
 	if (sheep->data & 1)
 		return;
 	sheep->data |= 1;
-	if (sheep->type->mark)
-		sheep->type->mark(sheep);
+	if (sheep_type(sheep)->mark)
+		sheep_type(sheep)->mark(sheep);
 }
 
 void sheep_protect(struct sheep_vm *vm, sheep_t sheep)

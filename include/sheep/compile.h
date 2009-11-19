@@ -41,6 +41,13 @@ static inline unsigned int sheep_slot_local(struct sheep_function *function)
 	return function->nr_locals++;
 }
 
+static inline int sheep_compile_object(struct sheep_vm *vm,
+				struct sheep_function *function,
+				struct sheep_context *context, sheep_t sheep)
+{
+	return sheep_type(sheep)->compile(vm, function, context, sheep);
+}
+
 int sheep_compile_constant(struct sheep_vm *, struct sheep_function *,
 			struct sheep_context *, sheep_t);
 int sheep_compile_name(struct sheep_vm *, struct sheep_function *,

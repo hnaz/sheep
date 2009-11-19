@@ -57,7 +57,7 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	struct sheep_vector *freevars, *indirects;
 	unsigned int i;
 
-	sheep_bug_on(sheep->type != &sheep_function_type);
+	sheep_bug_on(sheep_type(sheep) != &sheep_function_type);
 	function = sheep_data(sheep);
 
 	if (!function->foreign)
@@ -115,7 +115,7 @@ static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 {
 	struct sheep_function *function;
 
-	if (callable->type == &sheep_alien_type) {
+	if (sheep_type(callable) == &sheep_alien_type) {
 		struct sheep_alien *alien;
 
 		alien = sheep_data(callable);

@@ -27,7 +27,7 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 	function = sheep_zalloc(sizeof(struct sheep_function));
 	sheep_code_init(&function->code);
 
-	err = expr->type->compile(vm, function, &context, expr);
+	err = sheep_compile_object(vm, function, &context, expr);
 	if (err) {
 		sheep_code_exit(&function->code);
 		sheep_free(function);
@@ -173,10 +173,10 @@ static int compile_call(struct sheep_vm *vm, struct sheep_function *function,
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
-		if (args->head->type->compile(vm, function, &block, args->head))
+		if (sheep_compile_object(vm, function, &block, args->head))
 			goto out;
 
-	if (form->head->type->compile(vm, function, context, form->head))
+	if (sheep_compile_object(vm, function, context, form->head))
 		goto out;
 
 	if (context->flags & SHEEP_CONTEXT_TAILFORM)
@@ -198,7 +198,7 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_function *function,
 	/* The empty list is a constant */
 	if (!list->head)
 		return sheep_compile_constant(vm, function, context, expr);
-	if (list->head->type == &sheep_name_type) {
+	if (sheep_type(list->head) == &sheep_name_type) {
 		const char *op;
 		void *entry;
 

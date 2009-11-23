@@ -438,45 +438,6 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 	}
 }
 
-/* (= a b) */
-static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t a, b;
-
-	if (sheep_unpack_stack("=", vm, nr_args, "oo", &a, &b))
-		return NULL;
-
-	if (sheep_equal(a, b))
-		return &sheep_true;
-	return &sheep_false;
-}
-
-/* (bool object) */
-static sheep_t eval_bool(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t sheep;
-
-	if (sheep_unpack_stack("bool", vm, nr_args, "o", &sheep))
-		return NULL;
-
-	if (sheep_test(sheep))
-		return &sheep_true;
-	return &sheep_false;
-}
-
-/* (not object) */
-static sheep_t eval_not(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t sheep;
-
-	if (sheep_unpack_stack("not", vm, nr_args, "o", &sheep))
-		return NULL;
-
-	if (sheep_test(sheep))
-		return &sheep_false;
-	return &sheep_true;
-}
-
 /* (number expression) */
 static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -1009,13 +970,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);
-
-	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
-	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
-
-	sheep_module_function(vm, &vm->main, "=", eval_equal);
-	sheep_module_function(vm, &vm->main, "bool", eval_bool);
-	sheep_module_function(vm, &vm->main, "not", eval_not);
 
 	sheep_module_function(vm, &vm->main, "number", eval_number);
 	sheep_module_function(vm, &vm->main, "<", eval_less);

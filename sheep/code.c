@@ -5,6 +5,7 @@
  */
 #include <sheep/function.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/vm.h>
 #include <stdio.h>
 
@@ -56,6 +57,7 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 {
 	struct sheep_indirect *indirect;
 	sheep_t sheep;
+	char *str;
 
 	printf("  %-10s %5u ", opnames[op], arg);
 
@@ -79,8 +81,9 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		return;
 	}
 
-	printf("; ");
-	sheep_ddump(sheep);
+	str = sheep_format(sheep);
+	printf("; %s\n", str);
+	sheep_free(str);
 }
 
 void sheep_code_disassemble(struct sheep_code *code)

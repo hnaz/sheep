@@ -1,93 +1,55 @@
-()
+(variable test
+  (with (nr 1)
+    (function (result)
+      (ddump
+        (reduce concat
+                (list (string nr) ": "
+                      (if result "ok" "failed"))))
+      (set nr (+ nr 1)))))
 
-true
+(test (= ()
+         (quote ())))
 
-"hello"
+(test (= ()
+         (list)))
 
-(list)
+(test (= (list 2 3)
+         (tail (list 1 2 3))))
 
-(list 1 2 3)
+(test (= (list 1 2 3)
+         (with (a (quote (1 2 3)))
+           a)))
 
-(quote a)
+(test (= (quote a)
+         ((function (x)
+            x)
+          (quote a))))
 
-(variable foo (quote bar))
-foo
+(test (= true
+         (block
+           (function outer (x)
+             (function inner ()
+               x)
+             (inner))
+           (outer true))))
 
-(with (a (quote (1 2 3)))
-  a)
+(test (= (list 42 42)
+         (block
+           (function tau (x)
+             (if x
+               (tau false)
+               42))
+           (list (tau true) (tau false)))))
 
-(block
-  (function id (x) x)
-  (id (quote a)))
+(test (= (quote ((1 1) (2 2) (3 3) (4 4)))
+         (map (function (x)
+                (list x x))
+              (list 1 2 3 4))))
 
-((function (x)
-   x)
- (quote a))
-
-((function ()
-   (quote x)))
-
-(function foo (x)
-  (foo x))
-
-(function outer (x)
-  (function inner ()
-    x)
-  (inner))
-(outer true)
-
-(function make (x)
-  (function inner-make (y)
-    (function ()
-      (list x y)))
-  (inner-make inner-make))
-(variable maker (make 11))
-(maker)
-
-(if 0 1)
-(if 1 2)
-(if 1 2 3)
-(if 0 1 2)
-(if 0 1 2 3 4 5)
-(if 1 2 3 4 5 6)
-
-(function foo (x)
-  (if x 1 2))
-(foo 0)
-(foo 1)
-
-(function tau (x)
-  (if x
-    (tau false)
-    42))
-(tau 0)
-(tau 1)
-
-(map (function (x)
-       (list x x))
-     (list 1 2 3 4))
-
-(function relist (list)
-  (if list
-    (cons (head list)
-          (relist (tail list)))
-    ()))
-(relist (list 1 2 3))
-
-(reduce - (list 100 50 20 10 5 2 1 1 1 1 1 1 1 1 1 1 1 1 1))
-(reduce + (list 1 2 3 4 5 6 7 8 9 10))
-
-(variable alternating (list "hello" "" true ()))
-(map bool alternating)
-(map not alternating)
-
-(ddump (quote success!))
-
-(function << (n b)
-    (function shift (b ac)
-      (if b
-        (shift (- b 1) (* ac n))
-        ac))
-    (shift b 1))
-(<< 1 1)
-(<< 7 2)
+(test (= 5050
+         (block
+           (function numbers (from)
+             (if from
+               (cons from (numbers (- from 1)))
+               ()))
+           (reduce + (numbers 100)))))

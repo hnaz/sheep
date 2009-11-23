@@ -20,6 +20,7 @@ void *sheep_zalloc(size_t);
 void *sheep_realloc(void *, size_t);
 char *sheep_strdup(const char *);
 void sheep_free(const void *);
+int sheep_addprintf(char **, size_t *, const char *, ...);
 
 void __noreturn sheep_bug(const char *, ...);
 

@@ -8,6 +8,7 @@
 #include <sheep/bool.h>
 #include <sheep/core.h>
 #include <sheep/eval.h>
+#include <sheep/list.h>
 #include <sheep/util.h>
 #include <string.h>
 
@@ -37,6 +38,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	sheep_core_init(vm);
 	sheep_bool_builtins(vm);
 	sheep_number_builtins(vm);
+	sheep_list_builtins(vm);
 }
 
 void sheep_vm_exit(struct sheep_vm *vm)

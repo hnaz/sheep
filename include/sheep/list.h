@@ -24,4 +24,6 @@ static inline struct sheep_list *sheep_list(sheep_t sheep)
 	return sheep_data(sheep);
 }
 
+void sheep_list_builtins(struct sheep_vm *);
+
 #endif /* _SHEEP_LIST_H */

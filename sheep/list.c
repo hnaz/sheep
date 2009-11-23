@@ -4,7 +4,9 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/compile.h>
+#include <sheep/module.h>
 #include <sheep/object.h>
+#include <sheep/core.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>
@@ -169,4 +171,82 @@ sheep_t sheep_make_list(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 	list->head = head;
 	list->tail = tail;
 	return sheep_make_object(vm, &sheep_list_type, list);
+}
+
+/* (cons item list) */
+static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t item, list, new;
+
+	new = sheep_make_list(vm, NULL, NULL);
+
+	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
+		return NULL;
+
+	sheep_list(new)->head = item;
+	sheep_list(new)->tail = list;
+
+	return new;
+}
+
+/* (list expr*) */
+static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t list;
+
+	list = sheep_make_list(vm, NULL, NULL);
+	sheep_protect(vm, list);
+
+	while (nr_args--) {
+		sheep_t new;
+
+		new = sheep_make_list(vm, NULL, list);
+		sheep_list(new)->head = sheep_vector_pop(&vm->stack);
+
+		sheep_unprotect(vm, list);
+		sheep_protect(vm, new);
+
+		list = new;
+	}
+
+	sheep_unprotect(vm, list);
+	return list;
+}
+
+/* (head list) */
+static sheep_t eval_head(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list;
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("head", vm, nr_args, "l", &sheep))
+		return NULL;
+
+	list = sheep_list(sheep);
+	if (list->head)
+		return list->head;
+	return sheep;
+}
+
+/* (tail list) */
+static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list;
+	sheep_t sheep;
+
+	if (sheep_unpack_stack("tail", vm, nr_args, "l", &sheep))
+		return NULL;
+
+	list = sheep_list(sheep);
+	if (list->head)
+		return list->tail;
+	return sheep;
+}
+
+void sheep_list_builtins(struct sheep_vm *vm)
+{
+	sheep_module_function(vm, &vm->main, "cons", eval_cons);
+	sheep_module_function(vm, &vm->main, "list", eval_list);
+	sheep_module_function(vm, &vm->main, "head", eval_head);
+	sheep_module_function(vm, &vm->main, "tail", eval_tail);
 }

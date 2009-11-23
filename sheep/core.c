@@ -576,76 +576,6 @@ out:
 	return NULL;
 }
 
-/* (cons item list) */
-static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t item, list, new;
-
-	new = sheep_make_list(vm, NULL, NULL);
-
-	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
-		return NULL;
-
-	sheep_list(new)->head = item;
-	sheep_list(new)->tail = list;
-
-	return new;
-}
-
-/* (list expr*) */
-static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t list;
-
-	list = sheep_make_list(vm, NULL, NULL);
-	sheep_protect(vm, list);
-
-	while (nr_args--) {
-		sheep_t new;
-
-		new = sheep_make_list(vm, NULL, list);
-		sheep_list(new)->head = sheep_vector_pop(&vm->stack);
-
-		sheep_unprotect(vm, list);
-		sheep_protect(vm, new);
-
-		list = new;
-	}
-
-	sheep_unprotect(vm, list);
-	return list;
-}
-
-/* (head list) */
-static sheep_t eval_head(struct sheep_vm *vm, unsigned int nr_args)
-{
-	struct sheep_list *list;
-	sheep_t sheep;
-
-	if (sheep_unpack_stack("head", vm, nr_args, "l", &sheep))
-		return NULL;
-
-	list = sheep_list(sheep);
-	if (list->head)
-		return list->head;
-	return sheep;
-}
-
-/* (tail list) */
-static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
-{
-	struct sheep_list *list;
-	sheep_t sheep;
-
-	if (sheep_unpack_stack("tail", vm, nr_args, "l", &sheep))
-		return NULL;
-
-	list = sheep_list(sheep);
-	if (list->head)
-		return list->tail;
-	return sheep;
-}
-
 /* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -815,11 +745,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "string", eval_string);
 	sheep_module_function(vm, &vm->main, "split", eval_split);
 	sheep_module_function(vm, &vm->main, "join", eval_join);
-
-	sheep_module_function(vm, &vm->main, "cons", eval_cons);
-	sheep_module_function(vm, &vm->main, "list", eval_list);
-	sheep_module_function(vm, &vm->main, "head", eval_head);
-	sheep_module_function(vm, &vm->main, "tail", eval_tail);
 
 	sheep_module_function(vm, &vm->main, "length", eval_length);
 	sheep_module_function(vm, &vm->main, "concat", eval_concat);

@@ -679,18 +679,6 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_sequence(sheep)->reverse(vm, sheep);
 }
 
-/* (ddump expr) */
-static sheep_t eval_ddump(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t sheep;
-
-	if (sheep_unpack_stack("ddump", vm, nr_args, "o", &sheep))
-		return NULL;
-
-	sheep_ddump(sheep);
-	return &sheep_true;
-}
-
 /* (disassemble function) */
 static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -734,7 +722,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_module_function(vm, &vm->main, "map", eval_map);
 	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
 
-	sheep_module_function(vm, &vm->main, "ddump", eval_ddump);
 	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
 }
 

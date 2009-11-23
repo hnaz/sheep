@@ -36,9 +36,6 @@ static inline void sheep_set_data(sheep_t sheep, void *data)
 int sheep_test(sheep_t);
 int sheep_equal(sheep_t, sheep_t);
 
-void __sheep_ddump(sheep_t);
-void sheep_ddump(sheep_t);
-
 void sheep_mark(sheep_t);
 
 void sheep_protect(struct sheep_vm *, sheep_t);

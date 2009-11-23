@@ -9,8 +9,6 @@
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/vm.h>
-#include <limits.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -72,27 +70,23 @@ static sheep_t read_string(struct sheep_vm *vm, FILE *fp)
 	return sheep_make_string(vm, buf);
 }
 
-static int parse_number(const char *buf, double *valuep)
-{
-	char *end;
-
-	*valuep = strtod(buf, &end);
-	if (*end)
-		return -1;
-	return 0;
-}
-
 static sheep_t read_atom(struct sheep_vm *vm, FILE *fp, int c)
 {
+	sheep_t sheep;
 	char buf[512];
-	double value;
 
 	buf[0] = c;
 	if (read_token(fp, buf + 1, 511, 0) < 0)
 		return NULL;
-	if (!parse_number(buf, &value))
-		return sheep_make_number(vm, value);
-	return sheep_make_name(vm, buf);
+	switch (sheep_parse_number(vm, buf, &sheep)) {
+	case 0:
+		return sheep;
+	case -1:
+		return sheep_make_name(vm, buf);
+	case -2:
+		fprintf(stderr, "number bits exceeded\n");
+	}
+	return NULL;
 }
 
 static sheep_t read_sexp(struct sheep_vm *vm, FILE *fp, int c);

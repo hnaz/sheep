@@ -206,6 +206,8 @@ void sheep_ddump(sheep_t sheep)
 
 void sheep_mark(sheep_t sheep)
 {
+	if (sheep_is_fixnum(sheep))
+		return;
 	if (sheep->data & 1)
 		return;
 	sheep->data |= 1;

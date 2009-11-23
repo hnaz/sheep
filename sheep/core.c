@@ -489,16 +489,17 @@ static sheep_t eval_number(struct sheep_vm *vm, unsigned int nr_args)
 		return sheep;
 
 	if (sheep_type(sheep) == &sheep_string_type) {
-		double value;
-		char *end;
+		const char *str = sheep_rawstring(sheep);
+		sheep_t number;
 
-		value = strtod(sheep_rawstring(sheep), &end);
-		if (*end) {
+		switch (sheep_parse_number(vm, str, &number)) {
+		case 0:
+			return number;
+		default:
 			fprintf(stderr, "number: can not convert \"%s\"\n",
-				sheep_rawstring(sheep));
+				str);
 			return NULL;
 		}
-		return sheep_make_number(vm, value);
 	}
 
 	fprintf(stderr, "number: can not convert %s\n",
@@ -517,23 +518,23 @@ static sheep_t do_cmp(struct sheep_vm *vm, unsigned int nr_args,
 		const char *name, enum relation relation)
 {
 	int result = result;
-	double *a, *b;
+	long a, b;
 
 	if (sheep_unpack_stack(name, vm, nr_args, "NN", &a, &b))
 		return NULL;
 
 	switch (relation) {
 	case LESS:
-		result = *a < *b;
+		result = a < b;
 		break;
 	case LESSEQ:
-		result = *a <= *b;
+		result = a <= b;
 		break;
 	case MOREEQ:
-		result = *a >= *b;
+		result = a >= b;
 		break;
 	case MORE:
-		result = *a > *b;
+		result = a > b;
 		break;
 	}
 
@@ -569,36 +570,27 @@ static sheep_t eval_more(struct sheep_vm *vm, unsigned int nr_args)
 static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
 			const char *operation)
 {
-	double value, *a, *b;
+	long value, a, b;
 
 	if (sheep_unpack_stack(operation, vm, nr_args, "NN", &a, &b))
 		return NULL;
 
 	switch (*operation) {
 	case '+':
-		value = *a + *b;
+		value = a + b;
 		break;
 	case '-':
-		value = *a - *b;
+		value = a - b;
 		break;
 	case '*':
-		value = *a * *b;
+		value = a * b;
 		break;
 	case '/':
-		value = *a / *b;
+		value = a / b;
 		break;
-	case '%': {
-		long la, lb;
-
-		la = *a;
-		lb = *b;
-		if (la != *a || lb != *b) {
-			fprintf(stderr, "%%: having problems...\n");
-			return NULL;
-		}
-		value = la % lb;
+	case '%':
+		value = a % b;
 		break;
-	}
 	default:
 		sheep_bug("unknown arithmetic operation");
 	}
@@ -616,11 +608,11 @@ static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
 static sheep_t eval_minus(struct sheep_vm *vm, unsigned int nr_args)
 {
 	if (nr_args == 1) {
-		double *num;
+		long number;
 
-		if (sheep_unpack_stack("-", vm, nr_args, "N", &num))
+		if (sheep_unpack_stack("-", vm, nr_args, "N", &number))
 			return NULL;
-		return sheep_make_number(vm, -*num);
+		return sheep_make_number(vm, -number);
 	}
 
 	return do_arith(vm, nr_args, "-");
@@ -652,15 +644,14 @@ static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
 		return NULL;
 
-	if (sheep_type(sheep) == &sheep_string_type)
-		return sheep;
-
-	if (sheep_type(sheep) == &sheep_number_type) {
+	if (sheep_is_fixnum(sheep)) {
 		char buf[32];
-
-		sprintf(buf, "%.14g", *(double *)sheep_data(sheep));
+		sprintf(buf, "%ld", sheep_fixnum(sheep));
 		return sheep_make_string(vm, buf);
 	}
+
+	if (sheep_type(sheep) == &sheep_string_type)
+		return sheep;
 
 	fprintf(stderr, "string: can not convert %s\n",
 		sheep_type(sheep)->name);

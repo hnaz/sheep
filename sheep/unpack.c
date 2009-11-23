@@ -89,9 +89,12 @@ enum sheep_unpack __sheep_unpack_list(const char **wanted, sheep_t *mismatch,
 			return SHEEP_UNPACK_MISMATCH;
 		}
 
-		if (isupper(*items))
-			*va_arg(ap, void **) = sheep_data(object);
-		else
+		if (isupper(*items)) {
+			if (sheep_is_fixnum(object))
+				*va_arg(ap, long *) = sheep_fixnum(object);
+			else
+				*va_arg(ap, void **) = sheep_data(object);
+		} else
 			*va_arg(ap, sheep_t *) = object;
 
 		items++;
@@ -128,9 +131,12 @@ enum sheep_unpack __sheep_unpack_stack(const char **wanted, sheep_t *mismatch,
 			return SHEEP_UNPACK_MISMATCH;
 		}
 
-		if (isupper(*items))
-			*va_arg(ap, void **) = sheep_data(object);
-		else
+		if (isupper(*items)) {
+			if (sheep_is_fixnum(object))
+				*va_arg(ap, long *) = sheep_fixnum(object);
+			else
+				*va_arg(ap, void **) = sheep_data(object);
+		} else
 			*va_arg(ap, sheep_t *) = object;
 
 		items++;

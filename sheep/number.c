@@ -150,7 +150,7 @@ static sheep_t eval_more(struct sheep_vm *vm, unsigned int nr_args)
 	return do_cmp(vm, nr_args, ">", MORE);
 }
 
-static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
+static sheep_t do_binop(struct sheep_vm *vm, unsigned int nr_args,
 			const char *operation)
 {
 	long value, a, b;
@@ -174,6 +174,21 @@ static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
 	case '%':
 		value = a % b;
 		break;
+	case '|':
+		value = a | b;
+		break;
+	case '&':
+		value = a & b;
+		break;
+	case '^':
+		value = a ^ b;
+		break;
+	case '<':
+		value = a << b;
+		break;
+	case '>':
+		value = a >> b;
+		break;
 	default:
 		sheep_bug("unknown arithmetic operation");
 	}
@@ -184,7 +199,7 @@ static sheep_t do_arith(struct sheep_vm *vm, unsigned int nr_args,
 /* (+ a b) */
 static sheep_t eval_plus(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_arith(vm, nr_args, "+");
+	return do_binop(vm, nr_args, "+");
 }
 
 /* (- a &optional b) */
@@ -198,37 +213,88 @@ static sheep_t eval_minus(struct sheep_vm *vm, unsigned int nr_args)
 		return sheep_make_number(vm, -number);
 	}
 
-	return do_arith(vm, nr_args, "-");
+	return do_binop(vm, nr_args, "-");
 }
 
 /* (* a b) */
 static sheep_t eval_multiply(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_arith(vm, nr_args, "*");
+	return do_binop(vm, nr_args, "*");
 }
 
 /* (/ a b) */
 static sheep_t eval_divide(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_arith(vm, nr_args, "/");
+	return do_binop(vm, nr_args, "/");
 }
 
 /* (% a b) */
 static sheep_t eval_modulo(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_arith(vm, nr_args, "%");
+	return do_binop(vm, nr_args, "%");
+}
+
+/* (~ number) */
+static sheep_t eval_lnot(struct sheep_vm *vm, unsigned int nr_args)
+{
+	long number;
+
+	if (sheep_unpack_stack("~", vm, nr_args, "N", &number))
+		return NULL;
+
+	return sheep_make_number(vm, ~number);
+}
+
+/* (| a b) */
+static sheep_t eval_lor(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_binop(vm, nr_args, "|");
+}
+
+/* (& a b) */
+static sheep_t eval_land(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_binop(vm, nr_args, "&");
+}
+
+/* (^ a b) */
+static sheep_t eval_lxor(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_binop(vm, nr_args, "^");
+}
+
+/* (<< a b) */
+static sheep_t eval_shiftl(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_binop(vm, nr_args, "<<");
+}
+
+/* (>> a b) */
+static sheep_t eval_shiftr(struct sheep_vm *vm, unsigned int nr_args)
+{
+	return do_binop(vm, nr_args, ">>");
 }
 
 void sheep_number_builtins(struct sheep_vm *vm)
 {
 	sheep_module_function(vm, &vm->main, "number", eval_number);
+
 	sheep_module_function(vm, &vm->main, "<", eval_less);
 	sheep_module_function(vm, &vm->main, "<=", eval_lesseq);
 	sheep_module_function(vm, &vm->main, ">=", eval_moreeq);
 	sheep_module_function(vm, &vm->main, ">", eval_more);
+
 	sheep_module_function(vm, &vm->main, "+", eval_plus);
 	sheep_module_function(vm, &vm->main, "-", eval_minus);
 	sheep_module_function(vm, &vm->main, "*", eval_multiply);
 	sheep_module_function(vm, &vm->main, "/", eval_divide);
 	sheep_module_function(vm, &vm->main, "%", eval_modulo);
+
+	sheep_module_function(vm, &vm->main, "~", eval_lnot);
+	sheep_module_function(vm, &vm->main, "|", eval_lor);
+	sheep_module_function(vm, &vm->main, "&", eval_land);
+	sheep_module_function(vm, &vm->main, "^", eval_lxor);
+
+	sheep_module_function(vm, &vm->main, "<<", eval_shiftl);
+	sheep_module_function(vm, &vm->main, ">>", eval_shiftr);
 }

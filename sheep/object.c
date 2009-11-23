@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/string.h>
 #include <sheep/vector.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
@@ -192,10 +193,11 @@ int sheep_equal(sheep_t a, sheep_t b)
 
 void __sheep_ddump(sheep_t sheep)
 {
-	if (sheep_type(sheep)->ddump)
-		sheep_type(sheep)->ddump(sheep);
-	else
-		printf("#<%s %p>", sheep_type(sheep)->name, sheep);
+	char *str;
+
+	str = sheep_format(sheep);
+	fputs(str, stdout);
+	sheep_free(str);
 }
 
 void sheep_ddump(sheep_t sheep)

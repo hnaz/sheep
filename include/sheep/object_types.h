@@ -6,6 +6,8 @@
 #ifndef _SHEEP_OBJECT_TYPES_H
 #define _SHEEP_OBJECT_TYPES_H
 
+#include <stdlib.h>
+
 typedef struct sheep_object * sheep_t;
 
 struct sheep_function;
@@ -32,7 +34,7 @@ struct sheep_type {
 
 	const struct sheep_sequence *sequence;
 
-	void (*ddump)(sheep_t);
+	void (*format)(sheep_t, char **, size_t *);
 };
 
 struct sheep_object {

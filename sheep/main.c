@@ -1,5 +1,6 @@
 #include <sheep/compile.h>
 #include <sheep/config.h>
+#include <sheep/string.h>
 #include <sheep/eval.h>
 #include <sheep/read.h>
 #include <sheep/util.h>
@@ -58,6 +59,7 @@ static int do_stdin(void)
 
 	while (1) {
 		sheep_t exp, fun, val;
+		char *res;
 
 		printf("> ");
 		fflush(stdout);
@@ -70,8 +72,11 @@ static int do_stdin(void)
 		if (!fun)
 			continue;
 		val = sheep_eval(&vm, fun);
-		if (val)
-			sheep_ddump(val);
+		if (!val)
+			continue;
+		res = sheep_format(val);
+		puts(res);
+		sheep_free(res);
 	}
 
 	puts("bye");

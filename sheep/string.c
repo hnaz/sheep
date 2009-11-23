@@ -74,9 +74,9 @@ static int equal_string(sheep_t a, sheep_t b)
 	return !strcmp(sheep_rawstring(a), sheep_rawstring(b));
 }
 
-static void ddump_string(sheep_t sheep)
+static void format_string(sheep_t sheep, char **bufp, size_t *posp)
 {
-	printf("\"%s\"", sheep_rawstring(sheep));
+	sheep_addprintf(bufp, posp, "\"%s\"", sheep_rawstring(sheep));
 }
 
 const struct sheep_type sheep_string_type = {
@@ -86,7 +86,7 @@ const struct sheep_type sheep_string_type = {
 	.test = test_string,
 	.equal = equal_string,
 	.sequence = &string_sequence,
-	.ddump = ddump_string,
+	.format = format_string,
 };
 
 sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str)
@@ -97,4 +97,18 @@ sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str)
 sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 {
 	return __sheep_make_string(vm, sheep_strdup(str));
+}
+
+void __sheep_format(sheep_t sheep, char **bufp, size_t *posp)
+{
+	return sheep_type(sheep)->format(sheep, bufp, posp);
+}
+
+char *sheep_format(sheep_t sheep)
+{
+	char *buf = NULL;
+	size_t pos = 0;
+
+	__sheep_format(sheep, &buf, &pos);
+	return buf;
 }

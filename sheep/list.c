@@ -6,6 +6,7 @@
 #include <sheep/compile.h>
 #include <sheep/module.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/core.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
@@ -135,21 +136,21 @@ static int equal_list(sheep_t a, sheep_t b)
 	return !(la->head || lb->head);
 }
 
-static void ddump_list(sheep_t sheep)
+static void format_list(sheep_t sheep, char **bufp, size_t *posp)
 {
 	struct sheep_list *list;
 
 	list = sheep_list(sheep);
-	printf("(");
+	sheep_addprintf(bufp, posp, "(");
 	while (list->head) {
 		sheep = list->head;
-		__sheep_ddump(sheep);
+		__sheep_format(sheep, bufp, posp);
 		list = sheep_list(list->tail);
 		if (!list->head)
 			break;
-		printf(" ");
+		sheep_addprintf(bufp, posp, " ");
 	}
-	printf(")");
+	sheep_addprintf(bufp, posp, ")");
 }
 
 const struct sheep_type sheep_list_type = {
@@ -160,7 +161,7 @@ const struct sheep_type sheep_list_type = {
 	.test = test_list,
 	.equal = equal_list,
 	.sequence = &list_sequence,
-	.ddump = ddump_list,
+	.format = format_list,
 };
 
 sheep_t sheep_make_list(struct sheep_vm *vm, sheep_t head, sheep_t tail)

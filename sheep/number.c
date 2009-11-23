@@ -9,6 +9,7 @@
 #include <sheep/string.h>
 #include <sheep/bool.h>
 #include <sheep/core.h>
+#include <sheep/util.h>
 #include <sheep/vm.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -26,9 +27,9 @@ static int equal_number(sheep_t a, sheep_t b)
 	return a == b;
 }
 
-static void ddump_number(sheep_t sheep)
+static void format_number(sheep_t sheep, char **bufp, size_t *posp)
 {
-	printf("%ld", sheep_fixnum(sheep));
+	sheep_addprintf(bufp, posp, "%ld", sheep_fixnum(sheep));
 }
 
 const struct sheep_type sheep_number_type = {
@@ -36,7 +37,7 @@ const struct sheep_type sheep_number_type = {
 	.compile = sheep_compile_constant,
 	.test = test_number,
 	.equal = equal_number,
-	.ddump = ddump_number,
+	.format = format_number,
 };
 
 sheep_t sheep_make_number(struct sheep_vm *vm, long number)

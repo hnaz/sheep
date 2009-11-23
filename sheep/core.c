@@ -442,22 +442,16 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
+	char *buf;
 
 	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
 		return NULL;
 
-	if (sheep_is_fixnum(sheep)) {
-		char buf[32];
-		sprintf(buf, "%ld", sheep_fixnum(sheep));
-		return sheep_make_string(vm, buf);
-	}
-
 	if (sheep_type(sheep) == &sheep_string_type)
 		return sheep;
 
-	fprintf(stderr, "string: can not convert %s\n",
-		sheep_type(sheep)->name);
-	return NULL;
+	buf = sheep_format(sheep);
+	return __sheep_make_string(vm, buf);
 }
 
 static char *do_split(char **stringp, const char *delim)

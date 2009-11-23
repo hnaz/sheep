@@ -33,21 +33,21 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(function);
 }
 
-static void ddump_function(sheep_t sheep)
+static void format_function(sheep_t sheep, char **bufp, size_t *posp)
 {
 	struct sheep_function *function;
 
 	function = sheep_data(sheep);
 	if (function->name)
-		printf("#<function '%s'>", function->name);
+		sheep_addprintf(bufp, posp, "#<function '%s'>", function->name);
 	else
-		printf("#<function '%p'>", function);
+		sheep_addprintf(bufp, posp, "#<function '%p'>", function);
 }
 
 const struct sheep_type sheep_function_type = {
 	.name = "function",
 	.free = free_function,
-	.ddump = ddump_function,
+	.format = format_function,
 };
 
 static void mark_indirect(struct sheep_vector *foreign)
@@ -122,7 +122,7 @@ const struct sheep_type sheep_closure_type = {
 	.name = "function",
 	.mark = mark_closure,
 	.free = free_closure,
-	.ddump = ddump_function,
+	.format = format_function,
 };
 
 sheep_t sheep_make_function(struct sheep_vm *vm, const char *name)

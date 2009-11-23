@@ -22,9 +22,9 @@ static int equal_name(sheep_t a, sheep_t b)
 	return !strcmp(sheep_cname(a), sheep_cname(b));
 }
 
-static void ddump_name(sheep_t sheep)
+static void format_name(sheep_t sheep, char **bufp, size_t *posp)
 {
-	printf("%s", sheep_cname(sheep));
+	sheep_addprintf(bufp, posp, "%s", sheep_cname(sheep));
 }
 
 const struct sheep_type sheep_name_type = {
@@ -32,7 +32,7 @@ const struct sheep_type sheep_name_type = {
 	.free = free_name,
 	.compile = sheep_compile_name,
 	.equal = equal_name,
-	.ddump = ddump_name,
+	.format = format_name,
 };
 
 sheep_t sheep_make_name(struct sheep_vm *vm, const char *cname)

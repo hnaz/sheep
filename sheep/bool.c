@@ -7,6 +7,7 @@
 #include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/core.h>
+#include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>
 
@@ -17,19 +18,19 @@ static int test_bool(sheep_t sheep)
 	return sheep != &sheep_false;
 }
 
-static void ddump_bool(sheep_t sheep)
+static void format_bool(sheep_t sheep, char **bufp, size_t *posp)
 {
 	if (sheep == &sheep_false)
-		printf("false");
+		sheep_addprintf(bufp, posp, "false");
 	else
-		printf("true");
+		sheep_addprintf(bufp, posp, "true");
 }
 
 const struct sheep_type sheep_bool_type = {
 	.name = "bool",
 	.compile = sheep_compile_constant,
 	.test = test_bool,
-	.ddump = ddump_bool,
+	.format = format_bool,
 };
 
 struct sheep_object sheep_true = {

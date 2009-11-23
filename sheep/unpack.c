@@ -39,6 +39,9 @@ static int verify(char control, sheep_t object)
 	case 'q':
 		return type == &sheep_string_type ||
 			type == &sheep_list_type;
+	case 'f':
+		return type == &sheep_function_type ||
+			type == &sheep_closure_type;
 	case 'c':
 		return type == &sheep_alien_type ||
 			type == &sheep_function_type ||
@@ -50,8 +53,9 @@ static int verify(char control, sheep_t object)
 static const char *map_type(char type)
 {
 	static const char *controlnames[] = {
-		"bbool", "nnumber", "aname", "sstring",
-		"llist", "qsequence", "ccallable", NULL
+		"bbool", "nnumber", "aname",
+		"sstring", "llist", "qsequence",
+		"ffunction", "ccallable", NULL
 	};
 	const char **p;
 

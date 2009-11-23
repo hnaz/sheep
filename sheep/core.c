@@ -696,29 +696,17 @@ static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_function *function;
 	unsigned int nr_foreigns;
-	sheep_t callable;
 
-	if (sheep_unpack_stack("disassemble", vm, nr_args, "c", &callable))
+	if (sheep_unpack_stack("disassemble", vm, nr_args, "F", &function))
 		return NULL;
-	
-	if (sheep_type(callable) == &sheep_alien_type) {
-		struct sheep_alien *alien;
 
-		alien = sheep_data(callable);
-		printf("disassemble: %s is an alien\n", alien->name);
-		return &sheep_false;
-	}
-
-	function = sheep_data(callable);
 	if (function->foreign)
 		nr_foreigns = function->foreign->nr_items;
 	else
 		nr_foreigns = 0;
 
-	__sheep_ddump(callable);
-	printf(", %u parameters, %u local slots, "
-		"%u foreign references\n", function->nr_parms,
-		function->nr_locals, nr_foreigns);
+	printf("%u parameters, %u local slots, %u foreign references\n",
+		function->nr_parms, function->nr_locals, nr_foreigns);
 
 	sheep_code_disassemble(&function->code);
 	return &sheep_true;

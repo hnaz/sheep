@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/number.h>
 #include <sheep/object.h>
 #include <sheep/bool.h>
 #include <sheep/core.h>
@@ -35,6 +36,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	memset(vm, 0, sizeof(*vm));
 	sheep_core_init(vm);
 	sheep_bool_builtins(vm);
+	sheep_number_builtins(vm);
 }
 
 void sheep_vm_exit(struct sheep_vm *vm)

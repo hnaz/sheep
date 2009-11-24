@@ -22,11 +22,6 @@ static int test_number(sheep_t sheep)
 	return !!sheep_fixnum(sheep);
 }
 
-static int equal_number(sheep_t a, sheep_t b)
-{
-	return a == b;
-}
-
 static void format_number(sheep_t sheep, char **bufp, size_t *posp)
 {
 	sheep_addprintf(bufp, posp, "%ld", sheep_fixnum(sheep));
@@ -36,7 +31,10 @@ const struct sheep_type sheep_number_type = {
 	.name = "number",
 	.compile = sheep_compile_constant,
 	.test = test_number,
-	.equal = equal_number,
+	/*
+	 * Fixnums are encoded in the reference pointer, equality is
+	 * thus checked directly in sheep_equal().
+	 */
 	.format = format_number,
 };
 

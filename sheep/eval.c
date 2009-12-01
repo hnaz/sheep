@@ -63,10 +63,9 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	if (!function->foreign)
 		return sheep;
 
-	indirects = sheep_malloc(sizeof(struct sheep_vector));
-	sheep_vector_init(indirects);
-
 	freevars = function->foreign;
+	indirects = sheep_zalloc(sizeof(struct sheep_vector));
+
 	for (i = 0; i < freevars->nr_items; i++) {
 		struct sheep_indirect *indirect;
 		struct sheep_freevar *freevar;

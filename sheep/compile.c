@@ -25,8 +25,6 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 	int err;
 
 	function = sheep_zalloc(sizeof(struct sheep_function));
-	sheep_code_init(&function->code);
-
 	err = sheep_compile_object(vm, function, &context, expr);
 	if (err) {
 		sheep_code_exit(&function->code);
@@ -94,8 +92,7 @@ static unsigned int slot_foreign(struct sheep_function *function,
 	struct sheep_freevar *freevar;
 
 	if (!foreign) {
-		foreign = sheep_malloc(sizeof(struct sheep_vector));
-		sheep_vector_init(foreign);
+		foreign = sheep_zalloc(sizeof(struct sheep_vector));
 		function->foreign = foreign;
 	} else {
 		unsigned int i;

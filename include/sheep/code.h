@@ -38,18 +38,6 @@ struct sheep_code {
 	struct sheep_vector labels;
 };
 
-#define SHEEP_CODE_INITIALIZER			\
-	{ .code = SHEEP_VECTOR_INITIALIZER,	\
-	  .labels = SHEEP_VECTOR_INITIALIZER }
-
-#define SHEEP_DEFINE_CODE(name)				\
-	struct sheep_code name = SHEEP_CODE_INITIALIZER
-
-static inline void sheep_code_init(struct sheep_code *code)
-{
-	*code = (struct sheep_code)SHEEP_CODE_INITIALIZER;
-}
-
 static inline void sheep_code_exit(struct sheep_code *code)
 {
 	sheep_free(code->code.items);

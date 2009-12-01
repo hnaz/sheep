@@ -5,6 +5,7 @@
  */
 #include <sheep/function.h>
 #include <sheep/compile.h>
+#include <sheep/module.h>
 #include <sheep/unpack.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -373,6 +374,39 @@ static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
 	return sheep_compile_set(vm, function, context, name);
 }
 
+/* (load name) */
+static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	sheep_t mod, name_;
+	unsigned int slot;
+	const char *name;
+	int ret = -1;
+
+	if (context->parent) {
+		fprintf(stderr, "load not on toplevel form\n");
+		return -1;
+	}
+
+	if (sheep_unpack_list("load", args, "a", &name_))
+		return -1;
+
+	sheep_protect(vm, name_);
+	name = sheep_cname(name_);
+
+	mod = sheep_module_load(vm, name);
+	if (!mod)
+		goto out;
+
+	slot = sheep_vm_constant(vm, mod);
+	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
+	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+	ret = 0;
+out:
+	sheep_unprotect(vm, name_);
+	return ret;
+}
+
 void sheep_core_init(struct sheep_vm *vm)
 {
 	sheep_map_set(&vm->specials, "quote", compile_quote);
@@ -384,6 +418,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);
+	sheep_map_set(&vm->specials, "load", compile_load);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

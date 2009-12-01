@@ -17,6 +17,10 @@ struct sheep_module {
 	struct sheep_map env;
 };
 
+extern const struct sheep_type sheep_module_type;
+
+sheep_t sheep_module_load(struct sheep_vm *, const char *);
+
 unsigned int sheep_module_shared(struct sheep_vm *, struct sheep_module *,
 				const char *, sheep_t);
 

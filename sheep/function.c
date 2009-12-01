@@ -151,7 +151,7 @@ sheep_t sheep_closure_function(struct sheep_vm *vm,
 }
 
 /* (disassemble function) */
-static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_function *function;
 	unsigned int nr_foreigns;
@@ -173,5 +173,5 @@ static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 
 void sheep_function_builtins(struct sheep_vm *vm)
 {
-	sheep_vm_function(vm, "disassemble", eval_disassemble);
+	sheep_vm_function(vm, "disassemble", builtin_disassemble);
 }

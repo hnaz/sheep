@@ -41,7 +41,7 @@ struct sheep_object sheep_false = {
 };
 
 /* (= a b) */
-static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_equal(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t a, b;
 
@@ -54,7 +54,7 @@ static sheep_t eval_equal(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (bool object) */
-static sheep_t eval_bool(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_bool(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
@@ -67,7 +67,7 @@ static sheep_t eval_bool(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (not object) */
-static sheep_t eval_not(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_not(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
@@ -84,7 +84,7 @@ void sheep_bool_builtins(struct sheep_vm *vm)
 	sheep_vm_variable(vm, "true", &sheep_true);
 	sheep_vm_variable(vm, "false", &sheep_false);
 
-	sheep_vm_function(vm, "=", eval_equal);
-	sheep_vm_function(vm, "bool", eval_bool);
-	sheep_vm_function(vm, "not", eval_not);
+	sheep_vm_function(vm, "=", builtin_equal);
+	sheep_vm_function(vm, "bool", builtin_bool);
+	sheep_vm_function(vm, "not", builtin_not);
 }

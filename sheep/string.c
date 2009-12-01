@@ -115,7 +115,7 @@ char *sheep_format(sheep_t sheep)
 }
 
 /* (string expression) */
-static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_string(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 	char *buf;
@@ -147,7 +147,7 @@ static char *do_split(char **stringp, const char *delim)
 }
 
 /* (split string string) */
-static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 {
 	const char *string, *token;
 	struct sheep_list *list;
@@ -197,7 +197,7 @@ static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (join delimiter list-of-strings) */
-static sheep_t eval_join(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 {
 	char *new = NULL, *result = NULL;
 	size_t length = 0, dlength;
@@ -248,7 +248,7 @@ out:
 
 void sheep_string_builtins(struct sheep_vm *vm)
 {
-	sheep_vm_function(vm, "string", eval_string);
-	sheep_vm_function(vm, "split", eval_split);
-	sheep_vm_function(vm, "join", eval_join);
+	sheep_vm_function(vm, "string", builtin_string);
+	sheep_vm_function(vm, "split", builtin_split);
+	sheep_vm_function(vm, "join", builtin_join);
 }

@@ -175,7 +175,7 @@ sheep_t sheep_make_list(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 }
 
 /* (cons item list) */
-static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_cons(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t item, list, new;
 
@@ -191,7 +191,7 @@ static sheep_t eval_cons(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (list expr*) */
-static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_list(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t list;
 
@@ -215,7 +215,7 @@ static sheep_t eval_list(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (head list) */
-static sheep_t eval_head(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_head(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_list *list;
 	sheep_t sheep;
@@ -230,7 +230,7 @@ static sheep_t eval_head(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (tail list) */
-static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_tail(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct sheep_list *list;
 	sheep_t sheep;
@@ -245,7 +245,7 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (map function list) */
-static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t mapper, old, new, result = NULL;
 	struct sheep_list *l_old, *l_new;
@@ -279,7 +279,7 @@ out:
 }
 
 /* (reduce function list) */
-static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_reduce(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t reducer, list_, a, b, value, result = NULL;
 	struct sheep_list *list;
@@ -314,10 +314,10 @@ out:
 
 void sheep_list_builtins(struct sheep_vm *vm)
 {
-	sheep_vm_function(vm, "cons", eval_cons);
-	sheep_vm_function(vm, "list", eval_list);
-	sheep_vm_function(vm, "head", eval_head);
-	sheep_vm_function(vm, "tail", eval_tail);
-	sheep_vm_function(vm, "map", eval_map);
-	sheep_vm_function(vm, "reduce", eval_reduce);
+	sheep_vm_function(vm, "cons", builtin_cons);
+	sheep_vm_function(vm, "list", builtin_list);
+	sheep_vm_function(vm, "head", builtin_head);
+	sheep_vm_function(vm, "tail", builtin_tail);
+	sheep_vm_function(vm, "map", builtin_map);
+	sheep_vm_function(vm, "reduce", builtin_reduce);
 }

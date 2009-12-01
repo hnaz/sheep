@@ -12,7 +12,7 @@
 #include <sheep/sequence.h>
 
 /* (length sequence) */
-static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_length(struct sheep_vm *vm, unsigned int nr_args)
 {
 	unsigned int len;
 	sheep_t seq;
@@ -25,7 +25,7 @@ static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (concat a b) */
-static sheep_t eval_concat(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t a, b;
 
@@ -42,7 +42,7 @@ static sheep_t eval_concat(struct sheep_vm *vm, unsigned int nr_args)
 }
 
 /* (reverse sequence) */
-static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
+static sheep_t builtin_reverse(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
@@ -54,7 +54,7 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 
 void sheep_sequence_builtins(struct sheep_vm *vm)
 {
-	sheep_vm_function(vm, "length", eval_length);
-	sheep_vm_function(vm, "concat", eval_concat);
-	sheep_vm_function(vm, "reverse", eval_reverse);
+	sheep_vm_function(vm, "length", builtin_length);
+	sheep_vm_function(vm, "concat", builtin_concat);
+	sheep_vm_function(vm, "reverse", builtin_reverse);
 }

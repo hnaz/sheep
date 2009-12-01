@@ -53,4 +53,6 @@ static inline unsigned int sheep_function_local(struct sheep_function *function)
 	return function->nr_locals++;
 }
 
+void sheep_function_builtins(struct sheep_vm *);
+
 #endif /* _SHEEP_FUNCTION_H */

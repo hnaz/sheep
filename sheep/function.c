@@ -4,7 +4,9 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/object.h>
+#include <sheep/bool.h>
 #include <sheep/code.h>
+#include <sheep/core.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>
@@ -146,4 +148,30 @@ sheep_t sheep_closure_function(struct sheep_vm *vm,
 	if (function->name)
 		closure->name = sheep_strdup(function->name);
 	return sheep_make_object(vm, &sheep_closure_type, closure);
+}
+
+/* (disassemble function) */
+static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_function *function;
+	unsigned int nr_foreigns;
+
+	if (sheep_unpack_stack("disassemble", vm, nr_args, "F", &function))
+		return NULL;
+
+	if (function->foreign)
+		nr_foreigns = function->foreign->nr_items;
+	else
+		nr_foreigns = 0;
+
+	printf("%u parameters, %u local slots, %u foreign references\n",
+		function->nr_parms, function->nr_locals, nr_foreigns);
+
+	sheep_code_disassemble(&function->code);
+	return &sheep_true;
+}
+
+void sheep_function_builtins(struct sheep_vm *vm)
+{
+	sheep_vm_function(vm, "disassemble", eval_disassemble);
 }

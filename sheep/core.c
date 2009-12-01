@@ -548,26 +548,6 @@ static sheep_t eval_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_sequence(sheep)->reverse(vm, sheep);
 }
 
-/* (disassemble function) */
-static sheep_t eval_disassemble(struct sheep_vm *vm, unsigned int nr_args)
-{
-	struct sheep_function *function;
-	unsigned int nr_foreigns;
-
-	if (sheep_unpack_stack("disassemble", vm, nr_args, "F", &function))
-		return NULL;
-
-	if (function->foreign)
-		nr_foreigns = function->foreign->nr_items;
-	else
-		nr_foreigns = 0;
-
-	printf("%u parameters, %u local slots, %u foreign references\n",
-		function->nr_parms, function->nr_locals, nr_foreigns);
-
-	sheep_code_disassemble(&function->code);
-	return &sheep_true;
-}
 
 void sheep_core_init(struct sheep_vm *vm)
 {
@@ -586,8 +566,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_vm_function(vm, "reverse", eval_reverse);
 	sheep_vm_function(vm, "map", eval_map);
 	sheep_vm_function(vm, "reduce", eval_reduce);
-
-	sheep_vm_function(vm, "disassemble", eval_disassemble);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

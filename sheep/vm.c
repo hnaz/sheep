@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/function.h>
 #include <sheep/number.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
@@ -62,6 +63,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	sheep_number_builtins(vm);
 	sheep_string_builtins(vm);
 	sheep_list_builtins(vm);
+	sheep_function_builtins(vm);
 }
 
 void sheep_vm_exit(struct sheep_vm *vm)

@@ -5,7 +5,7 @@
  */
 #include <sheep/number.h>
 #include <sheep/object.h>
-#include <sheep/core.h>
+#include <sheep/unpack.h>
 #include <sheep/vm.h>
 #include <stdio.h>
 

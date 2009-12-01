@@ -20,7 +20,12 @@ enum sheep_unpack {
 
 enum sheep_unpack __sheep_unpack_list(const char **, sheep_t *,
 				struct sheep_list *, const char *, va_list);
+int sheep_unpack_list(const char *, struct sheep_list *, const char *, ...);
+
 enum sheep_unpack __sheep_unpack_stack(const char **, sheep_t *,
 				struct sheep_vector *, const char *, va_list);
+int sheep_unpack_stack(const char *, struct sheep_vm *, unsigned int,
+		const char *, ...);
+
 
 #endif /* _SHEEP_UNPACK_H */

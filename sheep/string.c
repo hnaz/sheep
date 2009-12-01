@@ -5,7 +5,7 @@
  */
 #include <sheep/compile.h>
 #include <sheep/object.h>
-#include <sheep/core.h>
+#include <sheep/unpack.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <string.h>

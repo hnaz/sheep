@@ -6,8 +6,8 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
+#include <sheep/unpack.h>
 #include <sheep/eval.h>
-#include <sheep/core.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>

@@ -4,9 +4,9 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/object.h>
+#include <sheep/unpack.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
-#include <sheep/core.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
 #include <stdio.h>

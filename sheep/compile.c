@@ -24,14 +24,20 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 	};
 	int err;
 
+	sheep_protect(vm, expr);
+
 	function = sheep_zalloc(sizeof(struct sheep_function));
 	err = sheep_compile_object(vm, function, &context, expr);
 	if (err) {
 		sheep_code_exit(&function->code);
 		sheep_free(function);
+
+		sheep_unprotect(vm, expr);
 		return NULL;
 	}
 	sheep_code_finalize(&function->code);
+
+	sheep_unprotect(vm, expr);
 	return sheep_make_object(vm, &sheep_function_type, function);
 }
 

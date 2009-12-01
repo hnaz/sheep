@@ -4,7 +4,6 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/compile.h>
-#include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/core.h>
 #include <sheep/util.h>
@@ -82,10 +81,10 @@ static sheep_t eval_not(struct sheep_vm *vm, unsigned int nr_args)
 
 void sheep_bool_builtins(struct sheep_vm *vm)
 {
-	sheep_module_shared(vm, &vm->main, "true", &sheep_true);
-	sheep_module_shared(vm, &vm->main, "false", &sheep_false);
+	sheep_vm_variable(vm, "true", &sheep_true);
+	sheep_vm_variable(vm, "false", &sheep_false);
 
-	sheep_module_function(vm, &vm->main, "=", eval_equal);
-	sheep_module_function(vm, &vm->main, "bool", eval_bool);
-	sheep_module_function(vm, &vm->main, "not", eval_not);
+	sheep_vm_function(vm, "=", eval_equal);
+	sheep_vm_function(vm, "bool", eval_bool);
+	sheep_vm_function(vm, "not", eval_not);
 }

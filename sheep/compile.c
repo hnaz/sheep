@@ -48,22 +48,28 @@ int sheep_compile_constant(struct sheep_vm *vm, struct sheep_function *function,
 }
 
 enum env_level {
+	ENV_NONE,
 	ENV_LOCAL,
 	ENV_GLOBAL,
 	ENV_FOREIGN,
+	ENV_BUILTIN,
 };
 
-static int lookup(struct sheep_context *context, const char *name,
-		unsigned int *dist, unsigned int *slot,
-		enum env_level *env_level)
+static enum env_level lookup_env(struct sheep_vm *vm,
+				struct sheep_context *context, const char *name,
+				unsigned int *dist, unsigned int *slot)
 {
 	struct sheep_context *current = context;
 	unsigned int distance = 0;
 	void *entry;
 
 	while (sheep_map_get(current->env, name, &entry)) {
-		if (!current->parent)
-			return -1;
+		if (!current->parent) {
+			if (sheep_map_get(&vm->builtins, name, &entry))
+				return ENV_NONE;
+			current = NULL;
+			break;
+		}
 		if (current->flags & SHEEP_CONTEXT_FUNCTION)
 			distance++;
 		current = current->parent;
@@ -72,14 +78,13 @@ static int lookup(struct sheep_context *context, const char *name,
 	*dist = distance;
 	*slot = (unsigned long)entry;
 
+	if (!current)
+		return ENV_BUILTIN;
 	if (!current->parent)
-		*env_level = ENV_GLOBAL;
-	else if (!distance)
-		*env_level = ENV_LOCAL;
-	else
-		*env_level = ENV_FOREIGN;
-
-	return 0;
+		return ENV_GLOBAL;
+	if (!distance)
+		return ENV_LOCAL;
+	return ENV_FOREIGN;
 }
 
 static unsigned int slot_foreign(struct sheep_function *function,
@@ -112,22 +117,19 @@ static unsigned int slot_foreign(struct sheep_function *function,
 	return sheep_vector_push(foreign, freevar);
 }
 
-static int __sheep_compile_name(struct sheep_vm *vm,
-				struct sheep_function *function, 
-				struct sheep_context *context,
-				sheep_t expr, int set)
+static int compile_name(struct sheep_vm *vm,
+			struct sheep_function *function, 
+			struct sheep_context *context,
+			sheep_t expr, int set)
 {
 	unsigned int dist, slot;
-	enum env_level level;
 	const char *name;
 
 	name = sheep_cname(expr);
-	if (lookup(context, name, &dist, &slot, &level)) {
+	switch (lookup_env(vm, context, name, &dist, &slot)) {
+	case ENV_NONE:
 		fprintf(stderr, "unbound name: %s\n", name);
 		return -1;
-	}
-
-	switch (level) {
 	case ENV_LOCAL:
 		if (set)
 			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
@@ -144,6 +146,13 @@ static int __sheep_compile_name(struct sheep_vm *vm,
 			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
 		sheep_emit(&function->code, SHEEP_FOREIGN, slot);
 		break;
+	case ENV_BUILTIN:
+		if (set) {
+			fprintf(stderr, "read-only bound: %s\n", name);
+			return -1;
+		}
+		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
+		break;
 	}
 	return 0;
 }
@@ -151,13 +160,13 @@ static int __sheep_compile_name(struct sheep_vm *vm,
 int sheep_compile_name(struct sheep_vm *vm, struct sheep_function *function,
 		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, function, context, expr, 0);
+	return compile_name(vm, function, context, expr, 0);
 }
 
 int sheep_compile_set(struct sheep_vm *vm, struct sheep_function *function,
 		struct sheep_context *context, sheep_t expr)
 {
-	return __sheep_compile_name(vm, function, context, expr, 1);
+	return compile_name(vm, function, context, expr, 1);
 }
 
 static int compile_call(struct sheep_vm *vm, struct sheep_function *function,

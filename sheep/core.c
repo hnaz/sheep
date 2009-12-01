@@ -5,7 +5,6 @@
  */
 #include <sheep/function.h>
 #include <sheep/compile.h>
-#include <sheep/module.h>
 #include <sheep/number.h>
 #include <sheep/string.h>
 #include <sheep/unpack.h>
@@ -712,17 +711,17 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);
 
-	sheep_module_function(vm, &vm->main, "string", eval_string);
-	sheep_module_function(vm, &vm->main, "split", eval_split);
-	sheep_module_function(vm, &vm->main, "join", eval_join);
+	sheep_vm_function(vm, "string", eval_string);
+	sheep_vm_function(vm, "split", eval_split);
+	sheep_vm_function(vm, "join", eval_join);
 
-	sheep_module_function(vm, &vm->main, "length", eval_length);
-	sheep_module_function(vm, &vm->main, "concat", eval_concat);
-	sheep_module_function(vm, &vm->main, "reverse", eval_reverse);
-	sheep_module_function(vm, &vm->main, "map", eval_map);
-	sheep_module_function(vm, &vm->main, "reduce", eval_reduce);
+	sheep_vm_function(vm, "length", eval_length);
+	sheep_vm_function(vm, "concat", eval_concat);
+	sheep_vm_function(vm, "reverse", eval_reverse);
+	sheep_vm_function(vm, "map", eval_map);
+	sheep_vm_function(vm, "reduce", eval_reduce);
 
-	sheep_module_function(vm, &vm->main, "disassemble", eval_disassemble);
+	sheep_vm_function(vm, "disassemble", eval_disassemble);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

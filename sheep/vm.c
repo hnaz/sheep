@@ -5,6 +5,7 @@
  */
 #include <sheep/number.h>
 #include <sheep/object.h>
+#include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/core.h>
 #include <sheep/eval.h>
@@ -32,6 +33,26 @@ void sheep_vm_mark(struct sheep_vm *vm)
 			sheep_mark(vm->stack.items[i]);
 }
 
+unsigned int sheep_vm_bind(struct sheep_vm *vm, struct sheep_map *env,
+			const char *name, sheep_t value)
+{
+	unsigned int slot;
+
+	slot = sheep_vm_constant(vm, value);
+	sheep_map_set(env, name, (void *)(unsigned long)slot);
+	return slot;
+}
+
+void sheep_vm_variable(struct sheep_vm *vm, const char *name, sheep_t value)
+{
+	sheep_vm_bind(vm, &vm->builtins, name, value);
+}
+
+void sheep_vm_function(struct sheep_vm *vm, const char *name, sheep_alien_t f)
+{
+	sheep_vm_variable(vm, name, sheep_make_alien(vm, f, name));
+}
+
 void sheep_vm_init(struct sheep_vm *vm)
 {
 	memset(vm, 0, sizeof(*vm));
@@ -43,6 +64,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 
 void sheep_vm_exit(struct sheep_vm *vm)
 {
+	sheep_map_drain(&vm->builtins);
 	sheep_core_exit(vm);
 	sheep_evaluator_exit(vm);
 	sheep_free(vm->globals.items);

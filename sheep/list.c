@@ -4,7 +4,6 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/compile.h>
-#include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
 #include <sheep/core.h>
@@ -246,8 +245,8 @@ static sheep_t eval_tail(struct sheep_vm *vm, unsigned int nr_args)
 
 void sheep_list_builtins(struct sheep_vm *vm)
 {
-	sheep_module_function(vm, &vm->main, "cons", eval_cons);
-	sheep_module_function(vm, &vm->main, "list", eval_list);
-	sheep_module_function(vm, &vm->main, "head", eval_head);
-	sheep_module_function(vm, &vm->main, "tail", eval_tail);
+	sheep_vm_function(vm, "cons", eval_cons);
+	sheep_vm_function(vm, "list", eval_list);
+	sheep_vm_function(vm, "head", eval_head);
+	sheep_vm_function(vm, "tail", eval_tail);
 }

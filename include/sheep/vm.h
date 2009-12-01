@@ -10,6 +10,7 @@
 #include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/vector.h>
+#include <sheep/alien.h>
 #include <sheep/map.h>
 
 struct sheep_vm {
@@ -23,6 +24,7 @@ struct sheep_vm {
 
 	/* Compiler */
 	struct sheep_map specials;
+	struct sheep_map builtins;
 	struct sheep_module main;
 
 	/* Evaluator */
@@ -40,6 +42,12 @@ static inline unsigned int sheep_vm_global(struct sheep_vm *vm)
 {
 	return sheep_vector_push(&vm->globals, NULL);
 }
+
+unsigned int sheep_vm_bind(struct sheep_vm *, struct sheep_map *,
+			const char *, sheep_t);
+
+void sheep_vm_variable(struct sheep_vm *, const char *, sheep_t);
+void sheep_vm_function(struct sheep_vm *, const char *, sheep_alien_t);
 
 void sheep_vm_init(struct sheep_vm *);
 void sheep_vm_exit(struct sheep_vm *);

@@ -4,7 +4,6 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/compile.h>
-#include <sheep/module.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
 #include <sheep/bool.h>
@@ -276,24 +275,24 @@ static sheep_t eval_shiftr(struct sheep_vm *vm, unsigned int nr_args)
 
 void sheep_number_builtins(struct sheep_vm *vm)
 {
-	sheep_module_function(vm, &vm->main, "number", eval_number);
+	sheep_vm_function(vm, "number", eval_number);
 
-	sheep_module_function(vm, &vm->main, "<", eval_less);
-	sheep_module_function(vm, &vm->main, "<=", eval_lesseq);
-	sheep_module_function(vm, &vm->main, ">=", eval_moreeq);
-	sheep_module_function(vm, &vm->main, ">", eval_more);
+	sheep_vm_function(vm, "<", eval_less);
+	sheep_vm_function(vm, "<=", eval_lesseq);
+	sheep_vm_function(vm, ">=", eval_moreeq);
+	sheep_vm_function(vm, ">", eval_more);
 
-	sheep_module_function(vm, &vm->main, "+", eval_plus);
-	sheep_module_function(vm, &vm->main, "-", eval_minus);
-	sheep_module_function(vm, &vm->main, "*", eval_multiply);
-	sheep_module_function(vm, &vm->main, "/", eval_divide);
-	sheep_module_function(vm, &vm->main, "%", eval_modulo);
+	sheep_vm_function(vm, "+", eval_plus);
+	sheep_vm_function(vm, "-", eval_minus);
+	sheep_vm_function(vm, "*", eval_multiply);
+	sheep_vm_function(vm, "/", eval_divide);
+	sheep_vm_function(vm, "%", eval_modulo);
 
-	sheep_module_function(vm, &vm->main, "~", eval_lnot);
-	sheep_module_function(vm, &vm->main, "|", eval_lor);
-	sheep_module_function(vm, &vm->main, "&", eval_land);
-	sheep_module_function(vm, &vm->main, "^", eval_lxor);
+	sheep_vm_function(vm, "~", eval_lnot);
+	sheep_vm_function(vm, "|", eval_lor);
+	sheep_vm_function(vm, "&", eval_land);
+	sheep_vm_function(vm, "^", eval_lxor);
 
-	sheep_module_function(vm, &vm->main, "<<", eval_shiftl);
-	sheep_module_function(vm, &vm->main, ">>", eval_shiftr);
+	sheep_vm_function(vm, "<<", eval_shiftl);
+	sheep_vm_function(vm, ">>", eval_shiftr);
 }

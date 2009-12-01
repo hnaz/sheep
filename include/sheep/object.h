@@ -18,11 +18,6 @@ static inline const struct sheep_type *sheep_type(sheep_t sheep)
 	return sheep->type;
 }
 
-static inline const struct sheep_sequence *sheep_sequence(sheep_t sheep)
-{
-	return sheep_type(sheep)->sequence;
-}
-
 static inline void *sheep_data(sheep_t sheep)
 {
 	return (void *)(sheep->data & ~1);

@@ -438,75 +438,6 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 	}
 }
 
-
-/* (map function list) */
-static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t mapper, old, new, result = NULL;
-	struct sheep_list *l_old, *l_new;
-
-	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old))
-		return NULL;
-	sheep_protect(vm, mapper);
-	sheep_protect(vm, old);
-
-	new = sheep_make_list(vm, NULL, NULL);
-	sheep_protect(vm, new);
-
-	l_old = sheep_list(old);
-	l_new = sheep_list(new);
-
-	while (l_old->head) {
-		l_new->head = sheep_call(vm, mapper, 1, l_old->head);
-		if (!l_new->head)
-			goto out;
-		l_new->tail = sheep_make_list(vm, NULL, NULL);
-		l_new = sheep_list(l_new->tail);
-		l_old = sheep_list(l_old->tail);
-	}
-	result = new;
-out:
-	sheep_unprotect(vm, new);
-	sheep_unprotect(vm, old);
-	sheep_unprotect(vm, mapper);
-
-	return result;
-}
-
-/* (reduce function list) */
-static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t reducer, list_, a, b, value, result = NULL;
-	struct sheep_list *list;
-
-	if (sheep_unpack_stack("reduce", vm, nr_args, "cl", &reducer, &list_))
-		return NULL;
-
-	sheep_protect(vm, reducer);
-	sheep_protect(vm, list_);
-
-	list = sheep_list(list_);
-	if (sheep_unpack_list("reduce", list, "oor!", &a, &b, &list))
-		return NULL;
-
-	value = sheep_call(vm, reducer, 2, a, b);
-	if (!value)
-		goto out;
-
-	while (list->head) {
-		value = sheep_call(vm, reducer, 2, value, list->head);
-		if (!value)
-			goto out;
-		list = sheep_list(list->tail);
-	}
-	result = value;
-out:
-	sheep_unprotect(vm, list_);
-	sheep_unprotect(vm, reducer);
-
-	return result;
-}
-
 /* (length sequence) */
 static sheep_t eval_length(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -564,8 +495,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_vm_function(vm, "length", eval_length);
 	sheep_vm_function(vm, "concat", eval_concat);
 	sheep_vm_function(vm, "reverse", eval_reverse);
-	sheep_vm_function(vm, "map", eval_map);
-	sheep_vm_function(vm, "reduce", eval_reduce);
 }
 
 void sheep_core_exit(struct sheep_vm *vm)

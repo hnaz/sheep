@@ -26,11 +26,6 @@ static inline sheep_t sheep_compile(struct sheep_vm *vm, sheep_t exp)
 	return __sheep_compile(vm, &vm->main, exp);
 }
 
-static inline unsigned int sheep_slot_local(struct sheep_function *function)
-{
-	return function->nr_locals++;
-}
-
 static inline int sheep_compile_object(struct sheep_vm *vm,
 				struct sheep_function *function,
 				struct sheep_context *context, sheep_t sheep)

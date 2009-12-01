@@ -48,4 +48,9 @@ static inline struct sheep_function *sheep_function(sheep_t sheep)
 sheep_t sheep_make_function(struct sheep_vm *, const char *);
 sheep_t sheep_closure_function(struct sheep_vm *, struct sheep_function *);
 
+static inline unsigned int sheep_function_local(struct sheep_function *function)
+{
+	return function->nr_locals++;
+}
+
 #endif /* _SHEEP_FUNCTION_H */

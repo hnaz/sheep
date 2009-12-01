@@ -172,7 +172,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 		if (sheep_compile_object(vm, function, &block, value))
 			goto out;
 
-		slot = sheep_slot_local(function);
+		slot = sheep_function_local(function);
 		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
 		sheep_map_set(&env, name, (void *)(unsigned long)slot);
 	}
@@ -198,7 +198,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 		return -1;
 
 	if (context->parent) {
-		slot = sheep_slot_local(function);
+		slot = sheep_function_local(function);
 		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
 		sheep_emit(&function->code, SHEEP_LOCAL, slot);
 	} else {
@@ -240,7 +240,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 
 		if (unpack("function", parms, "Ar", &parm, &parms))
 			goto out;
-		slot = sheep_slot_local(childfun);
+		slot = sheep_function_local(childfun);
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
 		childfun->nr_parms++;
 	}
@@ -248,7 +248,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	cslot = sheep_vm_constant(vm, sheep);
 	if (name) {
 		if (context->parent)
-			bslot = sheep_slot_local(function);
+			bslot = sheep_function_local(function);
 		else
 			bslot = sheep_vm_global(vm);
 		sheep_map_set(context->env, name, (void *)(unsigned long)bslot);

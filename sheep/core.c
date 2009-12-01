@@ -5,20 +5,14 @@
  */
 #include <sheep/function.h>
 #include <sheep/compile.h>
-#include <sheep/number.h>
-#include <sheep/string.h>
 #include <sheep/unpack.h>
-#include <sheep/alien.h>
-#include <sheep/bool.h>
 #include <sheep/code.h>
-#include <sheep/eval.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 

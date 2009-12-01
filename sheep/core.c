@@ -24,7 +24,7 @@
 
 #include <sheep/core.h>
 
-static int unpack(const char *caller, struct sheep_list *list,
+int sheep_unpack_list(const char *caller, struct sheep_list *list,
 		const char *items, ...)
 {
 	enum sheep_unpack status;
@@ -60,7 +60,7 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_function *function,
 	unsigned int slot;
 	sheep_t obj;
 
-	if (unpack("quote", args, "o", &obj))
+	if (sheep_unpack_list("quote", args, "o", &obj))
 		return -1;
 
 	slot = sheep_vm_constant(vm, obj);
@@ -136,7 +136,7 @@ static int compile_block(struct sheep_vm *vm, struct sheep_function *function,
 	int ret;
 
 	/* Just make sure the block is not empty */
-	if (unpack("block", args, "r!", &args))
+	if (sheep_unpack_list("block", args, "r!", &args))
 		return -1;
 
 	ret = do_compile_block(vm, function, context, &env, args, 0);
@@ -157,7 +157,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 	};
 	int ret = -1;
 
-	if (unpack("with", args, "Lr!", &bindings, &body))
+	if (sheep_unpack_list("with", args, "Lr!", &bindings, &body))
 		return -1;
 
 	while (bindings->head) {
@@ -165,7 +165,8 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 		const char *name;
 		sheep_t value;
 
-		if (unpack("with", bindings, "Aor", &name, &value, &bindings))
+		if (sheep_unpack_list("with", bindings, "Aor", &name, &value,
+					&bindings))
 			goto out;
 
 		if (sheep_compile_object(vm, function, &block, value))
@@ -190,7 +191,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 	const char *name;
 	sheep_t value;
 
-	if (unpack("variable", args, "Ao", &name, &value))
+	if (sheep_unpack_list("variable", args, "Ao", &name, &value))
 		return -1;
 
 	if (sheep_compile_object(vm, function, context, value))
@@ -227,7 +228,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	} else
 		name = NULL;
 
-	if (unpack("function", args, "Lr!", &parms, &body))
+	if (sheep_unpack_list("function", args, "Lr!", &parms, &body))
 		return -1;
 
 	sheep = sheep_make_function(vm, name);
@@ -237,7 +238,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 		unsigned int slot;
 		const char *parm;
 
-		if (unpack("function", parms, "Ar", &parm, &parms))
+		if (sheep_unpack_list("function", parms, "Ar", &parm, &parms))
 			goto out;
 		slot = sheep_function_local(childfun);
 		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
@@ -296,7 +297,7 @@ static int do_compile_chain(struct sheep_vm *vm, struct sheep_function *function
 	unsigned long Lend;
 	int ret = -1;
 
-	if (unpack(name, args, "r!", &args))
+	if (sheep_unpack_list(name, args, "r!", &args))
 		goto out;
 
 	Lend = sheep_code_jump(&function->code);
@@ -306,7 +307,7 @@ static int do_compile_chain(struct sheep_vm *vm, struct sheep_function *function
 		if (tailposition(context, args))
 			block.flags |= SHEEP_CONTEXT_TAILFORM;
 
-		if (unpack(name, args, "or", &exp, &args))
+		if (sheep_unpack_list(name, args, "or", &exp, &args))
 			goto out;
 
 		if (sheep_compile_object(vm, function, &block, exp))
@@ -354,7 +355,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_function *function,
 	sheep_t cond, then;
 	int ret = -1;
 
-	if (unpack("if", args, "oor", &cond, &then, &elseform))
+	if (sheep_unpack_list("if", args, "oor", &cond, &then, &elseform))
 		goto out;
 
 	Lelse = sheep_code_jump(&function->code);
@@ -398,7 +399,7 @@ static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
 {
 	sheep_t name, value;
 
-	if (unpack("set", args, "ao", &name, &value))
+	if (sheep_unpack_list("set", args, "ao", &name, &value))
 		return -1;
 
 	if (sheep_compile_object(vm, function, context, value))
@@ -437,137 +438,6 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 	}
 }
 
-/* (string expression) */
-static sheep_t eval_string(struct sheep_vm *vm, unsigned int nr_args)
-{
-	sheep_t sheep;
-	char *buf;
-
-	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
-		return NULL;
-
-	if (sheep_type(sheep) == &sheep_string_type)
-		return sheep;
-
-	buf = sheep_format(sheep);
-	return __sheep_make_string(vm, buf);
-}
-
-static char *do_split(char **stringp, const char *delim)
-{
-	char *match, *result;
-
-	match = strstr(*stringp, delim);
-	result = *stringp;
-	if (!match) {
-		*stringp = NULL;
-		return result;
-	}
-
-	*match = 0;
-	*stringp = match + strlen(delim);
-	return result;
-}
-
-/* (split string string) */
-static sheep_t eval_split(struct sheep_vm *vm, unsigned int nr_args)
-{
-	const char *string, *token;
-	struct sheep_list *list;
-	sheep_t list_, token_;
-	char *pos, *orig;
-	int empty;
-
-	if (sheep_unpack_stack("split", vm, nr_args, "sS", &token_, &string))
-		return NULL;
-	sheep_protect(vm, token_);
-	pos = orig = sheep_strdup(string);
-
-	list_ = sheep_make_list(vm, NULL, NULL);
-	sheep_protect(vm, list_);
-
-	token = sheep_rawstring(token_);
-	empty = !strlen(token);
-
-	list = sheep_list(list_);
-	while (pos) {
-		sheep_t item;
-		/*
-		 * Empty splitting separates out every single
-		 * character: (split "" "foo") => ("f" "o" "o")
-		 */
-		if (empty) {
-			char str[2] = { *pos, 0 };
-
-			item = sheep_make_string(vm, str);
-			if (!pos[0] || !pos[1])
-				pos = NULL;
-			else
-				pos++;
-		} else
-			item = sheep_make_string(vm, do_split(&pos, token));
-
-		list->head = item;
-		list->tail = sheep_make_list(vm, NULL, NULL);
-		list = sheep_list(list->tail);
-	}
-	sheep_free(orig);
-
-	sheep_unprotect(vm, list_);
-	sheep_unprotect(vm, token_);
-
-	return list_;
-}
-
-/* (join delimiter list-of-strings) */
-static sheep_t eval_join(struct sheep_vm *vm, unsigned int nr_args)
-{
-	char *new = NULL, *result = NULL;
-	size_t length = 0, dlength;
-	struct sheep_list *list;
-	sheep_t delim_, list_;
-	const char *delim;
-
-	if (sheep_unpack_stack("join", vm, nr_args, "sl", &delim_, &list_))
-		return NULL;
-
-	sheep_protect(vm, delim_);
-	sheep_protect(vm, list_);
-
-	delim = sheep_rawstring(delim_);
-	list = sheep_list(list_);
-
-	dlength = strlen(delim);
-
-	while (list->head) {
-		const char *string;
-		size_t newlength;
-
-		if (unpack("join", list, "Sr", &string, &list))
-			goto out;
-
-		newlength = length + strlen(string);
-		if (list->head)
-			newlength += dlength;
-		new = sheep_realloc(new, newlength + 1);
-		strcpy(new + length, string);
-		if (list->head)
-			strcpy(new + newlength - dlength, delim);
-		length = newlength;
-	}
-
-	if (new)
-		result = new;
-	else
-		result = sheep_strdup("");
-out:
-	sheep_unprotect(vm, list_);
-	sheep_unprotect(vm, delim_);
-
-	if (result)
-		return __sheep_make_string(vm, result);
-	return NULL;
-}
 
 /* (map function list) */
 static sheep_t eval_map(struct sheep_vm *vm, unsigned int nr_args)
@@ -616,7 +486,7 @@ static sheep_t eval_reduce(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, list_);
 
 	list = sheep_list(list_);
-	if (unpack("reduce", list, "oor!", &a, &b, &list))
+	if (sheep_unpack_list("reduce", list, "oor!", &a, &b, &list))
 		return NULL;
 
 	value = sheep_call(vm, reducer, 2, a, b);
@@ -710,10 +580,6 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);
 	sheep_map_set(&vm->specials, "set", compile_set);
-
-	sheep_vm_function(vm, "string", eval_string);
-	sheep_vm_function(vm, "split", eval_split);
-	sheep_vm_function(vm, "join", eval_join);
 
 	sheep_vm_function(vm, "length", eval_length);
 	sheep_vm_function(vm, "concat", eval_concat);

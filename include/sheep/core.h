@@ -6,9 +6,11 @@
 #ifndef _SHEEP_CORE_H
 #define _SHEEP_CORE_H
 
+#include <sheep/list.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
 
+int sheep_unpack_list(const char *, struct sheep_list *, const char *, ...);
 int sheep_unpack_stack(const char *, struct sheep_vm *, unsigned int,
 		const char *, ...);
 

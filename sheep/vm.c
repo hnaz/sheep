@@ -5,6 +5,7 @@
  */
 #include <sheep/number.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/core.h>
@@ -59,6 +60,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	sheep_core_init(vm);
 	sheep_bool_builtins(vm);
 	sheep_number_builtins(vm);
+	sheep_string_builtins(vm);
 	sheep_list_builtins(vm);
 }
 

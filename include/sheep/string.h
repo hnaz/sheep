@@ -9,6 +9,8 @@
 #include <sheep/object.h>
 #include <stdlib.h>
 
+struct sheep_vm;
+
 extern const struct sheep_type sheep_string_type;
 
 sheep_t __sheep_make_string(struct sheep_vm *, const char *);
@@ -21,5 +23,7 @@ static inline const char *sheep_rawstring(sheep_t sheep)
 
 void __sheep_format(sheep_t, char **, size_t *);
 char *sheep_format(sheep_t);
+
+void sheep_string_builtins(struct sheep_vm *);
 
 #endif /* _SHEEP_STRING_H */

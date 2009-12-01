@@ -42,7 +42,7 @@ int sheep_compile_constant(struct sheep_vm *vm, struct sheep_function *function,
 {
 	unsigned int slot;
 
-	slot = sheep_slot_constant(vm, expr);
+	slot = sheep_vm_constant(vm, expr);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	return 0;
 }

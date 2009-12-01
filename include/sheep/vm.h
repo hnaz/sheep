@@ -31,6 +31,16 @@ struct sheep_vm {
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };
 
+static inline unsigned int sheep_vm_constant(struct sheep_vm *vm, sheep_t sheep)
+{
+	return sheep_vector_push(&vm->globals, sheep);
+}
+
+static inline unsigned int sheep_vm_global(struct sheep_vm *vm)
+{
+	return sheep_vector_push(&vm->globals, NULL);
+}
+
 void sheep_vm_init(struct sheep_vm *);
 void sheep_vm_exit(struct sheep_vm *);
 

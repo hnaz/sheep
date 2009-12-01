@@ -161,9 +161,7 @@ sheep_t sheep_make_object(struct sheep_vm *vm, const struct sheep_type *type,
 {
 	struct sheep_object *sheep;
 
-#if 1
 	if (!vm->parts)
-#endif
 		collect(vm);
 
 	sheep = alloc(vm);

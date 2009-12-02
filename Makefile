@@ -19,7 +19,7 @@ prefix		= /usr
 bindir		= $(prefix)/bin
 
 SCFLAGS		= -Wall -Wextra -Wno-unused-parameter $(CFLAGS)
-SLDFLAGS	= $(LDFLAGS)
+SLDFLAGS	= -ldl $(LDFLAGS)
 
 ifeq ($(D),1)
 SCFLAGS		+= -O0 -g

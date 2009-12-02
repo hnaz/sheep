@@ -15,6 +15,7 @@ struct sheep_vm;
 struct sheep_module {
 	const char *name;
 	struct sheep_map env;
+	void *handle;
 };
 
 extern const struct sheep_type sheep_module_type;

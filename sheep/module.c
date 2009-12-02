@@ -12,17 +12,23 @@
 #include <sheep/map.h>
 #include <sheep/vm.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include <stdio.h>
 
 #include <sheep/module.h>
 
-static void free_module(struct sheep_vm *vm, sheep_t sheep)
+static void do_free_module(struct sheep_module *mod)
 {
-	struct sheep_module *mod = sheep_data(sheep);
-
 	sheep_free(mod->name);
 	sheep_map_drain(&mod->env);
+	if (mod->handle)
+		dlclose(mod->handle);
 	sheep_free(mod);
+}
+
+static void free_module(struct sheep_vm *vm, sheep_t sheep)
+{
+	do_free_module(sheep_data(sheep));
 }
 
 static void format_module(sheep_t sheep, char **bufp, size_t *posp)
@@ -37,43 +43,84 @@ const struct sheep_type sheep_module_type = {
 	.format = format_module,
 };
 
-sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
+static int load_so(struct sheep_vm *vm, const char *path,
+		struct sheep_module *mod)
 {
-	struct sheep_module *mod;
-	char path[1024];
-	FILE *fp = NULL;
+	int (*init)(struct sheep_vm *, struct sheep_module *);
+	void *handle;
 
-	sprintf(path, "%s.sheep", name);
-	if (access(path, R_OK))
-		goto error;
+	handle = dlopen(path, RTLD_NOW);
+	if (!handle)
+		return -1;
+
+	init = dlsym(handle, "init");
+	if (!init)
+		goto err;
+
+	if (init(vm, mod))
+		goto err;
+
+	mod->handle = handle;
+	return 0;
+err:
+	dlclose(handle);
+	return -1;
+}
+
+static int load_sheep(struct sheep_vm *vm, const char *path,
+		struct sheep_module *mod)
+{
+	int ret = -1;
+	FILE *fp;
+
 	fp = fopen(path, "r");
 	if (!fp)
-		goto error;
-
-	mod = sheep_zalloc(sizeof(struct sheep_module));
-	mod->name = sheep_strdup(name);
+		goto out;
 
 	while (1) {
 		sheep_t exp, fun;
 
 		exp = sheep_read(vm, fp);
 		if (!exp)
-			goto error;
+			goto out_file;
 		if (exp == &sheep_eof)
 			break;
 		fun = __sheep_compile(vm, mod, exp);
 		if (!fun)
-			goto error;
+			goto out_file;
 		if (!sheep_eval(vm, fun))
-			goto error;
+			goto out_file;
 	}
+	ret = 0;
+out_file:
 	fclose(fp);
-	return sheep_make_object(vm, &sheep_module_type, mod);
-error:
-	if (fp)
-		fclose(fp);
-	fprintf(stderr, "can not load %s\n", name);
+out:
+	return ret;
+}
+
+sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
+{
+	struct sheep_module *mod;
+	char path[1024];
+
+	mod = sheep_zalloc(sizeof(struct sheep_module));
+	mod->name = sheep_strdup(name);
+
+	sprintf(path, "./%s.so", name);
+	if (!access(path, R_OK)) {
+		if (!load_so(vm, path, mod))
+			goto found;
+	} else {
+		sprintf(path, "%s.sheep", name);
+		if (!access(path, R_OK)) {
+			if (!load_sheep(vm, path, mod))
+				goto found;
+		}
+	}
+	do_free_module(mod);
 	return NULL;
+found:
+	return sheep_make_object(vm, &sheep_module_type, mod);
 }
 
 /**

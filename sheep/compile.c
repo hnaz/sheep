@@ -11,6 +11,7 @@
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
+#include <string.h>
 #include <stdio.h>
 
 #include <sheep/compile.h>
@@ -120,15 +121,13 @@ static unsigned int slot_foreign(struct sheep_function *function,
 	return sheep_vector_push(foreign, freevar);
 }
 
-static int compile_name(struct sheep_vm *vm,
+static int compile_simple_name(struct sheep_vm *vm,
 			struct sheep_function *function, 
 			struct sheep_context *context,
-			sheep_t expr, int set)
+			const char *name, int set)
 {
 	unsigned int dist, slot;
-	const char *name;
 
-	name = sheep_cname(expr);
 	switch (lookup_env(vm, context, name, &dist, &slot)) {
 	case ENV_NONE:
 		fprintf(stderr, "unbound name: %s\n", name);
@@ -158,6 +157,58 @@ static int compile_name(struct sheep_vm *vm,
 		break;
 	}
 	return 0;
+}
+
+static int compile_name(struct sheep_vm *vm,
+			struct sheep_function *function, 
+			struct sheep_context *context,
+			sheep_t expr, int set)
+{
+	struct sheep_module *mod;
+	char *p, *q, *dup;
+	const char *name;
+	void *entry;
+
+	name = sheep_cname(expr);
+	q = strchr(name, ':');
+	if (!q)
+		return compile_simple_name(vm, function, context, name, set);
+
+	dup = p = sheep_strdup(name);
+	q = p + (q - name);
+
+	mod = &vm->main;
+	do {
+		sheep_t m;
+
+		*q = 0;
+
+		if (sheep_map_get(&mod->env, p, &entry))
+			goto err;
+
+		m = vm->globals.items[(unsigned long)entry];
+		if (sheep_type(m) != &sheep_module_type)
+			goto err;
+		mod = sheep_data(m);
+
+		p = q + 1;
+		q = strchr(p, ':');
+	} while (q);
+
+	if (sheep_map_get(&mod->env, p, &entry))
+		goto err;
+
+	sheep_free(dup);
+
+	if (set)
+		sheep_emit(&function->code, SHEEP_SET_GLOBAL,
+			(unsigned long)entry);
+	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
+	return 0;
+err:
+	sheep_free(dup);
+	fprintf(stderr, "unbound name: %s\n", name);
+	return -1;
 }
 
 int sheep_compile_name(struct sheep_vm *vm, struct sheep_function *function,

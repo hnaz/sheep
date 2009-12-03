@@ -50,12 +50,16 @@ static int load_so(struct sheep_vm *vm, const char *path,
 	void *handle;
 
 	handle = dlopen(path, RTLD_NOW);
-	if (!handle)
+	if (!handle) {
+		fprintf(stderr, "load: dlopen(%s) failed?!\n", path);
 		return -1;
+	}
 
 	init = dlsym(handle, "init");
-	if (!init)
+	if (!init) {
+		fprintf(stderr, "load: %s has no init()\n", path);
 		goto err;
+	}
 
 	if (init(vm, mod))
 		goto err;
@@ -115,7 +119,8 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 		if (!access(path, R_OK)) {
 			if (!load_sheep(vm, path, mod))
 				goto found;
-		}
+		} else
+			fprintf(stderr, "load: module %s not found\n", name);
 	}
 	do_free_module(mod);
 	return NULL;

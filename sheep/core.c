@@ -180,10 +180,10 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 static int compile_function(struct sheep_vm *vm, struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
-	unsigned int cslot, bslot = bslot;
 	struct sheep_function *childfun;
 	struct sheep_list *parms, *body;
 	SHEEP_DEFINE_MAP(env);
+	unsigned int cslot;
 	const char *name;
 	sheep_t sheep;
 	int ret = -1;
@@ -216,11 +216,20 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	}
 
 	cslot = sheep_vm_constant(vm, sheep);
+	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
+
 	if (name) {
-		if (context->parent)
+		unsigned int bslot;
+
+		if (context->parent) {
 			bslot = sheep_function_local(function);
-		else
+			sheep_emit(&function->code, SHEEP_SET_LOCAL, bslot);
+			sheep_emit(&function->code, SHEEP_LOCAL, bslot);
+		} else {
 			bslot = sheep_vm_global(vm);
+			sheep_emit(&function->code, SHEEP_SET_GLOBAL, bslot);
+			sheep_emit(&function->code, SHEEP_GLOBAL, bslot);
+		}
 		sheep_map_set(context->env, name, (void *)(unsigned long)bslot);
 	}
 
@@ -239,17 +248,6 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 		goto out;
 	}
 	sheep_code_finalize(&childfun->code);
-
-	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
-	if (name) {
-		if (context->parent) {
-			sheep_emit(&function->code, SHEEP_SET_LOCAL, bslot);
-			sheep_emit(&function->code, SHEEP_LOCAL, bslot);
-		} else {
-			sheep_emit(&function->code, SHEEP_SET_GLOBAL, bslot);
-			sheep_emit(&function->code, SHEEP_GLOBAL, bslot);
-		}
-	}
 out:
 	sheep_map_drain(&env);
 	return ret;

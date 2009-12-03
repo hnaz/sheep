@@ -31,7 +31,7 @@ enum access {
 };
 
 static struct sheep_map_entry **find(struct sheep_map *map,
-				const char *name, int create)
+				const char *name, int *create)
 {
 	struct sheep_map_entry **pentry, *entry;
 	int index;
@@ -49,22 +49,25 @@ static struct sheep_map_entry **find(struct sheep_map *map,
 	entry->name = sheep_strdup(name);
 	entry->next = map->entries[index];
 	map->entries[index] = entry;
+	*create = 1;
 	return &map->entries[index];
 }
 
-void sheep_map_set(struct sheep_map *map, const char *name, void *value)
+int sheep_map_set(struct sheep_map *map, const char *name, void *value)
 {
 	struct sheep_map_entry **pentry;
+	int create = 0;
 
-	pentry = find(map, name, 1);
+	pentry = find(map, name, &create);
 	(*pentry)->value = value;
+	return !create;
 }
 
 int sheep_map_get(struct sheep_map *map, const char *name, void **valuep)
 {
 	struct sheep_map_entry **pentry;
 
-	pentry = find(map, name, 0);
+	pentry = find(map, name, NULL);
 	if (!pentry)
 		return -1;
 	*valuep = (*pentry)->value;
@@ -75,7 +78,7 @@ int sheep_map_del(struct sheep_map *map, const char *name)
 {
 	struct sheep_map_entry **pentry, *entry;
 
-	pentry = find(map, name, 0);
+	pentry = find(map, name, NULL);
 	if (!pentry)
 		return -1;
 	entry = *pentry;

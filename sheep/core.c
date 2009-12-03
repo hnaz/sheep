@@ -207,7 +207,11 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 		if (sheep_unpack_list("function", parms, "Ar", &parm, &parms))
 			goto out;
 		slot = sheep_function_local(childfun);
-		sheep_map_set(&env, parm, (void *)(unsigned long)slot);
+		if (sheep_map_set(&env, parm, (void *)(unsigned long)slot)) {
+			fprintf(stderr, "function: duplicate parameter %s\n",
+				parm);
+			goto out;
+		}
 		childfun->nr_parms++;
 	}
 

@@ -16,7 +16,7 @@ struct sheep_map {
 #define SHEEP_DEFINE_MAP(name)			\
 	struct sheep_map name = { { 0 } }
 
-void sheep_map_set(struct sheep_map *, const char *, void *);
+int sheep_map_set(struct sheep_map *, const char *, void *);
 int sheep_map_get(struct sheep_map *, const char *, void **);
 int sheep_map_del(struct sheep_map *, const char *);
 

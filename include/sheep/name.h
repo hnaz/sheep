@@ -8,11 +8,16 @@
 
 #include <sheep/object.h>
 
+struct sheep_name {
+	const char **parts;
+	unsigned int nr_parts;
+};
+
 extern const struct sheep_type sheep_name_type;
 
 sheep_t sheep_make_name(struct sheep_vm *, const char *);
 
-static inline const char *sheep_cname(sheep_t sheep)
+static inline struct sheep_name *sheep_name(sheep_t sheep)
 {
 	return sheep_data(sheep);
 }

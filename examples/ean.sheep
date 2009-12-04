@@ -51,10 +51,10 @@ take the difference from the next multiple of ten."
 A concatenated with the digits in B."
   (number (concat (string a) (string b))))
 
-(function ean-checksum-range (base count)
-  (if count
-    (block
-      (ddump (concat-numbers base (ean-checksum base)))
-      (ean-checksum-range (+ base 1) (- count 1)))))
+# (function ean-checksum-range (base count)
+#   (if count
+#     (block
+#       (ddump (concat-numbers base (ean-checksum base)))
+#       (ean-checksum-range (+ base 1) (- count 1)))))
 
-(ean-checksum-range 12345 2000)
+# (ean-checksum-range 12345 2000)

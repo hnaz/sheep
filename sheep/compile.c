@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/function.h>
+#include <sheep/string.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -165,40 +166,30 @@ static int compile_name(struct sheep_vm *vm,
 			sheep_t expr, int set)
 {
 	struct sheep_module *mod;
-	char *p, *q, *dup;
-	const char *name;
+	struct sheep_name *name;
+	unsigned int i = 0;
 	void *entry;
+	char *tmp;
 
-	name = sheep_cname(expr);
-	q = strchr(name, ':');
-	if (!q)
-		return compile_simple_name(vm, function, context, name, set);
-
-	dup = p = sheep_strdup(name);
-	q = p + (q - name);
-
+	name = sheep_name(expr);
+	if (name->nr_parts == 1)
+		return compile_simple_name(vm, function, context,
+					name->parts[0], set);
 	mod = &vm->main;
 	do {
 		sheep_t m;
 
-		*q = 0;
-
-		if (sheep_map_get(&mod->env, p, &entry))
+		if (sheep_map_get(&mod->env, name->parts[i], &entry))
 			goto err;
 
 		m = vm->globals.items[(unsigned long)entry];
 		if (sheep_type(m) != &sheep_module_type)
 			goto err;
 		mod = sheep_data(m);
+	} while (++i < name->nr_parts - 1);
 
-		p = q + 1;
-		q = strchr(p, ':');
-	} while (q);
-
-	if (sheep_map_get(&mod->env, p, &entry))
+	if (sheep_map_get(&mod->env, name->parts[i], &entry))
 		goto err;
-
-	sheep_free(dup);
 
 	if (set)
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL,
@@ -206,8 +197,9 @@ static int compile_name(struct sheep_vm *vm,
 	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
 	return 0;
 err:
-	sheep_free(dup);
-	fprintf(stderr, "unbound name: %s\n", name);
+	tmp = sheep_format(expr);
+	fprintf(stderr, "unbound name: %s\n", tmp);
+	sheep_free(tmp);
 	return -1;
 }
 
@@ -262,11 +254,12 @@ int sheep_compile_list(struct sheep_vm *vm, struct sheep_function *function,
 	if (!list->head)
 		return sheep_compile_constant(vm, function, context, expr);
 	if (sheep_type(list->head) == &sheep_name_type) {
-		const char *op;
+		struct sheep_name *name;
 		void *entry;
 
-		op = sheep_data(list->head);
-		if (!sheep_map_get(&vm->specials, op, &entry)) {
+		name = sheep_name(list->head);
+		if (name->nr_parts == 1 &&
+		    !sheep_map_get(&vm->specials, *name->parts, &entry)) {
 			int (*compile_special)(struct sheep_vm *,
 					struct sheep_function *,
 					struct sheep_context *,

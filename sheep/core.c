@@ -127,20 +127,25 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 		return -1;
 
 	while (bindings->head) {
+		struct sheep_name *name;
 		unsigned int slot;
-		const char *name;
 		sheep_t value;
 
 		if (sheep_unpack_list("with", bindings, "Aor", &name, &value,
 					&bindings))
 			goto out;
 
+		if (name->nr_parts != 1) {
+			fprintf(stderr, "with: invalid binding name\n");
+			goto out;
+		}
+
 		if (sheep_compile_object(vm, function, &block, value))
 			goto out;
 
 		slot = sheep_function_local(function);
 		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-		sheep_map_set(&env, name, (void *)(unsigned long)slot);
+		sheep_map_set(&env, *name->parts, (void *)(unsigned long)slot);
 	}
 
 	ret = do_compile_forms(vm, function, &block, body);
@@ -153,12 +158,17 @@ out:
 static int compile_variable(struct sheep_vm *vm, struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
+	struct sheep_name *name;
 	unsigned int slot;
-	const char *name;
 	sheep_t value;
 
 	if (sheep_unpack_list("variable", args, "Ao", &name, &value))
 		return -1;
+
+	if (name->nr_parts != 1) {
+		fprintf(stderr, "variable: invalid name\n");
+		return -1;
+	}
 
 	if (sheep_compile_object(vm, function, context, value))
 		return -1;
@@ -172,7 +182,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	}
-	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+	sheep_map_set(context->env, *name->parts, (void *)(unsigned long)slot);
 	return 0;
 }
 
@@ -189,7 +199,14 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	int ret = -1;
 
 	if (args->head && sheep_type(args->head) == &sheep_name_type) {
-		name = sheep_cname(args->head);
+		struct sheep_name *n;
+
+		n = sheep_name(args->head);
+		if (n->nr_parts != 1) {
+			fprintf(stderr, "function: invalid name\n");
+			return -1;
+		}
+		name = *n->parts;
 		args = sheep_list(args->tail);
 	} else
 		name = NULL;
@@ -201,17 +218,23 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	childfun = sheep_data(sheep);
 
 	while (parms->head) {
+		struct sheep_name *parm;
 		unsigned int slot;
-		const char *parm;
 
 		if (sheep_unpack_list("function", parms, "Ar", &parm, &parms))
 			goto out;
-		slot = sheep_function_local(childfun);
-		if (sheep_map_set(&env, parm, (void *)(unsigned long)slot)) {
-			fprintf(stderr, "function: duplicate parameter %s\n",
-				parm);
+
+		if (parm->nr_parts != 1) {
+			fprintf(stderr, "function: invalid parameter\n");
 			goto out;
 		}
+
+		slot = sheep_function_local(childfun);
+		if (sheep_map_set(&env, *parm->parts, (void *)(unsigned long)slot)) {
+			fprintf(stderr, "function: duplicate parameter\n");
+			goto out;
+		}
+
 		childfun->nr_parms++;
 	}
 
@@ -219,30 +242,25 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
 
 	if (name) {
-		unsigned int bslot;
+		unsigned int slot;
 
 		if (context->parent) {
-			bslot = sheep_function_local(function);
-			sheep_emit(&function->code, SHEEP_SET_LOCAL, bslot);
-			sheep_emit(&function->code, SHEEP_LOCAL, bslot);
+			slot = sheep_function_local(function);
+			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
+			sheep_emit(&function->code, SHEEP_LOCAL, slot);
 		} else {
-			bslot = sheep_vm_global(vm);
-			sheep_emit(&function->code, SHEEP_SET_GLOBAL, bslot);
-			sheep_emit(&function->code, SHEEP_GLOBAL, bslot);
+			slot = sheep_vm_global(vm);
+			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
+			sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		}
-		sheep_map_set(context->env, name, (void *)(unsigned long)bslot);
+		sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	}
 
 	sheep_protect(vm, sheep);
 	ret = do_compile_block(vm, childfun, context, &env, body, 1);
 	sheep_unprotect(vm, sheep);
 	if (ret) {
-		/*
-		 * Potentially sacrifice a global slot, but take out
-		 * the binding to it if it doesn't contain anything
-		 * useful.  This can probably be done better one
-		 * day...
-		 */
+		/* Do not leave the dead slot bound... */
 		if (name)
 			sheep_map_del(context->env, name);
 		goto out;
@@ -380,13 +398,13 @@ static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
 static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
+	struct sheep_name *name;
 	sheep_t mod, name_;
 	unsigned int slot;
-	const char *name;
 	int ret = -1;
 
 	if (context->parent) {
-		fprintf(stderr, "load not on toplevel form\n");
+		fprintf(stderr, "load: not on toplevel\n");
 		return -1;
 	}
 
@@ -394,15 +412,20 @@ static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
 		return -1;
 
 	sheep_protect(vm, name_);
-	name = sheep_cname(name_);
+	name = sheep_name(name_);
 
-	mod = sheep_module_load(vm, name);
+	if (name->nr_parts != 1) {
+		fprintf(stderr, "load: invalid name\n");
+		goto out;
+	}
+
+	mod = sheep_module_load(vm, *name->parts);
 	if (!mod)
 		goto out;
 
 	slot = sheep_vm_constant(vm, mod);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
-	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+	sheep_map_set(context->env, *name->parts, (void *)(unsigned long)slot);
 	ret = 0;
 out:
 	sheep_unprotect(vm, name_);

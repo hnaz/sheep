@@ -122,6 +122,13 @@ static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 		return 1 - 2 * !*value;
 	}
 
+	if ((sheep_type(callable) != &sheep_function_type) &&
+	    (sheep_type(callable) != &sheep_closure_type)) {
+		fprintf(stderr, "can not call %s\n",
+			sheep_type(callable)->name);
+		return -1;
+	}
+
 	function = sheep_data(callable);
 	if (function->nr_parms != nr_args) {
 		fprintf(stderr, "%s: too %s arguments\n",

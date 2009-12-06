@@ -11,7 +11,7 @@ prefix		= /usr
 bindir		= $(prefix)/bin
 
 S_CFLAGS	= -Wall -Wextra -Wno-unused-parameter -fPIC $(CFLAGS)
-S_LDFLAGS	= -ldl $(LDFLAGS)
+S_LDFLAGS	= -ldl -rdynamic $(LDFLAGS)
 
 ifeq ($(D),1)
 S_CFLAGS	+= -O0 -g

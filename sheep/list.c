@@ -9,6 +9,7 @@
 #include <sheep/unpack.h>
 #include <sheep/eval.h>
 #include <sheep/util.h>
+#include <sheep/gc.h>
 #include <sheep/vm.h>
 #include <stdio.h>
 

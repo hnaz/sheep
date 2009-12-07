@@ -7,6 +7,7 @@
 #include <sheep/object.h>
 #include <sheep/unpack.h>
 #include <sheep/util.h>
+#include <sheep/gc.h>
 #include <sheep/vm.h>
 #include <string.h>
 #include <stdio.h>

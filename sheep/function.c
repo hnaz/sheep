@@ -8,6 +8,7 @@
 #include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/util.h>
+#include <sheep/gc.h>
 #include <sheep/vm.h>
 #include <stdio.h>
 

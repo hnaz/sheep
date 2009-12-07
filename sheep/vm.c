@@ -14,6 +14,7 @@
 #include <sheep/eval.h>
 #include <sheep/list.h>
 #include <sheep/util.h>
+#include <sheep/gc.h>
 #include <string.h>
 
 #include <sheep/vm.h>
@@ -74,5 +75,5 @@ void sheep_vm_exit(struct sheep_vm *vm)
 	sheep_core_exit(vm);
 	sheep_evaluator_exit(vm);
 	sheep_free(vm->globals.items);
-	sheep_objects_exit(vm);
+	sheep_gc_exit(vm);
 }

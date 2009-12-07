@@ -12,6 +12,7 @@
 #include <sheep/name.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
+#include <sheep/gc.h>
 #include <sheep/vm.h>
 #include <stdarg.h>
 #include <string.h>

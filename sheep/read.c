@@ -8,6 +8,7 @@
 #include <sheep/string.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
+#include <sheep/gc.h>
 #include <sheep/vm.h>
 #include <ctype.h>
 #include <stdio.h>

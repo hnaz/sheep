@@ -67,7 +67,7 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		break;
 	case SHEEP_FOREIGN:
 		indirect = function->foreign->items[arg];
-		if (indirect->closed)
+		if (indirect->count > 0)
 			sheep = indirect->value.closed;
 		else
 			sheep = vm->stack.items[indirect->value.live.index];

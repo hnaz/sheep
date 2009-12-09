@@ -18,7 +18,7 @@ struct sheep_freevar {
 };
 
 struct sheep_indirect {
-	unsigned int closed;
+	int count;
 	union {
 		struct {
 			unsigned int index;

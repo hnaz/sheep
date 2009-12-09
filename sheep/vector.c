@@ -61,10 +61,13 @@ unsigned long sheep_vector_push(struct sheep_vector *vec, void *item)
 
 void *sheep_vector_pop(struct sheep_vector *vec)
 {
+	void *item;
+
 	vec->nr_items -= 1;
+	item = vec->items[vec->nr_items];
 	if (vec->nr_items && vec->nr_items < (vec->nr_alloc >> 3))
 		vector_resize(vec, vec->nr_items);
-	return vec->items[vec->nr_items];
+	return item;
 }
 
 void sheep_vector_grow(struct sheep_vector *vec, unsigned long delta)

@@ -1,0 +1,9 @@
+# library function ideas
+
+(function nth-tail (list n)
+  (if (and list n)
+    (nth-tail (tail list) (- n 1))
+    list))
+
+(function nth (list n)
+  (head (nth-tail list n)))

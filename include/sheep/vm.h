@@ -43,10 +43,7 @@ static inline unsigned int sheep_vm_global(struct sheep_vm *vm)
 	return sheep_vector_push(&vm->globals, NULL);
 }
 
-unsigned int sheep_vm_bind(struct sheep_vm *, struct sheep_map *,
-			const char *, sheep_t);
-
-void sheep_vm_variable(struct sheep_vm *, const char *, sheep_t);
+unsigned int sheep_vm_variable(struct sheep_vm *, const char *, sheep_t);
 void sheep_vm_function(struct sheep_vm *, const char *, sheep_alien_t);
 
 void sheep_vm_init(struct sheep_vm *);

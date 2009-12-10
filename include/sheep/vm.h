@@ -46,7 +46,7 @@ static inline unsigned int sheep_vm_global(struct sheep_vm *vm)
 unsigned int sheep_vm_variable(struct sheep_vm *, const char *, sheep_t);
 void sheep_vm_function(struct sheep_vm *, const char *, sheep_alien_t);
 
-void sheep_vm_init(struct sheep_vm *);
+void sheep_vm_init(struct sheep_vm *, int, char **);
 void sheep_vm_exit(struct sheep_vm *);
 
 void sheep_vm_mark(struct sheep_vm *);

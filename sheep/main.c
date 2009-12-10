@@ -9,19 +9,19 @@
 #include <string.h>
 #include <stdio.h>
 
-static int do_file(const char *path)
+static int do_file(int ac, char **av)
 {
 	struct sheep_vm vm;
 	int ret = 1;
 	FILE *in;
 
-	in = fopen(path, "r");
+	in = fopen(av[1], "r");
 	if (!in) {
-		perror(path);
+		perror(av[1]);
 		return 1;
 	}
 
-	sheep_vm_init(&vm);
+	sheep_vm_init(&vm, ac, av);
 	while (1) {
 		sheep_t exp, fun, val;
 
@@ -44,13 +44,13 @@ out:
 	return ret;
 }
 
-static int do_stdin(void)
+static int do_stdin(int ac, char **av)
 {
 	struct timeval start, end, diff;
 	struct sheep_vm vm;
 
 	gettimeofday(&start, NULL);
-	sheep_vm_init(&vm);
+	sheep_vm_init(&vm, ac, av);
 	gettimeofday(&end, NULL);
 
 	timersub(&end, &start, &diff);
@@ -86,8 +86,8 @@ static int do_stdin(void)
 
 int main(int ac, char **av)
 {
-	if (ac == 2)
-		return do_file(av[1]);
+	if (ac > 1)
+		return do_file(ac, av);
 	else
-		return do_stdin();
+		return do_stdin(ac, av);
 }

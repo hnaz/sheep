@@ -52,7 +52,27 @@ void sheep_vm_function(struct sheep_vm *vm, const char *name, sheep_alien_t f)
 	sheep_vm_variable(vm, name, sheep_make_alien(vm, f, name));
 }
 
-void sheep_vm_init(struct sheep_vm *vm)
+static void setup_argv(struct sheep_vm *vm, int ac, char **av)
+{
+	struct sheep_list *p;
+	sheep_t list;
+
+	list = sheep_make_list(vm, NULL, NULL);
+	sheep_protect(vm, list);
+
+	p = sheep_list(list);
+	while (ac--) {
+		p->head = sheep_make_string(vm, *av);
+		p->tail = sheep_make_list(vm, NULL, NULL);
+		p = sheep_list(p->tail);
+		av++;
+	}
+
+	sheep_vm_variable(vm, "argv", list);
+	sheep_unprotect(vm, list);
+}
+
+void sheep_vm_init(struct sheep_vm *vm, int ac, char **av)
 {
 	memset(vm, 0, sizeof(*vm));
 	sheep_core_init(vm);
@@ -62,6 +82,7 @@ void sheep_vm_init(struct sheep_vm *vm)
 	sheep_list_builtins(vm);
 	sheep_sequence_builtins(vm);
 	sheep_function_builtins(vm);
+	setup_argv(vm, ac, av);
 }
 
 void sheep_vm_exit(struct sheep_vm *vm)

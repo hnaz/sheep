@@ -7,3 +7,13 @@
 
 (function nth (list n)
   (head (nth-tail list n)))
+
+(function reduce (op list)
+  (function iter (acc pos)
+    (if pos
+      (iter (op acc (head pos))
+            (tail pos))
+      acc))
+  (iter (op (nth list 0)
+            (nth list 1))
+        (nth-tail list 2)))

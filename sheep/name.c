@@ -39,7 +39,7 @@ static int equal_name(sheep_t a, sheep_t b)
 	return 1;
 }
 
-static void format_name(sheep_t sheep, char **bufp, size_t *posp)
+static void format_name(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_name *name;
 	unsigned int i;

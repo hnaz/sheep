@@ -34,7 +34,7 @@ struct sheep_type {
 
 	const struct sheep_sequence *sequence;
 
-	void (*format)(sheep_t, char **, size_t *);
+	void (*format)(sheep_t, char **, size_t *, int);
 };
 
 struct sheep_object {

@@ -137,7 +137,7 @@ static int equal_list(sheep_t a, sheep_t b)
 	return !(la->head || lb->head);
 }
 
-static void format_list(sheep_t sheep, char **bufp, size_t *posp)
+static void format_list(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_list *list;
 
@@ -145,7 +145,7 @@ static void format_list(sheep_t sheep, char **bufp, size_t *posp)
 	sheep_addprintf(bufp, posp, "(");
 	while (list->head) {
 		sheep = list->head;
-		__sheep_format(sheep, bufp, posp);
+		__sheep_format(sheep, bufp, posp, 1);
 		list = sheep_list(list->tail);
 		if (!list->head)
 			break;

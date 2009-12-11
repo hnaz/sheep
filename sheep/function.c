@@ -36,7 +36,7 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(function);
 }
 
-static void format_function(sheep_t sheep, char **bufp, size_t *posp)
+static void format_function(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_function *function;
 

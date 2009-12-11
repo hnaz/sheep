@@ -31,7 +31,7 @@ static void free_module(struct sheep_vm *vm, sheep_t sheep)
 	do_free_module(sheep_data(sheep));
 }
 
-static void format_module(sheep_t sheep, char **bufp, size_t *posp)
+static void format_module(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_module *mod = sheep_data(sheep);
 

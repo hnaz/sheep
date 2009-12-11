@@ -59,7 +59,7 @@ static int do_stdin(int ac, char **av)
 
 	while (1) {
 		sheep_t exp, fun, val;
-		char *res;
+		char *repr;
 
 		printf("> ");
 		fflush(stdout);
@@ -74,9 +74,9 @@ static int do_stdin(int ac, char **av)
 		val = sheep_eval(&vm, fun);
 		if (!val)
 			continue;
-		res = sheep_format(val);
-		puts(res);
-		sheep_free(res);
+		repr = sheep_repr(val);
+		puts(repr);
+		sheep_free(repr);
 	}
 
 	puts("bye");

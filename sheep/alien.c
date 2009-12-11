@@ -15,7 +15,7 @@ static void free_alien(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(sheep_data(sheep));
 }
 
-static void format_alien(sheep_t sheep, char **bufp, size_t *posp)
+static void format_alien(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_alien *alien;
 

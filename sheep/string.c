@@ -6,6 +6,7 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/unpack.h>
+#include <sheep/bool.h> /* &sheep_true... fix me */
 #include <sheep/util.h>
 #include <sheep/gc.h>
 #include <sheep/vm.h>
@@ -76,9 +77,11 @@ static int equal_string(sheep_t a, sheep_t b)
 	return !strcmp(sheep_rawstring(a), sheep_rawstring(b));
 }
 
-static void format_string(sheep_t sheep, char **bufp, size_t *posp)
+static void format_string(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
-	sheep_addprintf(bufp, posp, "\"%s\"", sheep_rawstring(sheep));
+	const char *fmt = repr ? "\"%s\"" : "%s";
+
+	sheep_addprintf(bufp, posp, fmt, sheep_rawstring(sheep));
 }
 
 const struct sheep_type sheep_string_type = {
@@ -101,9 +104,9 @@ sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 	return __sheep_make_string(vm, sheep_strdup(str));
 }
 
-void __sheep_format(sheep_t sheep, char **bufp, size_t *posp)
+void __sheep_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
-	return sheep_type(sheep)->format(sheep, bufp, posp);
+	sheep_type(sheep)->format(sheep, bufp, posp, repr);
 }
 
 char *sheep_format(sheep_t sheep)
@@ -111,7 +114,16 @@ char *sheep_format(sheep_t sheep)
 	char *buf = NULL;
 	size_t pos = 0;
 
-	__sheep_format(sheep, &buf, &pos);
+	__sheep_format(sheep, &buf, &pos, 0);
+	return buf;
+}
+
+char *sheep_repr(sheep_t sheep)
+{
+	char *buf = NULL;
+	size_t pos = 0;
+
+	__sheep_format(sheep, &buf, &pos, 1);
 	return buf;
 }
 
@@ -127,7 +139,7 @@ static sheep_t builtin_string(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_type(sheep) == &sheep_string_type)
 		return sheep;
 
-	buf = sheep_format(sheep);
+	buf = sheep_repr(sheep);
 	return __sheep_make_string(vm, buf);
 }
 
@@ -247,9 +259,31 @@ out:
 	return NULL;
 }
 
+/* (print &rest objects) */
+static sheep_t builtin_print(struct sheep_vm *vm, unsigned int nr_args)
+{
+	unsigned int offset = nr_args;
+
+	while (offset) {
+		unsigned long index;
+		char *tmp;
+
+		index = vm->stack.nr_items - offset;
+		tmp = sheep_format(vm->stack.items[index]);
+		printf("%s", tmp);
+		sheep_free(tmp);
+		offset--;
+	}
+	puts("");
+	vm->stack.nr_items -= nr_args;
+
+	return &sheep_true;
+}
+
 void sheep_string_builtins(struct sheep_vm *vm)
 {
 	sheep_vm_function(vm, "string", builtin_string);
 	sheep_vm_function(vm, "split", builtin_split);
 	sheep_vm_function(vm, "join", builtin_join);
+	sheep_vm_function(vm, "print", builtin_print);
 }

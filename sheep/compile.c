@@ -198,7 +198,7 @@ static int compile_name(struct sheep_vm *vm,
 	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
 	return 0;
 err:
-	tmp = sheep_format(expr);
+	tmp = sheep_repr(expr);
 	fprintf(stderr, "unbound name: %s\n", tmp);
 	sheep_free(tmp);
 	return -1;

@@ -21,8 +21,9 @@ static inline const char *sheep_rawstring(sheep_t sheep)
 	return sheep_data(sheep);
 }
 
-void __sheep_format(sheep_t, char **, size_t *);
+void __sheep_format(sheep_t, char **, size_t *, int);
 char *sheep_format(sheep_t);
+char *sheep_repr(sheep_t);
 
 void sheep_string_builtins(struct sheep_vm *);
 

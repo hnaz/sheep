@@ -81,7 +81,7 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 		return;
 	}
 
-	str = sheep_format(sheep);
+	str = sheep_repr(sheep);
 	printf("; %s\n", str);
 	sheep_free(str);
 }

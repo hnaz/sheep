@@ -17,7 +17,7 @@ static int test_bool(sheep_t sheep)
 	return sheep != &sheep_false;
 }
 
-static void format_bool(sheep_t sheep, char **bufp, size_t *posp)
+static void format_bool(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	if (sheep == &sheep_false)
 		sheep_addprintf(bufp, posp, "false");

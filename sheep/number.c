@@ -21,7 +21,7 @@ static int test_number(sheep_t sheep)
 	return !!sheep_fixnum(sheep);
 }
 
-static void format_number(sheep_t sheep, char **bufp, size_t *posp)
+static void format_number(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	sheep_addprintf(bufp, posp, "%ld", sheep_fixnum(sheep));
 }

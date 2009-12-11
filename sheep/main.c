@@ -15,9 +15,9 @@ static int do_file(int ac, char **av)
 	int ret = 1;
 	FILE *in;
 
-	in = fopen(av[1], "r");
+	in = fopen(av[0], "r");
 	if (!in) {
-		perror(av[1]);
+		perror(av[0]);
 		return 1;
 	}
 
@@ -86,7 +86,8 @@ static int do_stdin(int ac, char **av)
 
 int main(int ac, char **av)
 {
-	if (ac > 1)
+	ac--, av++;
+	if (ac)
 		return do_file(ac, av);
 	else
 		return do_stdin(ac, av);

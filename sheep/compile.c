@@ -176,7 +176,11 @@ static int compile_name(struct sheep_vm *vm,
 	if (name->nr_parts == 1)
 		return compile_simple_name(vm, function, context,
 					name->parts[0], set);
-	mod = &vm->main;
+	/* Yippie! */
+	while (context->parent)
+		context = context->parent;
+	mod = (struct sheep_module *)((char *)context->env -
+				(size_t)&((struct sheep_module *)0)->env);
 	do {
 		sheep_t m;
 

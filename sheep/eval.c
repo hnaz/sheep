@@ -342,7 +342,13 @@ out:
 	return sheep_vector_pop(&vm->stack);
 err:
 	vm->stack.nr_items = 0;
-	vm->calls.nr_items = 0;
+	sheep_unprotect(vm, function);
+	while (nesting--) {
+		function = sheep_vector_pop(&vm->calls);
+		sheep_unprotect(vm, function);
+		sheep_vector_pop(&vm->calls); /* basep */
+		sheep_vector_pop(&vm->calls); /* codep */
+	}
 	return NULL;
 }
 

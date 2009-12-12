@@ -11,6 +11,7 @@
 
 static int do_file(int ac, char **av)
 {
+	struct sheep_reader reader;
 	struct sheep_vm vm;
 	int ret = 1;
 	FILE *in;
@@ -22,15 +23,20 @@ static int do_file(int ac, char **av)
 	}
 
 	sheep_vm_init(&vm, ac, av);
+	sheep_reader_init(&reader, av[0], in);
 	while (1) {
-		sheep_t exp, fun, val;
+		struct sheep_expr *expr;
+		sheep_t fun, val;
 
-		exp = sheep_read(&vm, in);
-		if (!exp)
+		expr = sheep_read(&reader, &vm);
+		if (!expr)
 			goto out;
-		if (exp == &sheep_eof)
+		if (expr->object == &sheep_eof) {
+			sheep_free_expr(expr);
 			break;
-		fun = sheep_compile(&vm, exp);
+		}
+		fun = sheep_compile(&vm, expr->object);
+		sheep_free_expr(expr);
 		if (!fun)
 			goto out;
 		val = sheep_eval(&vm, fun);
@@ -47,10 +53,12 @@ out:
 static int do_stdin(int ac, char **av)
 {
 	struct timeval start, end, diff;
+	struct sheep_reader reader;
 	struct sheep_vm vm;
 
 	gettimeofday(&start, NULL);
 	sheep_vm_init(&vm, ac, av);
+	sheep_reader_init(&reader, "stdin", stdin);
 	gettimeofday(&end, NULL);
 
 	timersub(&end, &start, &diff);
@@ -58,17 +66,21 @@ static int do_stdin(int ac, char **av)
 		SHEEP_VERSION, SHEEP_NAME, diff.tv_sec, diff.tv_usec);
 
 	while (1) {
-		sheep_t exp, fun, val;
+		struct sheep_expr *expr;
+		sheep_t fun, val;
 		char *repr;
 
 		printf("> ");
 		fflush(stdout);
-		exp = sheep_read(&vm, stdin);
-		if (!exp)
+		expr = sheep_read(&reader, &vm);
+		if (!expr)
 			continue;
-		if (exp == &sheep_eof)
+		if (expr->object == &sheep_eof) {
+			sheep_free_expr(expr);
 			break;
-		fun = sheep_compile(&vm, exp);
+		}
+		fun = sheep_compile(&vm, expr->object);
+		sheep_free_expr(expr);
 		if (!fun)
 			continue;
 		val = sheep_eval(&vm, fun);

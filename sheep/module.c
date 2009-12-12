@@ -74,6 +74,7 @@ err:
 static int load_sheep(struct sheep_vm *vm, const char *path,
 		struct sheep_module *mod)
 {
+	struct sheep_reader reader;
 	int ret = -1;
 	FILE *fp;
 
@@ -81,15 +82,20 @@ static int load_sheep(struct sheep_vm *vm, const char *path,
 	if (!fp)
 		goto out;
 
+	sheep_reader_init(&reader, path, fp);
 	while (1) {
-		sheep_t exp, fun;
+		struct sheep_expr *expr;
+		sheep_t fun;
 
-		exp = sheep_read(vm, fp);
-		if (!exp)
+		expr = sheep_read(&reader, vm);
+		if (!expr)
 			goto out_file;
-		if (exp == &sheep_eof)
+		if (expr->object == &sheep_eof) {
+			sheep_free_expr(expr);
 			break;
-		fun = __sheep_compile(vm, mod, exp);
+		}
+		fun = __sheep_compile(vm, mod, expr->object);
+		sheep_free_expr(expr);
 		if (!fun)
 			goto out_file;
 		if (!sheep_eval(vm, fun))

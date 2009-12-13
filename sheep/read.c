@@ -37,6 +37,12 @@ static int next(struct sheep_reader *reader, int raw)
 	return c;
 }
 
+static void prev(struct sheep_reader *reader, int c)
+{
+	if (ungetc(c, reader->file) == '\n')
+		reader->lineno--;
+}
+
 static int issep(int c, int string)
 {
 	if (c == EOF)
@@ -65,7 +71,7 @@ static int read_token(struct sheep_reader *reader,
 	}
 	buf[i] = 0;
 	if (!string)
-		ungetc(c, reader->file);
+		prev(reader, c);
 	return 0;
 }
 

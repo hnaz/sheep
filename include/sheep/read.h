@@ -21,7 +21,7 @@ static inline void sheep_reader_init(struct sheep_reader *reader,
 				const char *filename, FILE *file)
 {
 	reader->filename = filename;
-	reader->lineno = 0;
+	reader->lineno = 1;
 	reader->file = file;
 }
 

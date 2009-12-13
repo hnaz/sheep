@@ -94,7 +94,7 @@ static int load_sheep(struct sheep_vm *vm, const char *path,
 			sheep_free_expr(expr);
 			break;
 		}
-		fun = __sheep_compile(vm, mod, expr->object);
+		fun = __sheep_compile(vm, mod, expr);
 		sheep_free_expr(expr);
 		if (!fun)
 			goto out_file;

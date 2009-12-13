@@ -9,6 +9,7 @@
 #include <sheep/code.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
+#include <sheep/read.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/gc.h>
@@ -19,37 +20,43 @@
 #include <sheep/compile.h>
 
 sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
-			sheep_t expr)
+			struct sheep_expr *expr)
 {
 	struct sheep_function *function;
+	struct sheep_compile compile = {
+		.vm = vm,
+		.module = module,
+		.expr = expr,
+	};
 	struct sheep_context context = {
 		.env = &module->env,
 	};
 	int err;
 
-	sheep_protect(vm, expr);
+	sheep_protect(vm, expr->object);
 
 	function = sheep_zalloc(sizeof(struct sheep_function));
-	err = sheep_compile_object(vm, function, &context, expr);
+	err = sheep_compile_object(&compile, function, &context, expr->object);
 	if (err) {
 		sheep_code_exit(&function->code);
 		sheep_free(function);
 
-		sheep_unprotect(vm, expr);
+		sheep_unprotect(vm, expr->object);
 		return NULL;
 	}
 	sheep_code_finalize(&function->code);
 
-	sheep_unprotect(vm, expr);
+	sheep_unprotect(vm, expr->object);
 	return sheep_make_object(vm, &sheep_function_type, function);
 }
 
-int sheep_compile_constant(struct sheep_vm *vm, struct sheep_function *function,
-			struct sheep_context *context, sheep_t expr)
+int sheep_compile_constant(struct sheep_compile *compile,
+			struct sheep_function *function,
+			struct sheep_context *context, sheep_t sheep)
 {
 	unsigned int slot;
 
-	slot = sheep_vm_constant(vm, expr);
+	slot = sheep_vm_constant(compile->vm, sheep);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -62,7 +69,7 @@ enum env_level {
 	ENV_BUILTIN,
 };
 
-static enum env_level lookup_env(struct sheep_vm *vm,
+static enum env_level lookup_env(struct sheep_compile *compile,
 				struct sheep_context *context, const char *name,
 				unsigned int *dist, unsigned int *slot)
 {
@@ -72,7 +79,7 @@ static enum env_level lookup_env(struct sheep_vm *vm,
 
 	while (sheep_map_get(current->env, name, &entry)) {
 		if (!current->parent) {
-			if (sheep_map_get(&vm->builtins, name, &entry))
+			if (sheep_map_get(&compile->vm->builtins, name, &entry))
 				return ENV_NONE;
 			current = NULL;
 			break;
@@ -123,14 +130,14 @@ static unsigned int slot_foreign(struct sheep_function *function,
 	return sheep_vector_push(foreign, freevar);
 }
 
-static int compile_simple_name(struct sheep_vm *vm,
-			struct sheep_function *function, 
+static int compile_simple_name(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context,
 			const char *name, int set)
 {
 	unsigned int dist, slot;
 
-	switch (lookup_env(vm, context, name, &dist, &slot)) {
+	switch (lookup_env(compile, context, name, &dist, &slot)) {
 	case ENV_NONE:
 		fprintf(stderr, "unbound name: %s\n", name);
 		return -1;
@@ -161,10 +168,10 @@ static int compile_simple_name(struct sheep_vm *vm,
 	return 0;
 }
 
-static int compile_name(struct sheep_vm *vm,
-			struct sheep_function *function, 
+static int compile_name(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context,
-			sheep_t expr, int set)
+			sheep_t sheep, int set)
 {
 	struct sheep_module *mod;
 	struct sheep_name *name;
@@ -172,22 +179,19 @@ static int compile_name(struct sheep_vm *vm,
 	void *entry;
 	char *tmp;
 
-	name = sheep_name(expr);
+	name = sheep_name(sheep);
 	if (name->nr_parts == 1)
-		return compile_simple_name(vm, function, context,
+		return compile_simple_name(compile, function, context,
 					name->parts[0], set);
 	/* Yippie! */
-	while (context->parent)
-		context = context->parent;
-	mod = (struct sheep_module *)((char *)context->env -
-				(size_t)&((struct sheep_module *)0)->env);
+	mod = compile->module;
 	do {
 		sheep_t m;
 
 		if (sheep_map_get(&mod->env, name->parts[i], &entry))
 			goto err;
 
-		m = vm->globals.items[(unsigned long)entry];
+		m = compile->vm->globals.items[(unsigned long)entry];
 		if (sheep_type(m) != &sheep_module_type)
 			goto err;
 		mod = sheep_data(m);
@@ -202,25 +206,28 @@ static int compile_name(struct sheep_vm *vm,
 	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
 	return 0;
 err:
-	tmp = sheep_repr(expr);
+	tmp = sheep_repr(sheep);
 	fprintf(stderr, "unbound name: %s\n", tmp);
 	sheep_free(tmp);
 	return -1;
 }
 
-int sheep_compile_name(struct sheep_vm *vm, struct sheep_function *function,
-		struct sheep_context *context, sheep_t expr)
+int sheep_compile_name(struct sheep_compile *compile,
+		struct sheep_function *function,
+		struct sheep_context *context, sheep_t sheep)
 {
-	return compile_name(vm, function, context, expr, 0);
+	return compile_name(compile, function, context, sheep, 0);
 }
 
-int sheep_compile_set(struct sheep_vm *vm, struct sheep_function *function,
-		struct sheep_context *context, sheep_t expr)
+int sheep_compile_set(struct sheep_compile *compile,
+		struct sheep_function *function,
+		struct sheep_context *context, sheep_t sheep)
 {
-	return compile_name(vm, function, context, expr, 1);
+	return compile_name(compile, function, context, sheep, 1);
 }
 
-static int compile_call(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_call(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *form)
 {
 	SHEEP_DEFINE_MAP(env);
@@ -233,10 +240,10 @@ static int compile_call(struct sheep_vm *vm, struct sheep_function *function,
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
-		if (sheep_compile_object(vm, function, &block, args->head))
+		if (sheep_compile_object(compile, function, &block, args->head))
 			goto out;
 
-	if (sheep_compile_object(vm, function, context, form->head))
+	if (sheep_compile_object(compile, function, context, form->head))
 		goto out;
 
 	if (context->flags & SHEEP_CONTEXT_TAILFORM)
@@ -249,31 +256,34 @@ out:
 	return ret;
 }
 
-int sheep_compile_list(struct sheep_vm *vm, struct sheep_function *function,
-		struct sheep_context *context, sheep_t expr)
+int sheep_compile_list(struct sheep_compile *compile,
+		struct sheep_function *function,
+		struct sheep_context *context, sheep_t sheep)
 {
 	struct sheep_list *list;
 
-	list = sheep_list(expr);
+	list = sheep_list(sheep);
+
 	/* The empty list is a constant */
 	if (!list->head)
-		return sheep_compile_constant(vm, function, context, expr);
+		return sheep_compile_constant(compile, function, context, sheep);
+
 	if (sheep_type(list->head) == &sheep_name_type) {
 		struct sheep_name *name;
 		void *entry;
 
 		name = sheep_name(list->head);
 		if (name->nr_parts == 1 &&
-		    !sheep_map_get(&vm->specials, *name->parts, &entry)) {
-			int (*compile_special)(struct sheep_vm *,
+		    !sheep_map_get(&compile->vm->specials, *name->parts, &entry)) {
+			int (*compile_special)(struct sheep_compile *,
 					struct sheep_function *,
 					struct sheep_context *,
 					struct sheep_list *) = entry;
 			struct sheep_list *args;
 
 			args = sheep_list(list->tail);
-			return compile_special(vm, function, context, args);
+			return compile_special(compile, function, context, args);
 		}
 	}
-	return compile_call(vm, function, context, list);
+	return compile_call(compile, function, context, list);
 }

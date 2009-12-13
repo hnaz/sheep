@@ -35,7 +35,7 @@ static int do_file(int ac, char **av)
 			sheep_free_expr(expr);
 			break;
 		}
-		fun = sheep_compile(&vm, expr->object);
+		fun = sheep_compile(&vm, expr);
 		sheep_free_expr(expr);
 		if (!fun)
 			goto out;
@@ -79,7 +79,7 @@ static int do_stdin(int ac, char **av)
 			sheep_free_expr(expr);
 			break;
 		}
-		fun = sheep_compile(&vm, expr->object);
+		fun = sheep_compile(&vm, expr);
 		sheep_free_expr(expr);
 		if (!fun)
 			continue;

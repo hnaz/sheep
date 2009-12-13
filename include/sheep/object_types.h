@@ -11,6 +11,7 @@
 typedef struct sheep_object * sheep_t;
 
 struct sheep_function;
+struct sheep_compile;
 struct sheep_context;
 struct sheep_vm;
 
@@ -26,7 +27,7 @@ struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(struct sheep_vm *, sheep_t);
 
-	int (*compile)(struct sheep_vm *, struct sheep_function *,
+	int (*compile)(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 
 	int (*test)(sheep_t);

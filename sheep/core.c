@@ -21,7 +21,8 @@
 #include <sheep/core.h>
 
 /* (quote expr) */
-static int compile_quote(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_quote(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	unsigned int slot;
@@ -30,7 +31,7 @@ static int compile_quote(struct sheep_vm *vm, struct sheep_function *function,
 	if (sheep_unpack_list("quote", args, "o", &obj))
 		return -1;
 
-	slot = sheep_vm_constant(vm, obj);
+	slot = sheep_vm_constant(compile->vm, obj);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -55,7 +56,8 @@ static int tailposition(struct sheep_context *context, struct sheep_list *block)
 	return 0;
 }
 
-static int do_compile_forms(struct sheep_vm *vm, struct sheep_function *function,
+static int do_compile_forms(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	for (;;) {
@@ -64,7 +66,7 @@ static int do_compile_forms(struct sheep_vm *vm, struct sheep_function *function
 		if (tailposition(context, args))
 			context->flags |= SHEEP_CONTEXT_TAILFORM;
 
-		if (sheep_compile_object(vm, function, context, value))
+		if (sheep_compile_object(compile, function, context, value))
 			return -1;
 
 		args = sheep_list(args->tail);
@@ -80,7 +82,8 @@ static int do_compile_forms(struct sheep_vm *vm, struct sheep_function *function
 	return 0;
 }
 
-static int do_compile_block(struct sheep_vm *vm, struct sheep_function *function,
+static int do_compile_block(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *parent, struct sheep_map *env,
 			struct sheep_list *args, int function_body)
 {
@@ -92,11 +95,12 @@ static int do_compile_block(struct sheep_vm *vm, struct sheep_function *function
 	if (function_body)
 		context.flags |= SHEEP_CONTEXT_FUNCTION;
 
-	return do_compile_forms(vm, function, &context, args);
+	return do_compile_forms(compile, function, &context, args);
 }
 
 /* (block expr*) */
-static int compile_block(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_block(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	SHEEP_DEFINE_MAP(env);
@@ -106,14 +110,15 @@ static int compile_block(struct sheep_vm *vm, struct sheep_function *function,
 	if (sheep_unpack_list("block", args, "r!", &args))
 		return -1;
 
-	ret = do_compile_block(vm, function, context, &env, args, 0);
+	ret = do_compile_block(compile, function, context, &env, args, 0);
 
 	sheep_map_drain(&env);
 	return ret;
 }
 
 /* (with ([name expr]*) expr*) */
-static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_with(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_list *bindings, *body;
@@ -141,7 +146,7 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 			goto out;
 		}
 
-		if (sheep_compile_object(vm, function, &block, value))
+		if (sheep_compile_object(compile, function, &block, value))
 			goto out;
 
 		slot = sheep_function_local(function);
@@ -149,14 +154,15 @@ static int compile_with(struct sheep_vm *vm, struct sheep_function *function,
 		sheep_map_set(&env, *name->parts, (void *)(unsigned long)slot);
 	}
 
-	ret = do_compile_forms(vm, function, &block, body);
+	ret = do_compile_forms(compile, function, &block, body);
 out:
 	sheep_map_drain(&env);
 	return ret;
 }
 
 /* (variable name expr) */
-static int compile_variable(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_variable(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_name *name;
@@ -171,7 +177,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 		return -1;
 	}
 
-	if (sheep_compile_object(vm, function, context, value))
+	if (sheep_compile_object(compile, function, context, value))
 		return -1;
 
 	if (context->parent) {
@@ -179,7 +185,7 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
 		sheep_emit(&function->code, SHEEP_LOCAL, slot);
 	} else {
-		slot = sheep_vm_global(vm);
+		slot = sheep_vm_global(compile->vm);
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	}
@@ -188,7 +194,8 @@ static int compile_variable(struct sheep_vm *vm, struct sheep_function *function
 }
 
 /* (function name? (arg*) expr*) */
-static int compile_function(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_function(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_function *childfun;
@@ -215,7 +222,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 	if (sheep_unpack_list("function", args, "Lr!", &parms, &body))
 		return -1;
 
-	sheep = sheep_make_function(vm, name);
+	sheep = sheep_make_function(compile->vm, name);
 	childfun = sheep_data(sheep);
 
 	while (parms->head) {
@@ -239,7 +246,7 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 		childfun->nr_parms++;
 	}
 
-	cslot = sheep_vm_constant(vm, sheep);
+	cslot = sheep_vm_constant(compile->vm, sheep);
 	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
 
 	if (name) {
@@ -250,16 +257,16 @@ static int compile_function(struct sheep_vm *vm, struct sheep_function *function
 			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
 			sheep_emit(&function->code, SHEEP_LOCAL, slot);
 		} else {
-			slot = sheep_vm_global(vm);
+			slot = sheep_vm_global(compile->vm);
 			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
 			sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		}
 		sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	}
 
-	sheep_protect(vm, sheep);
-	ret = do_compile_block(vm, childfun, context, &env, body, 1);
-	sheep_unprotect(vm, sheep);
+	sheep_protect(compile->vm, sheep);
+	ret = do_compile_block(compile, childfun, context, &env, body, 1);
+	sheep_unprotect(compile->vm, sheep);
 	if (ret) {
 		/* Do not leave the dead slot bound... */
 		if (name)
@@ -272,7 +279,8 @@ out:
 	return ret;
 }
 
-static int do_compile_chain(struct sheep_vm *vm, struct sheep_function *function,
+static int do_compile_chain(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args,
 			const char *name, enum sheep_opcode endbranch)
 {
@@ -297,7 +305,7 @@ static int do_compile_chain(struct sheep_vm *vm, struct sheep_function *function
 		if (sheep_unpack_list(name, args, "or", &exp, &args))
 			goto out;
 
-		if (sheep_compile_object(vm, function, &block, exp))
+		if (sheep_compile_object(compile, function, &block, exp))
 			goto out;
 
 		if (!args->head)
@@ -315,21 +323,26 @@ out:
 }
 
 /* (or one two three*?) */
-static int compile_or(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_or(struct sheep_compile *compile,
+		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	return do_compile_chain(vm, function, context, args, "or", SHEEP_BRT);
+	return do_compile_chain(compile, function, context,
+				args, "or", SHEEP_BRT);
 }
 
 /* (and one two three*?) */
-static int compile_and(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_and(struct sheep_compile *compile,
+		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	return do_compile_chain(vm, function, context, args, "and", SHEEP_BRF);
+	return do_compile_chain(compile, function, context,
+				args, "and", SHEEP_BRF);
 }
 
 /* (if cond then else*?) */
-static int compile_if(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_if(struct sheep_compile *compile,
+		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
 	SHEEP_DEFINE_MAP(env);
@@ -347,14 +360,14 @@ static int compile_if(struct sheep_vm *vm, struct sheep_function *function,
 
 	Lelse = sheep_code_jump(&function->code);
 
-	if (sheep_compile_object(vm, function, &block, cond))
+	if (sheep_compile_object(compile, function, &block, cond))
 		goto out;
 	sheep_emit(&function->code, SHEEP_BRF, Lelse);
 
 	sheep_emit(&function->code, SHEEP_DROP, 0);
 	if (context->flags & SHEEP_CONTEXT_TAILFORM)
 		block.flags |= SHEEP_CONTEXT_TAILFORM;
-	if (sheep_compile_object(vm, function, &block, then))
+	if (sheep_compile_object(compile, function, &block, then))
 		goto out;
 	block.flags &= ~SHEEP_CONTEXT_TAILFORM;
 
@@ -367,7 +380,7 @@ static int compile_if(struct sheep_vm *vm, struct sheep_function *function,
 		sheep_code_label(&function->code, Lelse);
 
 		sheep_emit(&function->code, SHEEP_DROP, 0);
-		if (do_compile_forms(vm, function, &block, elseform))
+		if (do_compile_forms(compile, function, &block, elseform))
 			goto out;
 
 		sheep_code_label(&function->code, Lend);
@@ -381,7 +394,8 @@ out:
 }
 
 /* (set name value) */
-static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_set(struct sheep_compile *compile,
+		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
 	sheep_t name, value;
@@ -389,14 +403,15 @@ static int compile_set(struct sheep_vm *vm, struct sheep_function *function,
 	if (sheep_unpack_list("set", args, "ao", &name, &value))
 		return -1;
 
-	if (sheep_compile_object(vm, function, context, value))
+	if (sheep_compile_object(compile, function, context, value))
 		return -1;
 
-	return sheep_compile_set(vm, function, context, name);
+	return sheep_compile_set(compile, function, context, name);
 }
 
 /* (load name) */
-static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
+static int compile_load(struct sheep_compile *compile,
+			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_name *name;
@@ -412,7 +427,7 @@ static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
 	if (sheep_unpack_list("load", args, "a", &name_))
 		return -1;
 
-	sheep_protect(vm, name_);
+	sheep_protect(compile->vm, name_);
 	name = sheep_name(name_);
 
 	if (name->nr_parts != 1) {
@@ -420,16 +435,16 @@ static int compile_load(struct sheep_vm *vm, struct sheep_function *function,
 		goto out;
 	}
 
-	mod = sheep_module_load(vm, *name->parts);
+	mod = sheep_module_load(compile->vm, *name->parts);
 	if (!mod)
 		goto out;
 
-	slot = sheep_vm_constant(vm, mod);
+	slot = sheep_vm_constant(compile->vm, mod);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	sheep_map_set(context->env, *name->parts, (void *)(unsigned long)slot);
 	ret = 0;
 out:
-	sheep_unprotect(vm, name_);
+	sheep_unprotect(compile->vm, name_);
 	return ret;
 }
 

@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2009 Johannes Weiner
 
+(load lib)
+
 (function sum (seq)
   (reduce + seq))
 
@@ -52,16 +54,9 @@ take the difference from the next multiple of ten."
       (print base (ean-checksum base))
       (ean-checksum-range (+ base 1) (- count 1)))))
 
-# xxx: should move to lib.sheep but (load lib) is not yet working with
-# modules relative to the calling module.
-(function nth (list nr)
-  (if (and list nr)
-    (nth (tail list) (- nr 1))
-    (head list)))
-
 # xxx: should be able to check for being loaded or executed?  or just
 # have the library in libean.sheep and the executable in ean.sheep?
 (if (not (= (length argv) 3))
-  (print "usage: " (nth argv 0) " base count")
-  (ean-checksum-range (number (nth argv 1))
-                      (number (nth argv 2))))
+  (print "usage: " (lib:nth 0 argv) " base count")
+  (ean-checksum-range (number (lib:nth 1 argv))
+                      (number (lib:nth 2 argv))))

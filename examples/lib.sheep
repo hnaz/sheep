@@ -1,12 +1,14 @@
 # library function ideas
 
-(function nth-tail (list n)
+(function nth-tail (n list)
   (if (and list n)
-    (nth-tail (tail list) (- n 1))
-    list))
+    (nth-tail (- n 1) (tail list))
+    (tail list)))
 
-(function nth (list n)
-  (head (nth-tail list n)))
+(function nth (n list)
+  (head (if (and list n)
+          (nth-tail (- n 1) list)
+          list)))
 
 (function reduce (op list)
   (function iter (acc pos)
@@ -14,6 +16,6 @@
       (iter (op acc (head pos))
             (tail pos))
       acc))
-  (iter (op (nth list 0)
-            (nth list 1))
-        (nth-tail list 2)))
+  (iter (op (nth 0 list)
+            (nth 1 list))
+        (nth-tail 1 list)))

@@ -28,7 +28,7 @@ static int compile_quote(struct sheep_compile *compile,
 	unsigned int slot;
 	sheep_t obj;
 
-	if (sheep_unpack_list("quote", args, "o", &obj))
+	if (sheep_unpack_form(compile, "quote", args, "o", &obj))
 		return -1;
 
 	slot = sheep_vm_constant(compile->vm, obj);
@@ -107,7 +107,7 @@ static int compile_block(struct sheep_compile *compile,
 	int ret;
 
 	/* Just make sure the block is not empty */
-	if (sheep_unpack_list("block", args, "r!", &args))
+	if (sheep_unpack_form(compile, "block", args, "r!", &args))
 		return -1;
 
 	ret = do_compile_block(compile, function, context, &env, args, 0);
@@ -129,7 +129,7 @@ static int compile_with(struct sheep_compile *compile,
 	};
 	int ret = -1;
 
-	if (sheep_unpack_list("with", args, "Lr!", &bindings, &body))
+	if (sheep_unpack_form(compile, "with", args, "Lr!", &bindings, &body))
 		return -1;
 
 	while (bindings->head) {
@@ -137,8 +137,8 @@ static int compile_with(struct sheep_compile *compile,
 		unsigned int slot;
 		sheep_t value;
 
-		if (sheep_unpack_list("with", bindings, "Aor", &name, &value,
-					&bindings))
+		if (sheep_unpack_form(compile, "with", bindings,
+					"Aor", &name, &value, &bindings))
 			goto out;
 
 		if (name->nr_parts != 1) {
@@ -169,7 +169,7 @@ static int compile_variable(struct sheep_compile *compile,
 	unsigned int slot;
 	sheep_t value;
 
-	if (sheep_unpack_list("variable", args, "Ao", &name, &value))
+	if (sheep_unpack_form(compile, "variable", args, "Ao", &name, &value))
 		return -1;
 
 	if (name->nr_parts != 1) {
@@ -219,7 +219,7 @@ static int compile_function(struct sheep_compile *compile,
 	} else
 		name = NULL;
 
-	if (sheep_unpack_list("function", args, "Lr!", &parms, &body))
+	if (sheep_unpack_form(compile, "function", args, "Lr!", &parms, &body))
 		return -1;
 
 	sheep = sheep_make_function(compile->vm, name);
@@ -229,7 +229,8 @@ static int compile_function(struct sheep_compile *compile,
 		struct sheep_name *parm;
 		unsigned int slot;
 
-		if (sheep_unpack_list("function", parms, "Ar", &parm, &parms))
+		if (sheep_unpack_form(compile, "function", parms,
+					"Ar", &parm, &parms))
 			goto out;
 
 		if (parm->nr_parts != 1) {
@@ -292,7 +293,7 @@ static int do_compile_chain(struct sheep_compile *compile,
 	unsigned long Lend;
 	int ret = -1;
 
-	if (sheep_unpack_list(name, args, "r!", &args))
+	if (sheep_unpack_form(compile, name, args, "r!", &args))
 		goto out;
 
 	Lend = sheep_code_jump(&function->code);
@@ -302,7 +303,7 @@ static int do_compile_chain(struct sheep_compile *compile,
 		if (tailposition(context, args))
 			block.flags |= SHEEP_CONTEXT_TAILFORM;
 
-		if (sheep_unpack_list(name, args, "or", &exp, &args))
+		if (sheep_unpack_form(compile, name, args, "or", &exp, &args))
 			goto out;
 
 		if (sheep_compile_object(compile, function, &block, exp))
@@ -355,7 +356,7 @@ static int compile_if(struct sheep_compile *compile,
 	sheep_t cond, then;
 	int ret = -1;
 
-	if (sheep_unpack_list("if", args, "oor", &cond, &then, &elseform))
+	if (sheep_unpack_form(compile, "if", args, "oor", &cond, &then, &elseform))
 		goto out;
 
 	Lelse = sheep_code_jump(&function->code);
@@ -400,7 +401,7 @@ static int compile_set(struct sheep_compile *compile,
 {
 	sheep_t name, value;
 
-	if (sheep_unpack_list("set", args, "ao", &name, &value))
+	if (sheep_unpack_form(compile, "set", args, "ao", &name, &value))
 		return -1;
 
 	if (sheep_compile_object(compile, function, context, value))
@@ -424,7 +425,7 @@ static int compile_load(struct sheep_compile *compile,
 		return -1;
 	}
 
-	if (sheep_unpack_list("load", args, "a", &name_))
+	if (sheep_unpack_form(compile, "load", args, "a", &name_))
 		return -1;
 
 	sheep_protect(compile->vm, name_);

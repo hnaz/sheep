@@ -5,6 +5,7 @@
  */
 #include <sheep/function.h>
 #include <sheep/string.h>
+#include <sheep/unpack.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -286,4 +287,50 @@ int sheep_compile_list(struct sheep_compile *compile,
 		}
 	}
 	return compile_call(compile, function, context, list);
+}
+
+int sheep_unpack_form(struct sheep_compile *compile, const char *caller,
+		struct sheep_list *form, const char *items, ...)
+{
+	enum sheep_unpack status;
+	struct sheep_list *expr;
+	unsigned long offset;
+	const char *wanted;
+	sheep_t mismatch;
+	va_list ap;
+
+	va_start(ap, items);
+	status = __sheep_unpack_list(&wanted, &mismatch, form, items, ap);
+	va_end(ap);
+
+	if (status == SHEEP_UNPACK_OK)
+		return 0;
+
+	expr = sheep_list(compile->expr->object);
+	offset = 1; /* @form list is at 0 */
+
+	switch (status) {
+	case SHEEP_UNPACK_MISMATCH:
+		sheep_list_search(expr, mismatch, &offset);
+		fprintf(stderr, "%s:%lu: %s: expected %s, got %s\n",
+			compile->expr->filename,
+			(unsigned long)compile->expr->lines.items[offset],
+			caller, wanted, sheep_type(mismatch)->name);
+		return -1;
+	case SHEEP_UNPACK_TOO_MANY:
+		sheep_list_search(expr, form->head, &offset);
+		fprintf(stderr, "%s:%lu: %s: too few arguments\n",
+			compile->expr->filename,
+			(unsigned long)compile->expr->lines.items[offset - 1],
+			caller);
+		return -1;
+	case SHEEP_UNPACK_TOO_FEW:
+		sheep_list_search(expr, form->head, &offset);
+		fprintf(stderr, "%s:%lu: %s: too many arguments\n",
+			compile->expr->filename,
+			(unsigned long)compile->expr->lines.items[offset - 1],
+			caller);
+	default: /* weird compiler... */
+		return -1;
+	}
 }

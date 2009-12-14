@@ -175,6 +175,22 @@ sheep_t sheep_make_list(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 	return sheep_make_object(vm, &sheep_list_type, list);
 }
 
+int sheep_list_search(struct sheep_list *list, sheep_t object,
+		unsigned long *offset)
+{
+	while (list->head) {
+		if (list->head == object)
+			return 1;
+		(*offset)++;
+		if (sheep_type(list->head) == &sheep_list_type)
+			if (sheep_list_search(sheep_list(list->head),
+						object, offset))
+				return 1;
+		list = sheep_list(list->tail);
+	}
+	return 0;
+}
+
 /* (cons item list) */
 static sheep_t builtin_cons(struct sheep_vm *vm, unsigned int nr_args)
 {

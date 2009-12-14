@@ -8,9 +8,11 @@
 
 #include <sheep/module.h>
 #include <sheep/object.h>
+#include <sheep/list.h>
 #include <sheep/read.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
+#include <stdarg.h>
 
 sheep_t __sheep_compile(struct sheep_vm *, struct sheep_module *,
 			struct sheep_expr *);
@@ -59,5 +61,8 @@ int sheep_compile_set(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 int sheep_compile_list(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
+
+int sheep_unpack_form(struct sheep_compile *, const char *,
+		struct sheep_list *, const char *, ...);
 
 #endif /* _SHEEP_COMPILE_H */

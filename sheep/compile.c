@@ -51,6 +51,30 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 	return sheep_make_object(vm, &sheep_function_type, function);
 }
 
+void sheep_compiler_error(struct sheep_compile *compile, sheep_t sheep,
+			const char *fmt, ...)
+{
+	struct sheep_expr *expr = compile->expr;
+	unsigned long offset;
+	va_list ap;
+
+	if (sheep_type(expr->object) == &sheep_list_type) {
+		struct sheep_list *form;
+
+		form = sheep_list(expr->object);
+		offset = 1; /* list itself is at 0 */
+		sheep_list_search(form, sheep, &offset);
+	} else
+		offset = 0;
+
+	fprintf(stderr, "%s:%lu: ", expr->filename,
+		(unsigned long)expr->lines.items[offset]);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
+}
+
 int sheep_compile_constant(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context, sheep_t sheep)
@@ -134,13 +158,16 @@ static unsigned int slot_foreign(struct sheep_function *function,
 static int compile_simple_name(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context,
-			const char *name, int set)
+			sheep_t sheep, int set)
 {
 	unsigned int dist, slot;
+	const char *name;
+
+	name = sheep_name(sheep)->parts[0];
 
 	switch (lookup_env(compile, context, name, &dist, &slot)) {
 	case ENV_NONE:
-		fprintf(stderr, "unbound name: %s\n", name);
+		sheep_compiler_error(compile, sheep, "unbound name: %s", name);
 		return -1;
 	case ENV_LOCAL:
 		if (set)
@@ -160,7 +187,8 @@ static int compile_simple_name(struct sheep_compile *compile,
 		break;
 	case ENV_BUILTIN:
 		if (set) {
-			fprintf(stderr, "read-only bound: %s\n", name);
+			sheep_compiler_error(compile, sheep,
+					"read-only bound name: %s", name);
 			return -1;
 		}
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
@@ -182,9 +210,9 @@ static int compile_name(struct sheep_compile *compile,
 
 	name = sheep_name(sheep);
 	if (name->nr_parts == 1)
-		return compile_simple_name(compile, function, context,
-					name->parts[0], set);
-	/* Yippie! */
+		return compile_simple_name(compile, function,
+					context, sheep, set);
+
 	mod = compile->module;
 	do {
 		sheep_t m;
@@ -208,7 +236,7 @@ static int compile_name(struct sheep_compile *compile,
 	return 0;
 err:
 	tmp = sheep_repr(sheep);
-	fprintf(stderr, "unbound name: %s\n", tmp);
+	sheep_compiler_error(compile, sheep, "unbound name: %s", tmp);
 	sheep_free(tmp);
 	return -1;
 }
@@ -311,11 +339,9 @@ int sheep_unpack_form(struct sheep_compile *compile, const char *caller,
 
 	switch (status) {
 	case SHEEP_UNPACK_MISMATCH:
-		sheep_list_search(expr, mismatch, &offset);
-		fprintf(stderr, "%s:%lu: %s: expected %s, got %s\n",
-			compile->expr->filename,
-			(unsigned long)compile->expr->lines.items[offset],
-			caller, wanted, sheep_type(mismatch)->name);
+		sheep_compiler_error(compile, mismatch,
+				"%s: expected %s, got %s",
+				caller, wanted, sheep_type(mismatch)->name);
 		return -1;
 	case SHEEP_UNPACK_TOO_MANY:
 		sheep_list_search(expr, form->head, &offset);

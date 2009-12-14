@@ -134,15 +134,17 @@ static int compile_with(struct sheep_compile *compile,
 
 	while (bindings->head) {
 		struct sheep_name *name;
+		sheep_t name_, value;
 		unsigned int slot;
-		sheep_t value;
 
 		if (sheep_unpack_form(compile, "with", bindings,
-					"Aor", &name, &value, &bindings))
+					"aor", &name_, &value, &bindings))
 			goto out;
 
+		name = sheep_name(name_);
 		if (name->nr_parts != 1) {
-			fprintf(stderr, "with: invalid binding name\n");
+			sheep_compiler_error(compile, name_,
+					"with: invalid binding name");
 			goto out;
 		}
 
@@ -166,14 +168,15 @@ static int compile_variable(struct sheep_compile *compile,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_name *name;
+	sheep_t name_, value;
 	unsigned int slot;
-	sheep_t value;
 
-	if (sheep_unpack_form(compile, "variable", args, "Ao", &name, &value))
+	if (sheep_unpack_form(compile, "variable", args, "ao", &name_, &value))
 		return -1;
 
+	name = sheep_name(name_);
 	if (name->nr_parts != 1) {
-		fprintf(stderr, "variable: invalid name\n");
+		sheep_compiler_error(compile, name_, "variable: invalid name");
 		return -1;
 	}
 
@@ -211,7 +214,8 @@ static int compile_function(struct sheep_compile *compile,
 
 		n = sheep_name(args->head);
 		if (n->nr_parts != 1) {
-			fprintf(stderr, "function: invalid name\n");
+			sheep_compiler_error(compile, args->head,
+					"function: invalid name");
 			return -1;
 		}
 		name = *n->parts;
@@ -228,19 +232,24 @@ static int compile_function(struct sheep_compile *compile,
 	while (parms->head) {
 		struct sheep_name *parm;
 		unsigned int slot;
+		sheep_t parm_;
 
 		if (sheep_unpack_form(compile, "function", parms,
-					"Ar", &parm, &parms))
+					"ar", &parm_, &parms))
 			goto out;
 
+		parm = sheep_name(parm_);
 		if (parm->nr_parts != 1) {
-			fprintf(stderr, "function: invalid parameter\n");
+			sheep_compiler_error(compile, parm_,
+					"function: invalid parameter name");
 			goto out;
 		}
 
 		slot = sheep_function_local(childfun);
 		if (sheep_map_set(&env, *parm->parts, (void *)(unsigned long)slot)) {
-			fprintf(stderr, "function: duplicate parameter\n");
+			sheep_compiler_error(compile, parm_,
+					"function: duplicate parameter: %s",
+					*parm->parts);
 			goto out;
 		}
 
@@ -432,7 +441,8 @@ static int compile_load(struct sheep_compile *compile,
 	name = sheep_name(name_);
 
 	if (name->nr_parts != 1) {
-		fprintf(stderr, "load: invalid name\n");
+		sheep_compiler_error(compile, name_,
+				"load: invalid module name");
 		goto out;
 	}
 

@@ -24,17 +24,15 @@ void sheep_vm_mark(struct sheep_vm *vm)
 	unsigned int i;
 
 	for (i = 0; i < vm->globals.nr_items; i++)
-		/*
-		 * Empty global slots occur with variable slots that
-		 * get reserved at compile time and initialized during
-		 * evaluation.
-		 */
 		if (vm->globals.items[i])
 			sheep_mark(vm->globals.items[i]);
 
 	for (i = 0; i < vm->stack.nr_items; i++)
 		if (vm->stack.items[i])
 			sheep_mark(vm->stack.items[i]);
+
+	for (i = 2; i < vm->calls.nr_items; i += 3)
+		sheep_mark(vm->calls.items[i]);
 }
 
 unsigned int sheep_vm_variable(struct sheep_vm *vm,

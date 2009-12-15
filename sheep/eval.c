@@ -265,9 +265,8 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 				sheep_protect(vm, function);
 
 				current = sheep_function(function);
-				codep = function_codep(current);
-
 				finalize_frame(vm, current);
+				codep = function_codep(current);
 				continue;
 			}
 			break;
@@ -286,12 +285,13 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 				sheep_vector_push(&vm->calls, (void *)basep);
 				sheep_vector_push(&vm->calls, function);
 
+				sheep_unprotect(vm, function);
 				function = tmp;
 				sheep_protect(vm, function);
 
 				current = sheep_function(function);
-				codep = function_codep(current);
 				basep = finalize_frame(vm, current);
+				codep = function_codep(current);
 
 				nesting++;
 				continue;
@@ -316,6 +316,8 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 				goto out;
 
 			function = sheep_vector_pop(&vm->calls);
+			sheep_protect(vm, function);
+
 			current = sheep_function(function);
 			basep = (unsigned long)sheep_vector_pop(&vm->calls);
 			codep = sheep_vector_pop(&vm->calls);
@@ -342,13 +344,8 @@ out:
 	return sheep_vector_pop(&vm->stack);
 err:
 	vm->stack.nr_items = 0;
+	vm->calls.nr_items -= 3 * nesting;
 	sheep_unprotect(vm, function);
-	while (nesting--) {
-		function = sheep_vector_pop(&vm->calls);
-		sheep_unprotect(vm, function);
-		sheep_vector_pop(&vm->calls); /* basep */
-		sheep_vector_pop(&vm->calls); /* codep */
-	}
 	return NULL;
 }
 

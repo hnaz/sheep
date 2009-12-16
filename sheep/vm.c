@@ -74,6 +74,7 @@ void sheep_vm_init(struct sheep_vm *vm, int ac, char **av)
 {
 	memset(vm, 0, sizeof(*vm));
 	sheep_core_init(vm);
+	sheep_object_builtins(vm);
 	sheep_bool_builtins(vm);
 	sheep_number_builtins(vm);
 	sheep_string_builtins(vm);

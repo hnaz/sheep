@@ -31,4 +31,8 @@ static inline void sheep_set_data(sheep_t sheep, void *data)
 int sheep_test(sheep_t);
 int sheep_equal(sheep_t, sheep_t);
 
+extern struct sheep_object sheep_nil;
+
+void sheep_object_builtins(struct sheep_vm *);
+
 #endif /* _SHEEP_OBJECT_H */

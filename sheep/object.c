@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/compile.h>
 #include <sheep/vector.h>
 #include <sheep/util.h>
 #include <sheep/gc.h>
@@ -40,4 +41,30 @@ int sheep_equal(sheep_t a, sheep_t b)
 	if (sheep_type(a)->equal)
 		return sheep_type(a)->equal(a, b);
 	return 0;
+}
+
+static int test_nil(sheep_t sheep)
+{
+	return 0;
+}
+
+static void format_nil(sheep_t sheep, char **bufp, size_t *posp, int repr)
+{
+	sheep_addprintf(bufp, posp, "nil");
+}
+
+const struct sheep_type sheep_nil_type = {
+	.name = "nil",
+	.compile = sheep_compile_constant,
+	.test = test_nil,
+	.format = format_nil,
+};
+
+struct sheep_object sheep_nil = {
+	.type = &sheep_nil_type,
+};
+
+void sheep_object_builtins(struct sheep_vm *vm)
+{
+	sheep_vm_variable(vm, "nil", &sheep_nil);
 }

@@ -174,7 +174,7 @@ static sheep_t builtin_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 		function->nr_parms, function->nr_locals, nr_foreigns);
 
 	sheep_code_disassemble(&function->code);
-	return &sheep_true;
+	return &sheep_nil;
 }
 
 void sheep_function_builtins(struct sheep_vm *vm)

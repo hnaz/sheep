@@ -74,6 +74,8 @@ IMPL: (string everything)
 
 (tail list)
 
+(find predicate list)
+
 (map function list)
 
 (reduce function list)

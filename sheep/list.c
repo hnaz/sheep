@@ -261,6 +261,35 @@ static sheep_t builtin_tail(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep;
 }
 
+/* (find predicate list) */
+static sheep_t builtin_find(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t predicate, list_, result = &sheep_nil;
+	struct sheep_list *list;
+
+	if (sheep_unpack_stack("find", vm, nr_args, "cl", &predicate, &list_))
+		return NULL;
+	sheep_protect(vm, predicate);
+	sheep_protect(vm, list_);
+
+	list = sheep_list(list_);
+	while (list->head) {
+		sheep_t val;
+
+		val = sheep_call(vm, predicate, 1, list->head);
+		if (sheep_test(val)) {
+			result = list->head;
+			break;
+		}
+
+		list = sheep_list(list->tail);
+	}
+
+	sheep_unprotect(vm, list_);
+	sheep_unprotect(vm, predicate);
+	return result;
+}
+
 /* (map function list) */
 static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -335,6 +364,7 @@ void sheep_list_builtins(struct sheep_vm *vm)
 	sheep_vm_function(vm, "list", builtin_list);
 	sheep_vm_function(vm, "head", builtin_head);
 	sheep_vm_function(vm, "tail", builtin_tail);
+	sheep_vm_function(vm, "find", builtin_find);
 	sheep_vm_function(vm, "map", builtin_map);
 	sheep_vm_function(vm, "reduce", builtin_reduce);
 }

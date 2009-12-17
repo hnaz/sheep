@@ -49,7 +49,7 @@ $(sheep-obj): include/sheep/config.h sheep/make.deps
 
 clean		+= $(sheep-obj)
 
-include/sheep/config.h:
+include/sheep/config.h: Makefile
 	$(Q)$(call cmd, "   CF     $@",					\
 		rm -f $@;						\
 		echo "#define SHEEP_VERSION \"$(VERSION)\"" >> $@;	\

@@ -28,7 +28,7 @@
 (function name (&rest parameters)
   &rest body)
 
-IMPL: (load module-name)
+(load module-name)
 
 2. builtin functions
 
@@ -38,7 +38,7 @@ IMPL: (load module-name)
 
 (not expression)
 
-(number expression)
+(number object)
 
 (< a b)
 
@@ -58,9 +58,7 @@ IMPL: (load module-name)
 
 (% a b)
 
-(string number-or-string)
-
-IMPL: (string everything)
+(string object)
 
 (split delimiter string)
 
@@ -82,10 +80,20 @@ IMPL: (string everything)
 
 (length sequence)
 
-(concat sequence)
+(concat seqa seqb)
 
 (reverse sequence)
 
+IMPL: (position item sequence)
+
+IMPL: (nth position sequence)
+
+IMPL: (slice from to sequence)
+
+IMPL: (remove item sequence)
+
+IMPL: (filter predicate sequence)
+
 IMPL: (sort predicate sequence)
 
-THINK: (print &rest expressions)
+(print &rest expressions)

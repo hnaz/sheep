@@ -15,7 +15,7 @@
   then
   &optional else)
 
-(with (&rest name-value-pairs)
+(with (name value)
   &rest body)
 
 (variable name value)

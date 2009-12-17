@@ -130,7 +130,7 @@ static int compile_with(struct sheep_compile *compile,
 	struct sheep_name *name;
 	sheep_t name_, value;
 	unsigned int slot;
-	int ret = -1;
+	int ret;
 
 	if (sheep_unpack_form(compile, "with", args, "Lr!", &binding, &body))
 		return -1;
@@ -141,18 +141,18 @@ static int compile_with(struct sheep_compile *compile,
 	name = sheep_name(name_);
 	if (name->nr_parts != 1) {
 		sheep_compiler_error(compile, name_, "with: invalid name");
-		goto out;
+		return -1;
 	}
 
 	if (sheep_compile_object(compile, function, &block, value))
-		goto out;
+		return -1;
 
 	slot = sheep_function_local(function);
 	sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
 	sheep_map_set(&env, *name->parts, (void *)(unsigned long)slot);
 
 	ret = do_compile_forms(compile, function, &block, body);
-out:
+
 	sheep_map_drain(&env);
 	return ret;
 }

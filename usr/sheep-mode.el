@@ -11,6 +11,8 @@
 	mode-name "Sheep")
   (set (make-local-variable 'indent-line-function)
        'sheep-indent-function)
+  (set (make-local-variable 'indent-tabs-mode)
+       nil)
   (set-syntax-table sheep-mode-syntax-table)
   (set (make-local-variable 'comment-start)
        "#")
@@ -25,7 +27,29 @@
 	  (font-lock-mark-block-function . mark-defun))))
 
 (defun sheep-indent-function ()
-  'noindent)
+  (let ((target
+	 (save-excursion
+	   (back-to-indentation)
+	   (let ((state (syntax-ppss)))
+	     ;; Toplevel
+	     (if (zerop (car state))
+		 0
+	       (goto-char (1+ (nth 1 state)))
+	       (if (looking-at "\\(block\\|if\\|with\\|function\\)\\>")
+		   ;; Block start
+		   (1+ (current-column))
+		 (forward-sexp)
+		 (1+ (if (looking-at "\\s-*$")
+			 ;; Arguments align with operator
+			 (progn
+			   (goto-char (nth 1 state))
+			   (current-column))
+		       ;; Arguments align with first argument
+		       (current-column)))))))))
+    (let ((offset (- (current-column) (current-indentation))))
+      (indent-line-to target)
+      (if (> offset 0)
+	  (forward-char offset)))))
 
 (defvar sheep-mode-syntax-table
   (let ((table (make-syntax-table))

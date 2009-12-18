@@ -1,0 +1,19 @@
+(load lib)
+
+(function human-readable (bytes)
+  "Convert BYTES into a human readable number of
+higher order units.  Returns (NUMBER UNIT), where
+UNIT is 'B' for bytes, 'K' for kilobytes and so on."
+  (function iter (value units)
+    (with (next-value (>> value 10))
+      (with (next-unit (tail units))
+        (if (and next-value next-unit)
+          (iter next-value next-unit)
+          (list value (head units))))))
+  (iter bytes (list "B" "KiB" "MiB" "GiB" "TiB" "PiB")))
+
+(if (= (length argv) 2)
+  (with (bytes (number (lib:nth 1 argv)))
+    (with (tuple (human-readable bytes))
+      (print bytes " = ~" (lib:nth 0 tuple) (lib:nth 1 tuple))))
+  (print "usage: " (lib:nth 0 argv) " bytes"))

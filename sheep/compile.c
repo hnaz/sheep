@@ -5,7 +5,6 @@
  */
 #include <sheep/function.h>
 #include <sheep/string.h>
-#include <sheep/unpack.h>
 #include <sheep/vector.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
@@ -15,7 +14,9 @@
 #include <sheep/map.h>
 #include <sheep/gc.h>
 #include <sheep/vm.h>
+#include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdio.h>
 
 #include <sheep/compile.h>
@@ -308,55 +309,128 @@ int sheep_compile_list(struct sheep_compile *compile,
 					struct sheep_function *,
 					struct sheep_context *,
 					struct sheep_list *) = entry;
-			struct sheep_list *args;
 
-			args = sheep_list(list->tail);
-			return compile_special(compile, function, context, args);
+			return compile_special(compile, function, context, list);
 		}
 	}
 	return compile_call(compile, function, context, list);
 }
 
-int sheep_unpack_form(struct sheep_compile *compile, const char *caller,
-		struct sheep_list *form, const char *items, ...)
+enum {
+	PARSE_OK,
+	PARSE_MISMATCH,
+	PARSE_TOO_FEW,
+	PARSE_TOO_MANY
+};
+
+static unsigned int __parse(struct sheep_list *form, const char *items,
+			sheep_t *mismatchp, va_list ap)
 {
-	enum sheep_unpack status;
-	struct sheep_list *expr;
-	unsigned long offset;
-	const char *wanted;
+	while (*items) {
+		struct sheep_name *name;
+		struct sheep_list *list;
+		sheep_t thing;
+
+		if (!form->head && *items != 'r')
+			return PARSE_TOO_FEW;
+
+		if (tolower(*items) == 'r') {
+			*va_arg(ap, struct sheep_list **) = form;
+			return PARSE_OK;
+		}
+
+		thing = form->head;
+
+		switch (*items) {
+		case 'e':
+			*va_arg(ap, sheep_t *) = thing;
+			break;
+		case 's':
+			if (sheep_type(thing) != &sheep_name_type)
+				goto mismatch;
+			name = sheep_name(thing);
+			if (name->nr_parts != 1)
+				goto mismatch;
+			*va_arg(ap, const char **) = name->parts[0];
+			break;
+		case 'n':
+			if (sheep_type(thing) != &sheep_name_type)
+				goto mismatch;
+			name = sheep_name(thing);
+			*va_arg(ap, struct sheep_name **) = name;
+			break;
+		case 'l':
+			if (sheep_type(thing) != &sheep_list_type)
+				goto mismatch;
+			list = sheep_list(thing);
+			*va_arg(ap, struct sheep_list **) = list;
+			break;
+		default:
+			sheep_bug("invalid parser instruction");
+		}
+
+		form = sheep_list(form->tail);
+		items++;
+		continue;
+	mismatch:
+		*mismatchp = thing;
+		return PARSE_MISMATCH;
+	}
+
+	if (form->head)
+		return PARSE_TOO_MANY;
+
+	return PARSE_OK;
+}
+
+static int parse(struct sheep_compile *compile, struct sheep_list *form,
+		struct sheep_list *child, const char *items, va_list ap)
+{
+	unsigned int ret;
 	sheep_t mismatch;
-	va_list ap;
+	const char *name;
 
-	va_start(ap, items);
-	status = __sheep_unpack_list(&wanted, &mismatch, form, items, ap);
-	va_end(ap);
-
-	if (status == SHEEP_UNPACK_OK)
+	ret = __parse(child, items, &mismatch, ap);
+	if (ret == PARSE_OK)
 		return 0;
 
-	expr = sheep_list(compile->expr->object);
-	offset = 1; /* @form list is at 0 */
+	name = sheep_repr(form->head);
+	if (ret == PARSE_MISMATCH) {
+		const char *culprit;
 
-	switch (status) {
-	case SHEEP_UNPACK_MISMATCH:
+		culprit = sheep_repr(mismatch);
 		sheep_compiler_error(compile, mismatch,
-				"%s: expected %s, got %s",
-				caller, wanted, sheep_type(mismatch)->name);
-		return -1;
-	case SHEEP_UNPACK_TOO_MANY:
-		sheep_list_search(expr, form->head, &offset);
-		fprintf(stderr, "%s:%lu: %s: too few arguments\n",
-			compile->expr->filename,
-			(unsigned long)compile->expr->lines.items[offset - 1],
-			caller);
-		return -1;
-	case SHEEP_UNPACK_TOO_FEW:
-		sheep_list_search(expr, form->head, &offset);
-		fprintf(stderr, "%s:%lu: %s: too many arguments\n",
-			compile->expr->filename,
-			(unsigned long)compile->expr->lines.items[offset - 1],
-			caller);
-	default: /* weird compiler... */
-		return -1;
-	}
+				"%s: parser error near `%s'",
+				name, culprit);
+		sheep_free(culprit);
+	} else
+		sheep_compiler_error(compile, child->head,
+				"%s: too %s arguments", name,
+				ret == PARSE_TOO_MANY ? "many" : "few");
+	sheep_free(name);
+	return -1;
+}
+
+int __sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
+		struct sheep_list *child, const char *items, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, items);
+	ret = parse(compile, form, child, items, ap);
+	va_end(ap);
+	return ret;
+}
+
+int sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
+		const char *items, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, items);
+	ret = parse(compile, form, sheep_list(form->tail), items, ap);
+	va_end(ap);
+	return ret;
 }

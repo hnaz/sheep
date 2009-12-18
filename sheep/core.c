@@ -6,7 +6,6 @@
 #include <sheep/function.h>
 #include <sheep/compile.h>
 #include <sheep/module.h>
-#include <sheep/unpack.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
@@ -26,12 +25,12 @@ static int compile_quote(struct sheep_compile *compile,
 			struct sheep_context *context, struct sheep_list *args)
 {
 	unsigned int slot;
-	sheep_t obj;
+	sheep_t expr;
 
-	if (sheep_unpack_form(compile, "quote", args, "o", &obj))
+	if (sheep_parse(compile, args, "e", &expr))
 		return -1;
 
-	slot = sheep_vm_constant(compile->vm, obj);
+	slot = sheep_vm_constant(compile->vm, expr);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	return 0;
 }
@@ -107,7 +106,7 @@ static int compile_block(struct sheep_compile *compile,
 	int ret;
 
 	/* Just make sure the block is not empty */
-	if (sheep_unpack_form(compile, "block", args, "r!", &args))
+	if (sheep_parse(compile, args, "R", &args))
 		return -1;
 
 	ret = do_compile_block(compile, function, context, &env, args, 0);
@@ -127,29 +126,23 @@ static int compile_with(struct sheep_compile *compile,
 		.env = &env,
 		.parent = context,
 	};
-	struct sheep_name *name;
-	sheep_t name_, value;
 	unsigned int slot;
+	const char *name;
+	sheep_t value;
 	int ret;
 
-	if (sheep_unpack_form(compile, "with", args, "Lr!", &binding, &body))
+	if (sheep_parse(compile, args, "lR", &binding, &body))
 		return -1;
 
-	if (sheep_unpack_form(compile, "with", binding, "ao", &name_, &value))
+	if (__sheep_parse(compile, args, binding, "se", &name, &value))
 		return -1;
-
-	name = sheep_name(name_);
-	if (name->nr_parts != 1) {
-		sheep_compiler_error(compile, name_, "with: invalid name");
-		return -1;
-	}
 
 	if (sheep_compile_object(compile, function, &block, value))
 		return -1;
 
 	slot = sheep_function_local(function);
 	sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-	sheep_map_set(&env, *name->parts, (void *)(unsigned long)slot);
+	sheep_map_set(&env, name, (void *)(unsigned long)slot);
 
 	ret = do_compile_forms(compile, function, &block, body);
 
@@ -162,18 +155,12 @@ static int compile_variable(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
-	struct sheep_name *name;
-	sheep_t name_, value;
 	unsigned int slot;
+	const char *name;
+	sheep_t value;
 
-	if (sheep_unpack_form(compile, "variable", args, "ao", &name_, &value))
+	if (sheep_parse(compile, args, "se", &name, &value))
 		return -1;
-
-	name = sheep_name(name_);
-	if (name->nr_parts != 1) {
-		sheep_compiler_error(compile, name_, "variable: invalid name");
-		return -1;
-	}
 
 	if (sheep_compile_object(compile, function, context, value))
 		return -1;
@@ -187,7 +174,7 @@ static int compile_variable(struct sheep_compile *compile,
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	}
-	sheep_map_set(context->env, *name->parts, (void *)(unsigned long)slot);
+	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	return 0;
 }
 
@@ -196,55 +183,40 @@ static int compile_function(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
-	struct sheep_function *childfun;
 	struct sheep_list *parms, *body;
+	struct sheep_function *childfun;
 	SHEEP_DEFINE_MAP(env);
 	unsigned int cslot;
+	sheep_t maybe_name;
 	const char *name;
 	sheep_t sheep;
 	int ret = -1;
 
-	if (args->head && sheep_type(args->head) == &sheep_name_type) {
-		struct sheep_name *n;
-
-		n = sheep_name(args->head);
-		if (n->nr_parts != 1) {
-			sheep_compiler_error(compile, args->head,
-					"function: invalid name");
+	maybe_name = sheep_list(args->tail)->head;
+	if (maybe_name && sheep_type(maybe_name) == &sheep_name_type) {
+		if (sheep_parse(compile, args, "slR", &name, &parms, &body))
 			return -1;
-		}
-		name = *n->parts;
-		args = sheep_list(args->tail);
-	} else
+	} else {
+		if (sheep_parse(compile, args, "lR", &parms, &body))
+			return -1;
 		name = NULL;
-
-	if (sheep_unpack_form(compile, "function", args, "Lr!", &parms, &body))
-		return -1;
+	}
 
 	sheep = sheep_make_function(compile->vm, name);
 	childfun = sheep_data(sheep);
 
 	while (parms->head) {
-		struct sheep_name *parm;
 		unsigned int slot;
-		sheep_t parm_;
+		const char *parm;
 
-		if (sheep_unpack_form(compile, "function", parms,
-					"ar", &parm_, &parms))
+		if (__sheep_parse(compile, args, parms, "sr", &parm, &parms))
 			goto out;
-
-		parm = sheep_name(parm_);
-		if (parm->nr_parts != 1) {
-			sheep_compiler_error(compile, parm_,
-					"function: invalid parameter name");
-			goto out;
-		}
 
 		slot = sheep_function_local(childfun);
-		if (sheep_map_set(&env, *parm->parts, (void *)(unsigned long)slot)) {
-			sheep_compiler_error(compile, parm_,
-					"function: duplicate parameter: %s",
-					*parm->parts);
+		if (sheep_map_set(&env, parm, (void *)(unsigned long)slot)) {
+			sheep_compiler_error(compile, parms->head,
+					"function: duplicate parameter `%s'",
+					parm);
 			goto out;
 		}
 
@@ -286,34 +258,36 @@ out:
 
 static int do_compile_chain(struct sheep_compile *compile,
 			struct sheep_function *function,
-			struct sheep_context *context, struct sheep_list *args,
-			const char *name, enum sheep_opcode endbranch)
+			struct sheep_context *context,
+			struct sheep_list *args,
+			enum sheep_opcode endbranch)
 {
 	SHEEP_DEFINE_MAP(env);
 	struct sheep_context block = {
 		.env = &env,
 		.parent = context,
 	};
+	struct sheep_list *args2;
 	unsigned long Lend;
 	int ret = -1;
 
-	if (sheep_unpack_form(compile, name, args, "r!", &args))
-		goto out;
+	if (sheep_parse(compile, args, "R", &args2))
+		return -1;
 
 	Lend = sheep_code_jump(&function->code);
 	for (;;) {
-		sheep_t exp;
+		sheep_t expr;
 
-		if (tailposition(context, args))
+		if (tailposition(context, args2))
 			block.flags |= SHEEP_CONTEXT_TAILFORM;
 
-		if (sheep_unpack_form(compile, name, args, "or", &exp, &args))
+		if (__sheep_parse(compile, args, args2, "er", &expr, &args2))
 			goto out;
 
-		if (sheep_compile_object(compile, function, &block, exp))
+		if (sheep_compile_object(compile, function, &block, expr))
 			goto out;
 
-		if (!args->head)
+		if (!args2->head)
 			break;
 
 		sheep_emit(&function->code, endbranch, Lend);
@@ -332,8 +306,7 @@ static int compile_or(struct sheep_compile *compile,
 		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	return do_compile_chain(compile, function, context,
-				args, "or", SHEEP_BRT);
+	return do_compile_chain(compile, function, context, args, SHEEP_BRT);
 }
 
 /* (and one two three*?) */
@@ -341,8 +314,7 @@ static int compile_and(struct sheep_compile *compile,
 		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	return do_compile_chain(compile, function, context,
-				args, "and", SHEEP_BRF);
+	return do_compile_chain(compile, function, context, args, SHEEP_BRF);
 }
 
 /* (if cond then else*?) */
@@ -360,8 +332,8 @@ static int compile_if(struct sheep_compile *compile,
 	sheep_t cond, then;
 	int ret = -1;
 
-	if (sheep_unpack_form(compile, "if", args, "oor", &cond, &then, &elseform))
-		goto out;
+	if (sheep_parse(compile, args, "eer", &cond, &then, &elseform))
+		return -1;
 
 	Lelse = sheep_code_jump(&function->code);
 
@@ -403,15 +375,17 @@ static int compile_set(struct sheep_compile *compile,
 		struct sheep_function *function,
 		struct sheep_context *context, struct sheep_list *args)
 {
-	sheep_t name, value;
+	struct sheep_name *name;
+	sheep_t value;
 
-	if (sheep_unpack_form(compile, "set", args, "ao", &name, &value))
+	if (sheep_parse(compile, args, "ne", &name, &value))
 		return -1;
 
 	if (sheep_compile_object(compile, function, context, value))
 		return -1;
 
-	return sheep_compile_set(compile, function, context, name);
+	return sheep_compile_set(compile, function, context,
+				sheep_list(args->tail)->head);
 }
 
 /* (load name) */
@@ -419,38 +393,31 @@ static int compile_load(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
-	struct sheep_name *name;
-	sheep_t mod, name_;
 	unsigned int slot;
+	const char *name;
 	int ret = -1;
+	sheep_t mod;
 
 	if (context->parent) {
 		fprintf(stderr, "load: not on toplevel\n");
 		return -1;
 	}
 
-	if (sheep_unpack_form(compile, "load", args, "a", &name_))
+	if (sheep_parse(compile, args, "s", &name))
 		return -1;
 
-	sheep_protect(compile->vm, name_);
-	name = sheep_name(name_);
+	sheep_protect(compile->vm, sheep_list(args->tail)->head);
 
-	if (name->nr_parts != 1) {
-		sheep_compiler_error(compile, name_,
-				"load: invalid module name");
-		goto out;
-	}
-
-	mod = sheep_module_load(compile->vm, *name->parts);
+	mod = sheep_module_load(compile->vm, name);
 	if (!mod)
 		goto out;
 
 	slot = sheep_vm_constant(compile->vm, mod);
 	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
-	sheep_map_set(context->env, *name->parts, (void *)(unsigned long)slot);
+	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	ret = 0;
 out:
-	sheep_unprotect(compile->vm, name_);
+	sheep_unprotect(compile->vm, sheep_list(args->tail)->head);
 	return ret;
 }
 

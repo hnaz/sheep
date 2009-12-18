@@ -64,7 +64,9 @@ int sheep_compile_set(struct sheep_compile *, struct sheep_function *,
 int sheep_compile_list(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 
-int sheep_unpack_form(struct sheep_compile *, const char *,
+int __sheep_parse(struct sheep_compile *, struct sheep_list *,
 		struct sheep_list *, const char *, ...);
+int sheep_parse(struct sheep_compile *, struct sheep_list *,
+		const char *, ...);
 
 #endif /* _SHEEP_COMPILE_H */

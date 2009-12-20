@@ -64,6 +64,8 @@ int sheep_compile_set(struct sheep_compile *, struct sheep_function *,
 int sheep_compile_list(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 
+void sheep_propagate_foreigns(struct sheep_function *, struct sheep_function *);
+
 int __sheep_parse(struct sheep_compile *, struct sheep_list *,
 		struct sheep_list *, const char *, ...);
 int sheep_parse(struct sheep_compile *, struct sheep_list *,

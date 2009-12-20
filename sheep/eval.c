@@ -63,7 +63,8 @@ static void close_pending(struct sheep_vm *vm, unsigned long basep)
 	}
 }
 
-static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
+static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
+		struct sheep_function *parent, sheep_t sheep)
 {
 	struct sheep_function *function, *closure;
 	struct sheep_vector *freevars, *indirects;
@@ -81,33 +82,24 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep, sheep_t sheep)
 	for (i = 0; i < freevars->nr_items; i++) {
 		struct sheep_indirect *indirect;
 		struct sheep_freevar *freevar;
-		unsigned long owner, offset;
 		unsigned int dist, slot;
 
 		freevar = freevars->items[i];
 		dist = freevar->dist;
 		slot = freevar->slot;
 		/*
-		 * Closure instantiation happens in the owner scope,
-		 * thus if the owner distance is 1, the current frame
-		 * is the owner.
-		 *
-		 * Otherwise, the frame is on the call stack.
+		 * Immediate child: parent is on the callstack.  Grand
+		 * child: use the parent's link to the foreign slot.
 		 */
-		offset = dist - 1;
-		if (!offset)
-			owner = basep;
+		if (dist == 1)
+			indirect = note_pending(vm, basep + slot);
 		else {
-			/*
-			 * The callstack contains
-			 *	[codep basep function]
-			 * for every frame.
-			 */
-			offset = vm->calls.nr_items - (3 * offset - 1);
-			owner = (unsigned long)vm->calls.items[offset];
+			indirect = parent->foreign->items[slot];
+			if (indirect->count < 0)	/* live */
+				indirect->count--;
+			else				/* closed */
+				indirect->count++;
 		}
-
-		indirect = note_pending(vm, owner + slot);
 		sheep_vector_push(indirects, indirect);
 	}
 
@@ -243,7 +235,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			break;
 		case SHEEP_CLOSURE:
 			tmp = vm->globals.items[arg];
-			tmp = closure(vm, basep, tmp);
+			tmp = closure(vm, basep, current, tmp);
 			sheep_vector_push(&vm->stack, tmp);
 			break;
 		case SHEEP_TAILCALL:

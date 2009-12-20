@@ -251,6 +251,8 @@ static int compile_function(struct sheep_compile *compile,
 		goto out;
 	}
 	sheep_code_finalize(&childfun->code);
+	if (childfun->foreign)
+		sheep_propagate_foreigns(function, childfun);
 out:
 	sheep_map_drain(&env);
 	return ret;

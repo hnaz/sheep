@@ -316,6 +316,29 @@ int sheep_compile_list(struct sheep_compile *compile,
 	return compile_call(compile, function, context, list);
 }
 
+void sheep_propagate_foreigns(struct sheep_function *function,
+			struct sheep_function *childfun)
+{
+	unsigned long i;
+
+	for (i = 0; i < childfun->foreign->nr_items; i++) {
+		struct sheep_freevar *var;
+
+		var = childfun->foreign->items[i];
+		/*
+		 * Immediate children of the slot owner directly refer
+		 * to a parent's local slot.
+		 */
+		if (var->dist == 1)
+			continue;
+		/*
+		 * Grandchildren refer to the slot through an
+		 * immediate parent's foreign slot.
+		 */
+		var->slot = slot_foreign(function, var->dist - 1, var->slot);
+	}
+}
+
 enum {
 	PARSE_OK,
 	PARSE_MISMATCH,

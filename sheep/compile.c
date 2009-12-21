@@ -267,16 +267,21 @@ static int compile_call(struct sheep_compile *compile,
 	};
 	struct sheep_list *args;
 	int nargs, ret = -1;
+	unsigned int tail;
 
 	args = sheep_list(form->tail);
 	for (nargs = 0; args->head; args = sheep_list(args->tail), nargs++)
 		if (sheep_compile_object(compile, function, &block, args->head))
 			goto out;
 
+	/* Do not propagate to subcalls as in call to foo in ((foo x) n) */
+	tail = context->flags & SHEEP_CONTEXT_TAILFORM;
+	context->flags &= ~SHEEP_CONTEXT_TAILFORM;
+
 	if (sheep_compile_object(compile, function, context, form->head))
 		goto out;
 
-	if (context->flags & SHEEP_CONTEXT_TAILFORM)
+	if (tail)
 		sheep_emit(&function->code, SHEEP_TAILCALL, nargs);
 	else
 		sheep_emit(&function->code, SHEEP_CALL, nargs);

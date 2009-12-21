@@ -1,10 +1,7 @@
 (variable test
   (with (nr 1)
     (function (result)
-      (ddump
-        (reduce concat
-                (list (string nr) ": "
-                      (if result "ok" "failed"))))
+      (print nr ": " (if result "ok" "failed"))
       (set nr (+ nr 1)))))
 
 (test (= ()

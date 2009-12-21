@@ -44,12 +44,23 @@ static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 /* (reverse sequence) */
 static sheep_t builtin_reverse(struct sheep_vm *vm, unsigned int nr_args)
 {
-	sheep_t sheep;
+	sheep_t seq;
 
-	if (sheep_unpack_stack("reverse", vm, nr_args, "q", &sheep))
+	if (sheep_unpack_stack("reverse", vm, nr_args, "q", &seq))
 		return NULL;
 
-	return sheep_sequence(sheep)->reverse(vm, sheep);
+	return sheep_sequence(seq)->reverse(vm, seq);
+}
+
+static sheep_t builtin_nth(struct sheep_vm *vm, unsigned int nr_args)
+{
+	unsigned long n;
+	sheep_t seq;
+
+	if (sheep_unpack_stack("nth", vm, nr_args, "Nq", &n, &seq))
+		return NULL;
+
+	return sheep_sequence(seq)->nth(vm, n, seq);
 }
 
 void sheep_sequence_builtins(struct sheep_vm *vm)
@@ -57,4 +68,5 @@ void sheep_sequence_builtins(struct sheep_vm *vm)
 	sheep_vm_function(vm, "length", builtin_length);
 	sheep_vm_function(vm, "concat", builtin_concat);
 	sheep_vm_function(vm, "reverse", builtin_reverse);
+	sheep_vm_function(vm, "nth", builtin_nth);
 }

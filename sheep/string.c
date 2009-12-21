@@ -56,10 +56,22 @@ static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
 	return __sheep_make_string(vm, result);
 }
 
+static sheep_t string_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
+{
+	char new[2] = { 0, 0 };
+	const char *string;
+
+	string = sheep_rawstring(sheep);
+	if (strlen(string) > n)
+		new[0] = string[n];
+	return sheep_make_string(vm, new);
+}
+
 static const struct sheep_sequence string_sequence = {
 	.length = string_length,
 	.concat = string_concat,
 	.reverse = string_reverse,
+	.nth = string_nth,
 };
 
 static void free_string(struct sheep_vm *vm, sheep_t sheep)

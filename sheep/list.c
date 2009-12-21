@@ -88,10 +88,25 @@ static sheep_t list_reverse(struct sheep_vm *vm, sheep_t sheep)
 	return new;
 }
 
+static sheep_t list_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
+{
+	struct sheep_list *list;
+
+	list = sheep_list(sheep);
+	while (n-- && list->head) {
+		sheep = list->tail;
+		list = sheep_list(sheep);
+	}
+	if (list->head)
+		sheep = list->head;
+	return sheep;
+}
+
 static const struct sheep_sequence list_sequence = {
 	.length = list_length,
 	.concat = list_concat,
 	.reverse = list_reverse,
+	.nth = list_nth,
 };
 
 static void mark_list(sheep_t sheep)

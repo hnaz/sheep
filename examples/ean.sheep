@@ -2,8 +2,6 @@
 #
 # Copyright (c) 2009 Johannes Weiner
 
-(load lib)
-
 (function sum (seq)
   (reduce + seq))
 
@@ -57,6 +55,6 @@ take the difference from the next multiple of ten."
 # xxx: should be able to check for being loaded or executed?  or just
 # have the library in libean.sheep and the executable in ean.sheep?
 (if (not (= (length argv) 3))
-  (print "usage: " (lib:nth 0 argv) " base count")
-  (ean-checksum-range (number (lib:nth 1 argv))
-                      (number (lib:nth 2 argv))))
+  (print "usage: " (nth 0 argv) " base count")
+  (ean-checksum-range (number (nth 1 argv))
+                      (number (nth 2 argv))))

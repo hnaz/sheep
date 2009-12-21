@@ -342,17 +342,9 @@ err:
 	return NULL;
 }
 
-sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
-		unsigned int nr_args, ...)
+static sheep_t call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args)
 {
-	unsigned int nr = nr_args;
 	sheep_t value;
-	va_list ap;
-
-	va_start(ap, nr_args);
-	while (nr--)
-		sheep_vector_push(&vm->stack, va_arg(ap, sheep_t));
-	va_end(ap);
 
 	switch (precall(vm, callable, nr_args, &value)) {
 	case -1:
@@ -363,6 +355,32 @@ sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
 	default:
 		return sheep_eval(vm, callable);
 	}
+}
+
+sheep_t sheep_apply(struct sheep_vm *vm, sheep_t callable,
+		struct sheep_list *args)
+{
+	unsigned int nr_args = 0;
+
+	while (args->head) {
+		sheep_vector_push(&vm->stack, args->head);
+		nr_args++;
+		args = sheep_list(args->tail);
+	}
+	return call(vm, callable, nr_args);
+}
+
+sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
+		unsigned int nr_args, ...)
+{
+	unsigned int nr = nr_args;
+	va_list ap;
+
+	va_start(ap, nr_args);
+	while (nr--)
+		sheep_vector_push(&vm->stack, va_arg(ap, sheep_t));
+	va_end(ap);
+	return call(vm, callable, nr_args);
 }
 
 void sheep_evaluator_exit(struct sheep_vm *vm)

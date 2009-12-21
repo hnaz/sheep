@@ -305,6 +305,18 @@ static sheep_t builtin_find(struct sheep_vm *vm, unsigned int nr_args)
 	return result;
 }
 
+/* (apply function list) */
+static sheep_t builtin_apply(struct sheep_vm *vm, unsigned int nr_args)
+{
+	struct sheep_list *list;
+	sheep_t callable;
+
+	if (sheep_unpack_stack("apply", vm, nr_args, "cL", &callable, &list))
+		return NULL;
+
+	return sheep_apply(vm, callable, list);
+}
+
 /* (map function list) */
 static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -380,6 +392,7 @@ void sheep_list_builtins(struct sheep_vm *vm)
 	sheep_vm_function(vm, "head", builtin_head);
 	sheep_vm_function(vm, "tail", builtin_tail);
 	sheep_vm_function(vm, "find", builtin_find);
+	sheep_vm_function(vm, "apply", builtin_apply);
 	sheep_vm_function(vm, "map", builtin_map);
 	sheep_vm_function(vm, "reduce", builtin_reduce);
 }

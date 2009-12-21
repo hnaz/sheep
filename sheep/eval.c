@@ -18,8 +18,8 @@
 
 #include <sheep/eval.h>
 
-static struct sheep_indirect *
-open_indirect(struct sheep_vm *vm, unsigned long index)
+static struct sheep_indirect *open_indirect(struct sheep_vm *vm,
+					unsigned long index)
 {
 	struct sheep_indirect *new, *prev = NULL, *next = vm->pending;
 
@@ -46,8 +46,8 @@ open_indirect(struct sheep_vm *vm, unsigned long index)
 	return new;
 }
 
-static struct sheep_indirect *
-inherit_indirect(struct sheep_function *parent, unsigned int slot)
+static struct sheep_indirect *inherit_indirect(struct sheep_function *parent,
+					unsigned int slot)
 {
 	struct sheep_indirect *indirect;
 
@@ -141,8 +141,8 @@ static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
 	return 0;
 }
 
-static void
-splice_arguments(struct sheep_vm *vm, unsigned long basep, unsigned int nr_args)
+static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
+			unsigned int nr_args)
 {
 	unsigned int t;
 
@@ -152,8 +152,8 @@ splice_arguments(struct sheep_vm *vm, unsigned long basep, unsigned int nr_args)
 	vm->stack.nr_items = basep + nr_args;
 }
 
-static unsigned long
-finalize_frame(struct sheep_vm *vm, struct sheep_function *function)
+static unsigned long finalize_frame(struct sheep_vm *vm,
+				struct sheep_function *function)
 {
 	unsigned int nr;
 
@@ -342,8 +342,8 @@ err:
 	return NULL;
 }
 
-sheep_t
-sheep_call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args, ...)
+sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
+		unsigned int nr_args, ...)
 {
 	unsigned int nr = nr_args;
 	sheep_t value;

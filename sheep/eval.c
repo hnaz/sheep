@@ -19,7 +19,7 @@
 #include <sheep/eval.h>
 
 static struct sheep_indirect *
-note_pending(struct sheep_vm *vm, unsigned long index)
+open_indirect(struct sheep_vm *vm, unsigned long index)
 {
 	struct sheep_indirect *new, *prev = NULL, *next = vm->pending;
 
@@ -46,21 +46,17 @@ note_pending(struct sheep_vm *vm, unsigned long index)
 	return new;
 }
 
-static void close_pending(struct sheep_vm *vm, unsigned long basep)
+static struct sheep_indirect *
+inherit_indirect(struct sheep_function *parent, unsigned int slot)
 {
-	while (vm->pending) {
-		struct sheep_indirect *indirect = vm->pending;
-		unsigned long index;
+	struct sheep_indirect *indirect;
 
-		index = indirect->value.live.index;
-		if (index < basep)
-			break;
-
-		vm->pending = indirect->value.live.next;
-
-		indirect->count = -indirect->count;
-		indirect->value.closed = vm->stack.items[index];
-	}
+	indirect = parent->foreign->items[slot];
+	if (indirect->count < 0)
+		indirect->count--;
+	else
+		indirect->count++;
+	return indirect;
 }
 
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
@@ -82,24 +78,12 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 	for (i = 0; i < freevars->nr_items; i++) {
 		struct sheep_indirect *indirect;
 		struct sheep_freevar *freevar;
-		unsigned int dist, slot;
 
 		freevar = freevars->items[i];
-		dist = freevar->dist;
-		slot = freevar->slot;
-		/*
-		 * Immediate child: parent is on the callstack.  Grand
-		 * child: use the parent's link to the foreign slot.
-		 */
-		if (dist == 1)
-			indirect = note_pending(vm, basep + slot);
-		else {
-			indirect = parent->foreign->items[slot];
-			if (indirect->count < 0)	/* live */
-				indirect->count--;
-			else				/* closed */
-				indirect->count++;
-		}
+		if (freevar->dist == 1)
+			indirect = open_indirect(vm, basep + freevar->slot);
+		else
+			indirect = inherit_indirect(parent, freevar->slot);
 		sheep_vector_push(indirects, indirect);
 	}
 
@@ -108,6 +92,23 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 	closure->foreign = indirects;
 
 	return sheep;
+}
+
+static void close_indirect(struct sheep_vm *vm, unsigned long basep)
+{
+	while (vm->pending) {
+		struct sheep_indirect *indirect = vm->pending;
+		unsigned long index;
+
+		index = indirect->value.live.index;
+		if (index < basep)
+			break;
+
+		vm->pending = indirect->value.live.next;
+
+		indirect->count = -indirect->count;
+		indirect->value.closed = vm->stack.items[index];
+	}
 }
 
 static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
@@ -249,7 +250,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 				sheep_vector_push(&vm->stack, tmp);
 				break;
 			default:
-				close_pending(vm, basep);
+				close_indirect(vm, basep);
 				splice_arguments(vm, basep, arg);
 
 				sheep_unprotect(vm, function);
@@ -293,7 +294,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			sheep_bug_on(vm->stack.nr_items -
 				basep - current->nr_locals != 1);
 
-			close_pending(vm, basep);
+			close_indirect(vm, basep);
 
 			if (current->nr_locals) {
 				vm->stack.items[basep] =

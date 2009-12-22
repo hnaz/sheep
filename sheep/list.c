@@ -364,7 +364,7 @@ static sheep_t builtin_reduce(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, list_);
 
 	list = sheep_list(list_);
-	if (sheep_unpack_list("reduce", list, "oor!", &a, &b, &list))
+	if (sheep_unpack_list("reduce", list, "oor", &a, &b, &list))
 		goto out;
 
 	value = sheep_call(vm, reducer, 2, a, b);

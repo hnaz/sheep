@@ -401,7 +401,8 @@ static int compile_load(struct sheep_compile *compile,
 	sheep_t mod;
 
 	if (context->parent) {
-		fprintf(stderr, "load: not on toplevel\n");
+		sheep_compiler_error(compile, args->head,
+				"load: not on toplevel");
 		return -1;
 	}
 

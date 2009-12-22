@@ -16,7 +16,7 @@ static sheep_t builtin_length(struct sheep_vm *vm, unsigned int nr_args)
 {
 	unsigned int len;
 	sheep_t seq;
-	
+
 	if (sheep_unpack_stack("length", vm, nr_args, "q", &seq))
 		return NULL;
 

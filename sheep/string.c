@@ -289,7 +289,7 @@ static sheep_t builtin_print(struct sheep_vm *vm, unsigned int nr_args)
 	puts("");
 	vm->stack.nr_items -= nr_args;
 
-	return &sheep_true;
+	return &sheep_nil;
 }
 
 void sheep_string_builtins(struct sheep_vm *vm)

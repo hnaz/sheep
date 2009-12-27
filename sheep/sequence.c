@@ -52,6 +52,7 @@ static sheep_t builtin_reverse(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_sequence(seq)->reverse(vm, seq);
 }
 
+/* (nth index sequence) */
 static sheep_t builtin_nth(struct sheep_vm *vm, unsigned int nr_args)
 {
 	unsigned long n;

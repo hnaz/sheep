@@ -276,6 +276,26 @@ static sheep_t builtin_tail(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep;
 }
 
+/* (position item list) */
+static sheep_t builtin_position(struct sheep_vm *vm, unsigned int nr_args)
+{
+	unsigned long position = 0;
+	struct sheep_list *list;
+	sheep_t item;
+
+	if (sheep_unpack_stack("position", vm, nr_args, "oL", &item, &list))
+		return NULL;
+
+	while (list->head) {
+		if (sheep_equal(item, list->head))
+			return sheep_make_number(vm, position);
+		position++;
+		list = sheep_list(list->tail);
+	}
+
+	return &sheep_nil;
+}
+
 /* (find predicate list) */
 static sheep_t builtin_find(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -391,6 +411,7 @@ void sheep_list_builtins(struct sheep_vm *vm)
 	sheep_vm_function(vm, "list", builtin_list);
 	sheep_vm_function(vm, "head", builtin_head);
 	sheep_vm_function(vm, "tail", builtin_tail);
+	sheep_vm_function(vm, "position", builtin_position);
 	sheep_vm_function(vm, "find", builtin_find);
 	sheep_vm_function(vm, "apply", builtin_apply);
 	sheep_vm_function(vm, "map", builtin_map);

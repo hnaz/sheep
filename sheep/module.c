@@ -5,6 +5,7 @@
  */
 #include <sheep/compile.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/vector.h>
 #include <sheep/eval.h>
 #include <sheep/read.h>
@@ -43,8 +44,14 @@ const struct sheep_type sheep_module_type = {
 	.format = format_module,
 };
 
-static int load_so(struct sheep_vm *vm, const char *path,
-		struct sheep_module *mod)
+enum {
+	LOAD_OK,
+	LOAD_SKIP,
+	LOAD_FAIL,
+};
+
+static unsigned int load_so(struct sheep_vm *vm, const char *path,
+			struct sheep_module *mod)
 {
 	int (*init)(struct sheep_vm *, struct sheep_module *);
 	void *handle;
@@ -52,7 +59,7 @@ static int load_so(struct sheep_vm *vm, const char *path,
 	handle = dlopen(path, RTLD_NOW);
 	if (!handle) {
 		fprintf(stderr, "load: dlopen(%s) failed?!\n", path);
-		return -1;
+		return LOAD_SKIP;
 	}
 
 	init = dlsym(handle, "init");
@@ -65,22 +72,24 @@ static int load_so(struct sheep_vm *vm, const char *path,
 		goto err;
 
 	mod->handle = handle;
-	return 0;
+	return LOAD_OK;
 err:
 	dlclose(handle);
-	return -1;
+	return LOAD_FAIL;
 }
 
-static int load_sheep(struct sheep_vm *vm, const char *path,
-		struct sheep_module *mod)
+static unsigned int load_sheep(struct sheep_vm *vm, const char *path,
+			struct sheep_module *mod)
 {
 	struct sheep_reader reader;
-	int ret = -1;
 	FILE *fp;
+	int ret;
 
 	fp = fopen(path, "r");
 	if (!fp)
-		goto out;
+		return LOAD_SKIP;
+
+	ret = LOAD_FAIL;
 
 	sheep_reader_init(&reader, path, fp);
 	while (1) {
@@ -101,33 +110,71 @@ static int load_sheep(struct sheep_vm *vm, const char *path,
 		if (!sheep_eval(vm, fun))
 			goto out_file;
 	}
-	ret = 0;
+	ret = LOAD_OK;
 out_file:
 	fclose(fp);
-out:
 	return ret;
 }
+
+static unsigned int module_load(struct sheep_vm *vm, const char *path,
+				const char *name, struct sheep_module *mod)
+{
+	char filename[1024];
+	int ret = LOAD_SKIP;
+
+	snprintf(filename, sizeof(filename), "%s/%s.so", path, name);
+	if (!access(filename, R_OK)) {
+		ret = load_so(vm, filename, mod);
+		if (ret != LOAD_SKIP)
+			return ret;
+	}
+
+	snprintf(filename, sizeof(filename), "%s/%s.sheep", path, name);
+	if (!access(filename, R_OK))
+		ret = load_sheep(vm, filename, mod);
+	return ret;
+}
+
+static unsigned int load_path;
 
 sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 {
 	struct sheep_module *mod;
-	char path[1024];
+	struct sheep_list *paths;
+	sheep_t paths_;
 
 	mod = sheep_zalloc(sizeof(struct sheep_module));
 	mod->name = sheep_strdup(name);
 
-	sprintf(path, "./%s.so", name);
-	if (!access(path, R_OK)) {
-		if (!load_so(vm, path, mod))
-			goto found;
-	} else {
-		sprintf(path, "%s.sheep", name);
-		if (!access(path, R_OK)) {
-			if (!load_sheep(vm, path, mod))
-				goto found;
-		} else
-			fprintf(stderr, "load: module %s not found\n", name);
+	paths_ = vm->globals.items[load_path];
+	if (sheep_type(paths_) != &sheep_list_type) {
+		fprintf(stderr, "load: load-path is not a list\n");
+		goto err;
 	}
+
+	paths = sheep_list(paths_);
+	while (paths->head) {
+		const char *path;
+
+		if (sheep_type(paths->head) != &sheep_string_type) {
+			fprintf(stderr, "load: bogus load-path contents\n");
+			goto err;
+		}
+
+		path = sheep_rawstring(paths->head);
+		switch (module_load(vm, path, name, mod)) {
+		case LOAD_OK:
+			goto found;
+		case LOAD_FAIL:
+			goto err;
+		case LOAD_SKIP:
+		default:
+			paths = sheep_list(paths->tail);
+		}
+	}
+
+	fprintf(stderr, "load: %s not found\n", name);
+err:		
 	do_free_module(mod);
 	return NULL;
 found:
@@ -156,4 +203,15 @@ unsigned int sheep_module_shared(struct sheep_vm *vm,
 	slot = sheep_vector_push(&vm->globals, sheep);
 	sheep_map_set(&module->env, name, (void *)(unsigned long)slot);
 	return slot;
+}
+
+void sheep_module_builtins(struct sheep_vm *vm)
+{
+	load_path = sheep_module_shared(vm, &vm->main,
+					"load-path",
+					sheep_make_list(vm,
+							sheep_make_string(vm, "."),
+							sheep_make_list(vm,
+									sheep_make_string(vm, "examples"),
+									sheep_make_list(vm, NULL, NULL))));
 }

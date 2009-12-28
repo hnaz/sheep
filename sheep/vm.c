@@ -81,6 +81,7 @@ void sheep_vm_init(struct sheep_vm *vm, int ac, char **av)
 	sheep_list_builtins(vm);
 	sheep_sequence_builtins(vm);
 	sheep_function_builtins(vm);
+	sheep_module_builtins(vm);
 	setup_argv(vm, ac, av);
 }
 

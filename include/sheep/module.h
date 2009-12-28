@@ -33,4 +33,6 @@ static inline void sheep_module_function(struct sheep_vm *vm,
 			sheep_make_alien(vm, alien, name));
 }
 
+void sheep_module_builtins(struct sheep_vm *);
+
 #endif /* _SHEEP_MODULE_H */

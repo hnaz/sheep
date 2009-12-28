@@ -52,9 +52,8 @@ take the difference from the next multiple of ten."
       (print base (ean-checksum base))
       (ean-checksum-range (+ base 1) (- count 1)))))
 
-# xxx: should be able to check for being loaded or executed?  or just
-# have the library in libean.sheep and the executable in ean.sheep?
-(if (not (= (length argv) 3))
-  (print "usage: " (nth 0 argv) " base count")
-  (ean-checksum-range (number (nth 1 argv))
-                      (number (nth 2 argv))))
+(if (not module)
+  (if (not (= (length argv) 3))
+    (print "usage: " (nth 0 argv) " base count")
+    (ean-checksum-range (number (nth 1 argv))
+                        (number (nth 2 argv)))))

@@ -145,6 +145,7 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 
 	mod = sheep_zalloc(sizeof(struct sheep_module));
 	mod->name = sheep_strdup(name);
+	sheep_module_shared(vm, mod, "module", sheep_make_string(vm, name));
 
 	paths_ = vm->globals.items[load_path];
 	if (sheep_type(paths_) != &sheep_list_type) {
@@ -214,4 +215,5 @@ void sheep_module_builtins(struct sheep_vm *vm)
 							sheep_make_list(vm,
 									sheep_make_string(vm, "examples"),
 									sheep_make_list(vm, NULL, NULL))));
+	sheep_vm_variable(vm, "module", &sheep_nil);
 }

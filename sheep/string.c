@@ -67,11 +67,29 @@ static sheep_t string_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
 	return sheep_make_string(vm, new);
 }
 
+static sheep_t string_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
+{
+	const char *str, *pos;
+
+	if (sheep_type(item) != &sheep_string_type) {
+		fprintf(stderr, "position: string can not contain %s\n",
+			sheep_type(item)->name);
+		return NULL;
+	}
+
+	str = sheep_rawstring(sheep);
+	pos = strstr(str, sheep_rawstring(item));
+	if (pos)
+		return sheep_make_number(vm, pos - str);
+	return &sheep_nil;
+}
+
 static const struct sheep_sequence string_sequence = {
 	.length = string_length,
 	.concat = string_concat,
 	.reverse = string_reverse,
 	.nth = string_nth,
+	.position = string_position,
 };
 
 static void free_string(struct sheep_vm *vm, sheep_t sheep)

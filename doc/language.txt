@@ -72,8 +72,6 @@
 
 (tail list)
 
-(position item list)
-
 (find predicate list)
 
 (map function list)
@@ -87,6 +85,8 @@
 (reverse sequence)
 
 IMPL: (slice from to sequence)
+
+(position item sequence)
 
 IMPL: (remove item sequence)
 

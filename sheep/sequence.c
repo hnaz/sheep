@@ -64,10 +64,22 @@ static sheep_t builtin_nth(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_sequence(seq)->nth(vm, n, seq);
 }
 
+/* (position item sequence) */
+static sheep_t builtin_position(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t item, seq;
+
+	if (sheep_unpack_stack("position", vm, nr_args, "oq", &item, &seq))
+		return NULL;
+
+	return sheep_sequence(seq)->position(vm, item, seq);
+}
+
 void sheep_sequence_builtins(struct sheep_vm *vm)
 {
 	sheep_vm_function(vm, "length", builtin_length);
 	sheep_vm_function(vm, "concat", builtin_concat);
 	sheep_vm_function(vm, "reverse", builtin_reverse);
 	sheep_vm_function(vm, "nth", builtin_nth);
+	sheep_vm_function(vm, "position", builtin_position);
 }

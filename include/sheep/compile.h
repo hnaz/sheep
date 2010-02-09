@@ -46,7 +46,7 @@ struct sheep_context {
  * @sheep: object to compile
  */
 
-void sheep_compiler_error(struct sheep_compile *, sheep_t, const char *, ...);
+void sheep_parser_error(struct sheep_compile *, sheep_t, const char *, ...);
 
 static inline int sheep_compile_object(struct sheep_compile *compile,
 				struct sheep_function *function,

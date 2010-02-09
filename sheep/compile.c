@@ -52,28 +52,32 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 	return sheep_make_object(vm, &sheep_function_type, function);
 }
 
-void sheep_compiler_error(struct sheep_compile *compile, sheep_t sheep,
+void sheep_parser_error(struct sheep_compile *compile, sheep_t culprit,
 			const char *fmt, ...)
 {
 	struct sheep_expr *expr = compile->expr;
-	unsigned long offset;
+	unsigned long position;
+	const char *repr;
 	va_list ap;
 
 	if (sheep_type(expr->object) == &sheep_list_type) {
-		struct sheep_list *form;
+		struct sheep_list *list = sheep_list(expr->object);
 
-		form = sheep_list(expr->object);
-		offset = 1; /* list itself is at 0 */
-		sheep_list_search(form, sheep, &offset);
+		position = 1; /* list itself is at 0 */
+		sheep_list_search(list, culprit, &position);
 	} else
-		offset = 0;
+		position = 0;
 
 	fprintf(stderr, "%s:%lu: ", expr->filename,
-		(unsigned long)expr->lines.items[offset]);
+		(unsigned long)expr->lines.items[position]);
+
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	fprintf(stderr, "\n");
+
+	repr = sheep_repr(culprit);
+	fprintf(stderr, " `%s'\n", repr);
+	sheep_free(repr);
 }
 
 int sheep_compile_constant(struct sheep_compile *compile,
@@ -168,7 +172,7 @@ static int compile_simple_name(struct sheep_compile *compile,
 
 	switch (lookup_env(compile, context, name, &dist, &slot)) {
 	case ENV_NONE:
-		sheep_compiler_error(compile, sheep, "unbound name: %s", name);
+		sheep_parser_error(compile, sheep, "unbound name");
 		return -1;
 	case ENV_LOCAL:
 		if (set)
@@ -188,8 +192,8 @@ static int compile_simple_name(struct sheep_compile *compile,
 		break;
 	case ENV_BUILTIN:
 		if (set) {
-			sheep_compiler_error(compile, sheep,
-					"read-only bound name: %s", name);
+			sheep_parser_error(compile, sheep,
+					"can not change read-only binding to");
 			return -1;
 		}
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
@@ -207,7 +211,6 @@ static int compile_name(struct sheep_compile *compile,
 	struct sheep_name *name;
 	unsigned int i = 0;
 	void *entry;
-	char *tmp;
 
 	name = sheep_name(sheep);
 	if (name->nr_parts == 1)
@@ -236,9 +239,7 @@ static int compile_name(struct sheep_compile *compile,
 	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
 	return 0;
 err:
-	tmp = sheep_repr(sheep);
-	sheep_compiler_error(compile, sheep, "unbound name: %s", tmp);
-	sheep_free(tmp);
+	sheep_parser_error(compile, sheep, "unbound");
 	return -1;
 }
 
@@ -410,26 +411,17 @@ static int parse(struct sheep_compile *compile, struct sheep_list *form,
 {
 	unsigned int ret;
 	sheep_t mismatch;
-	const char *name;
 
 	ret = __parse(child, items, &mismatch, ap);
 	if (ret == PARSE_OK)
 		return 0;
 
-	name = sheep_repr(form->head);
-	if (ret == PARSE_MISMATCH) {
-		const char *culprit;
-
-		culprit = sheep_repr(mismatch);
-		sheep_compiler_error(compile, mismatch,
-				"%s: parser error near `%s'",
-				name, culprit);
-		sheep_free(culprit);
-	} else
-		sheep_compiler_error(compile, child->head,
-				"%s: too %s arguments", name,
+	if (ret == PARSE_MISMATCH)
+		sheep_parser_error(compile, mismatch, "parser error at");
+	else
+		sheep_parser_error(compile, form->head, "too %s arguments to",
 				ret == PARSE_TOO_MANY ? "many" : "few");
-	sheep_free(name);
+
 	return -1;
 }
 

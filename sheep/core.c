@@ -206,21 +206,22 @@ static int compile_function(struct sheep_compile *compile,
 	childfun = sheep_data(sheep);
 
 	while (parms->head) {
+		struct sheep_list *rest;
 		unsigned int slot;
 		const char *parm;
 
-		if (__sheep_parse(compile, args, parms, "sr", &parm, &parms))
+		if (__sheep_parse(compile, args, parms, "sr", &parm, &rest))
 			goto out;
 
 		slot = sheep_function_local(childfun);
 		if (sheep_map_set(&env, parm, (void *)(unsigned long)slot)) {
-			sheep_compiler_error(compile, parms->head,
-					"function: duplicate parameter `%s'",
-					parm);
+			sheep_parser_error(compile, parms->head,
+					"duplicate function parameter");
 			goto out;
 		}
 
 		childfun->nr_parms++;
+		parms = rest;
 	}
 
 	cslot = sheep_vm_constant(compile->vm, sheep);
@@ -401,8 +402,7 @@ static int compile_load(struct sheep_compile *compile,
 	sheep_t mod;
 
 	if (context->parent) {
-		sheep_compiler_error(compile, args->head,
-				"load: not on toplevel");
+		sheep_parser_error(compile, args->head, "non-toplevel");
 		return -1;
 	}
 

@@ -24,12 +24,6 @@ static int hash(const char *name)
 	return key < 0 ? -key : key;
 }
 
-enum access {
-	MAP_READ,
-	MAP_CREATE,
-	MAP_DELETE,
-};
-
 static struct sheep_map_entry **find(struct sheep_map *map,
 				const char *name, int *create)
 {

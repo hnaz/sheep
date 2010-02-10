@@ -35,7 +35,7 @@
 	     (if (zerop (car state))
 		 0
 	       (goto-char (1+ (nth 1 state)))
-	       (if (looking-at "\\(block\\|if\\|with\\|function\\)\\>")
+	       (if (looking-at "\\(block\\|with\\|variable\\|function\\|if\\)\\>")
 		   ;; Block start
 		   (1+ (current-column))
 		 (forward-sexp)

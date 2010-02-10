@@ -12,7 +12,6 @@
 #include <sheep/read.h>
 #include <sheep/map.h>
 #include <sheep/vm.h>
-#include <stdarg.h>
 
 sheep_t __sheep_compile(struct sheep_vm *, struct sheep_module *,
 			struct sheep_expr *);
@@ -46,8 +45,6 @@ struct sheep_context {
  * @sheep: object to compile
  */
 
-void sheep_parser_error(struct sheep_compile *, sheep_t, const char *, ...);
-
 static inline int sheep_compile_object(struct sheep_compile *compile,
 				struct sheep_function *function,
 				struct sheep_context *context, sheep_t sheep)
@@ -65,10 +62,5 @@ int sheep_compile_list(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
 
 void sheep_propagate_foreigns(struct sheep_function *, struct sheep_function *);
-
-int __sheep_parse(struct sheep_compile *, struct sheep_list *,
-		struct sheep_list *, const char *, ...);
-int sheep_parse(struct sheep_compile *, struct sheep_list *,
-		const char *, ...);
 
 #endif /* _SHEEP_COMPILE_H */

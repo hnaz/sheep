@@ -6,6 +6,7 @@
 #include <sheep/function.h>
 #include <sheep/compile.h>
 #include <sheep/module.h>
+#include <sheep/parse.h>
 #include <sheep/code.h>
 #include <sheep/list.h>
 #include <sheep/name.h>

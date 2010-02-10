@@ -1,0 +1,9 @@
+(variable test
+  (with (nr 1)
+    (function (result)
+      (print nr ": " (if result "ok" "failed"))
+      (set nr (+ nr 1)))))
+
+# (block
+#   (test (= 1 0))
+#   (test (= 1 1)))

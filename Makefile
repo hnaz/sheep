@@ -87,7 +87,7 @@ install-lib: $(lib)
 	mkdir -p $(DESTDIR)$(libdir)/sheep-$(VERSION)
 	cp $^ $(DESTDIR)$(libdir)/sheep-$(VERSION)
 
-$(lib): sheep/libsheep-$(VERSION).so
+$(filter %.so, $(lib)): sheep/libsheep-$(VERSION).so
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -Lsheep -o $@ $(basename $@).c		\
 			-lsheep-$(VERSION) -shared			\

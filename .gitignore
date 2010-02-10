@@ -2,3 +2,4 @@ sheep/*.o
 sheep/*.so
 sheep/sheep
 sheep/make.deps
+include/sheep/config.h

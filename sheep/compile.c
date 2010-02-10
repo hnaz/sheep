@@ -322,6 +322,25 @@ int sheep_compile_list(struct sheep_compile *compile,
 	return compile_call(compile, function, context, list);
 }
 
+/**
+ * sheep_propagate_foreigns
+ * @function: container function
+ * @childfun: newly defined child of @function
+ *
+ * This is called for every nested function with free variable
+ * references, the foreign slots propagate upwards recursively.
+ *
+ * (function one (x)
+ *   (function two ()
+ *     (function three ()
+ *       x)))
+ *
+ * At the time (three) is defined, (one) with its `x' is long gone.
+ * The reference from (three) to `x' must be relayed through (two).
+ *
+ * Allocate a foreign slot from (two) to `x' and relocate the
+ * reference in (three) to the intermediate slot.
+ */
 void sheep_propagate_foreigns(struct sheep_function *function,
 			struct sheep_function *childfun)
 {
@@ -331,10 +350,12 @@ void sheep_propagate_foreigns(struct sheep_function *function,
 		struct sheep_freevar *var;
 
 		var = childfun->foreign->items[i];
-		/* var->slot indexes a local slot of @function */
 		if (var->dist == 1)
 			continue;
-		/* var->slot indexes a foreign slot of @function */
+		/*
+		 * Relocate the reference from the child through a
+		 * foreign reference in the immediate parent.
+		 */
 		var->slot = slot_foreign(function, var->dist - 1, var->slot);
 	}
 }

@@ -18,6 +18,17 @@
 
 #include <sheep/eval.h>
 
+/**
+ * open_indirect
+ * @vm: runtime
+ * @index: stack index into @vm->stack.items
+ *
+ * Open an indirect pointer to the stack slot at @index.  The value
+ * will be preserved when the slot is about to leave the stack.
+ *
+ * Returns an indirect pointer descriptor shared by every function
+ * referencing @index indirectly.
+ */
 static struct sheep_indirect *open_indirect(struct sheep_vm *vm,
 					unsigned long index)
 {
@@ -46,19 +57,6 @@ static struct sheep_indirect *open_indirect(struct sheep_vm *vm,
 	return new;
 }
 
-static struct sheep_indirect *inherit_indirect(struct sheep_function *parent,
-					unsigned int slot)
-{
-	struct sheep_indirect *indirect;
-
-	indirect = parent->foreign->items[slot];
-	if (indirect->count < 0)
-		indirect->count--;
-	else
-		indirect->count++;
-	return indirect;
-}
-
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 		struct sheep_function *parent, sheep_t sheep)
 {
@@ -78,12 +76,40 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 	for (i = 0; i < freevars->nr_items; i++) {
 		struct sheep_indirect *indirect;
 		struct sheep_freevar *freevar;
-
+		/*
+		 * Okay, here we translate lexical coordinates of free
+		 * variable references to indirect pointers into the
+		 * stack or to slots that already left the stack.
+		 *
+		 * If the referenced slot is bound by @parent,
+		 * i.e. the reference distance is one, we know that
+		 * @parent is living on the stack right now and
+		 * establish an indirect pointer to its local slot
+		 * identified by freevar->slot.
+		 *
+		 * Otherwise, the reference distance is bigger and
+		 * @parent has the slot not bound itself.  In this
+		 * case, freevar->slot identifies a _foreign_ slot in
+		 * @parent.  It exists in any case: either @parent
+		 * refers to the value itself or it kindly relays the
+		 * reference for us.  See sheep_propagate_foreigns()
+		 * and how it is used.
+		 */
 		freevar = freevars->items[i];
 		if (freevar->dist == 1)
 			indirect = open_indirect(vm, basep + freevar->slot);
-		else
-			indirect = inherit_indirect(parent, freevar->slot);
+		else {
+			indirect = parent->foreign->items[freevar->slot];
+			/*
+			 * The value slot might already be closed
+			 * over, which is reflected by the sign of the
+			 * use count.  Take care of it.
+			 */
+			if (indirect->count < 0)
+				indirect->count--;
+			else
+				indirect->count++;
+		}
 		sheep_vector_push(indirects, indirect);
 	}
 

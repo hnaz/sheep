@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/function.h>
+#include <sheep/foreign.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
 #include <sheep/vm.h>

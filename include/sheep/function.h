@@ -12,22 +12,6 @@
 
 struct sheep_vm;
 
-struct sheep_freevar {
-	unsigned int dist;
-	unsigned int slot;
-};
-
-struct sheep_indirect {
-	int count;
-	union {
-		struct {
-			unsigned int index;
-			struct sheep_indirect *next;
-		} live;
-		sheep_t closed;
-	} value;
-};
-
 struct sheep_function {
 	struct sheep_code code;
 	unsigned int nr_locals;

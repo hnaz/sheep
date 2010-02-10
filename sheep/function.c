@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
+#include <sheep/foreign.h>
 #include <sheep/object.h>
 #include <sheep/unpack.h>
 #include <sheep/bool.h>
@@ -53,68 +54,12 @@ const struct sheep_type sheep_function_type = {
 	.format = format_function,
 };
 
-static void mark_indirect(struct sheep_vector *foreign)
-{
-	unsigned int i;
-
-	for (i = 0; i < foreign->nr_items; i++) {
-		struct sheep_indirect *indirect;
-
-		indirect = foreign->items[i];
-		if (indirect->count > 0)
-			sheep_mark(indirect->value.closed);
-	}
-}
-
 static void mark_closure(sheep_t sheep)
 {
 	struct sheep_function *closure;
 
 	closure = sheep_data(sheep);
-	mark_indirect(closure->foreign);
-}
-
-static void unlink_pending(struct sheep_vm *vm, struct sheep_indirect *indirect)
-{
-	struct sheep_indirect *prev = NULL, *this = vm->pending;
-
-	while (this) {
-		struct sheep_indirect *next;
-
-		next = this->value.live.next;
-		if (this == indirect) {
-			if (prev)
-				prev->value.live.next = next;
-			else
-				vm->pending = next;
-			return;
-		}
-		prev = this;
-		this = next;
-	}
-	sheep_bug("unqueued live foreign reference");
-}
-
-static void put_indirect(struct sheep_vm *vm, struct sheep_vector *foreign)
-{
-	unsigned int i;
-
-	for (i = 0; i < foreign->nr_items; i++) {
-		struct sheep_indirect *indirect;
-
-		indirect = foreign->items[i];
-		if (indirect->count < 0) {	/* live */
-			if (++indirect->count == 0) {
-				unlink_pending(vm, indirect);
-				sheep_free(indirect);
-			}
-		} else {			/* closed */
-			if (--indirect->count == 0)
-				sheep_free(indirect);
-		}
-	}
-	sheep_free(foreign->items);
-	sheep_free(foreign);
+	sheep_foreign_mark(closure->foreign);
 }
 
 static void free_closure(struct sheep_vm *vm, sheep_t sheep)
@@ -122,7 +67,7 @@ static void free_closure(struct sheep_vm *vm, sheep_t sheep)
 	struct sheep_function *closure;
 
 	closure = sheep_data(sheep);
-	put_indirect(vm, closure->foreign);
+	sheep_foreign_release(vm, closure->foreign);
 	sheep_free(closure->name);
 	sheep_free(closure);
 }

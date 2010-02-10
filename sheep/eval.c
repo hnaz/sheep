@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/function.h>
+#include <sheep/foreign.h>
 #include <sheep/object.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
@@ -18,123 +19,20 @@
 
 #include <sheep/eval.h>
 
-/**
- * open_indirect
- * @vm: runtime
- * @index: stack index into @vm->stack.items
- *
- * Open an indirect pointer to the stack slot at @index.  The value
- * will be preserved when the slot is about to leave the stack.
- *
- * Returns an indirect pointer descriptor shared by every function
- * referencing @index indirectly.
- */
-static struct sheep_indirect *open_indirect(struct sheep_vm *vm,
-					unsigned long index)
-{
-	struct sheep_indirect *new, *prev = NULL, *next = vm->pending;
-
-	while (next) {
-		if (index == next->value.live.index) {
-			next->count--;
-			return next;
-		}
-		if (index > next->value.live.index)
-			break;
-		prev = next;
-		next = next->value.live.next;
-	}
-
-	new = sheep_malloc(sizeof(struct sheep_indirect));
-	new->count = -1;
-	new->value.live.index = index;
-	new->value.live.next = next;
-	if (prev)
-		prev->value.live.next = new;
-	else
-		vm->pending = new;
-
-	return new;
-}
-
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 		struct sheep_function *parent, sheep_t sheep)
 {
-	struct sheep_function *function, *closure;
-	struct sheep_vector *freevars, *indirects;
-	unsigned int i;
-
-	sheep_bug_on(sheep_type(sheep) != &sheep_function_type);
-	function = sheep_data(sheep);
+	struct sheep_function *function = sheep_data(sheep);
+	struct sheep_function *closure;
 
 	if (!function->foreign)
 		return sheep;
 
-	freevars = function->foreign;
-	indirects = sheep_zalloc(sizeof(struct sheep_vector));
-
-	for (i = 0; i < freevars->nr_items; i++) {
-		struct sheep_indirect *indirect;
-		struct sheep_freevar *freevar;
-		/*
-		 * Okay, here we translate lexical coordinates of free
-		 * variable references to indirect pointers into the
-		 * stack or to slots that already left the stack.
-		 *
-		 * If the referenced slot is bound by @parent,
-		 * i.e. the reference distance is one, we know that
-		 * @parent is living on the stack right now and
-		 * establish an indirect pointer to its local slot
-		 * identified by freevar->slot.
-		 *
-		 * Otherwise, the reference distance is bigger and
-		 * @parent has the slot not bound itself.  In this
-		 * case, freevar->slot identifies a _foreign_ slot in
-		 * @parent.  It exists in any case: either @parent
-		 * refers to the value itself or it kindly relays the
-		 * reference for us.  See sheep_propagate_foreigns()
-		 * and how it is used.
-		 */
-		freevar = freevars->items[i];
-		if (freevar->dist == 1)
-			indirect = open_indirect(vm, basep + freevar->slot);
-		else {
-			indirect = parent->foreign->items[freevar->slot];
-			/*
-			 * The value slot might already be closed
-			 * over, which is reflected by the sign of the
-			 * use count.  Take care of it.
-			 */
-			if (indirect->count < 0)
-				indirect->count--;
-			else
-				indirect->count++;
-		}
-		sheep_vector_push(indirects, indirect);
-	}
-
 	sheep = sheep_closure_function(vm, function);
 	closure = sheep_data(sheep);
-	closure->foreign = indirects;
+	closure->foreign = sheep_foreign_open(vm, basep, parent, function);
 
 	return sheep;
-}
-
-static void close_indirect(struct sheep_vm *vm, unsigned long basep)
-{
-	while (vm->pending) {
-		struct sheep_indirect *indirect = vm->pending;
-		unsigned long index;
-
-		index = indirect->value.live.index;
-		if (index < basep)
-			break;
-
-		vm->pending = indirect->value.live.next;
-
-		indirect->count = -indirect->count;
-		indirect->value.closed = vm->stack.items[index];
-	}
 }
 
 static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
@@ -230,7 +128,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			break;
 		case SHEEP_FOREIGN:
 			indirect = current->foreign->items[arg];
-			if (indirect->count > 0)
+			if (indirect->count < 0)
 				tmp = indirect->value.closed;
 			else {
 				unsigned long index;
@@ -243,7 +141,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 		case SHEEP_SET_FOREIGN:
 			tmp = sheep_vector_pop(&vm->stack);
 			indirect = current->foreign->items[arg];
-			if (indirect->count > 0)
+			if (indirect->count < 0)
 				indirect->value.closed = tmp;
 			else {
 				unsigned long index;
@@ -276,7 +174,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 				sheep_vector_push(&vm->stack, tmp);
 				break;
 			default:
-				close_indirect(vm, basep);
+				sheep_foreign_save(vm, basep);
 				splice_arguments(vm, basep, arg);
 
 				sheep_unprotect(vm, function);
@@ -320,7 +218,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			sheep_bug_on(vm->stack.nr_items -
 				basep - current->nr_locals != 1);
 
-			close_indirect(vm, basep);
+			sheep_foreign_save(vm, basep);
 
 			if (current->nr_locals) {
 				vm->stack.items[basep] =

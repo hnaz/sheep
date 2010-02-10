@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/function.h>
+#include <sheep/foreign.h>
 #include <sheep/compile.h>
 #include <sheep/module.h>
 #include <sheep/parse.h>
@@ -254,7 +255,7 @@ static int compile_function(struct sheep_compile *compile,
 	}
 	sheep_code_finalize(&childfun->code);
 	if (childfun->foreign)
-		sheep_propagate_foreigns(function, childfun);
+		sheep_foreign_propagate(function, childfun);
 out:
 	sheep_map_drain(&env);
 	return ret;

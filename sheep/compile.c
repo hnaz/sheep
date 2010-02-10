@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/function.h>
+#include <sheep/foreign.h>
 #include <sheep/vector.h>
 #include <sheep/parse.h>
 #include <sheep/code.h>
@@ -99,35 +100,6 @@ static enum env_level lookup_env(struct sheep_compile *compile,
 	return ENV_FOREIGN;
 }
 
-static unsigned int slot_foreign(struct sheep_function *function,
-				unsigned int dist, unsigned int slot)
-{
-	struct sheep_vector *foreign = function->foreign;
-	struct sheep_freevar *freevar;
-
-	if (!foreign) {
-		foreign = sheep_zalloc(sizeof(struct sheep_vector));
-		function->foreign = foreign;
-	} else {
-		unsigned int i;
-
-		for (i = 0; i < foreign->nr_items; i++) {
-			freevar = foreign->items[i];
-			if (freevar->dist != dist)
-				continue;
-			if (freevar->slot != slot)
-				continue;
-			return i;
-		}
-	}
-
-	freevar = sheep_malloc(sizeof(struct sheep_freevar));
-	freevar->dist = dist;
-	freevar->slot = slot;
-
-	return sheep_vector_push(foreign, freevar);
-}
-
 static int compile_simple_name(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context,
@@ -153,7 +125,7 @@ static int compile_simple_name(struct sheep_compile *compile,
 		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		break;
 	case ENV_FOREIGN:
-		slot = slot_foreign(function, dist, slot);
+		slot = sheep_foreign_slot(function, dist, slot);
 		if (set)
 			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
 		sheep_emit(&function->code, SHEEP_FOREIGN, slot);
@@ -288,42 +260,4 @@ int sheep_compile_list(struct sheep_compile *compile,
 		}
 	}
 	return compile_call(compile, function, context, list);
-}
-
-/**
- * sheep_propagate_foreigns
- * @function: container function
- * @childfun: newly defined child of @function
- *
- * This is called for every nested function with free variable
- * references, the foreign slots propagate upwards recursively.
- *
- * (function one (x)
- *   (function two ()
- *     (function three ()
- *       x)))
- *
- * At the time (three) is defined, (one) with its `x' is long gone.
- * The reference from (three) to `x' must be relayed through (two).
- *
- * Allocate a foreign slot from (two) to `x' and relocate the
- * reference in (three) to the intermediate slot.
- */
-void sheep_propagate_foreigns(struct sheep_function *function,
-			struct sheep_function *childfun)
-{
-	unsigned long i;
-
-	for (i = 0; i < childfun->foreign->nr_items; i++) {
-		struct sheep_freevar *var;
-
-		var = childfun->foreign->items[i];
-		if (var->dist == 1)
-			continue;
-		/*
-		 * Relocate the reference from the child through a
-		 * foreign reference in the immediate parent.
-		 */
-		var->slot = slot_foreign(function, var->dist - 1, var->slot);
-	}
 }

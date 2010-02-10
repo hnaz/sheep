@@ -23,11 +23,6 @@ static inline void *sheep_data(sheep_t sheep)
 	return (void *)(sheep->data & ~1);
 }
 
-static inline void sheep_set_data(sheep_t sheep, void *data)
-{
-	sheep->data = (unsigned long)data | (sheep->data & 1);
-}
-
 int sheep_test(sheep_t);
 int sheep_equal(sheep_t, sheep_t);
 

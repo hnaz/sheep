@@ -1,22 +1,29 @@
+# Versioning
 VERSION = 0.1
 NAME = Klaatu
 
+# Tools
 CC = gcc
 CPP = cpp
 CFLAGS = -O2 -pipe
 LDFLAGS =
 
+# Paths
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
+libdir = $(prefix)/lib
 
-S_CFLAGS = -Wall -Wextra -Wno-unused-parameter -fPIC $(CFLAGS)
-S_LDFLAGS = -ldl -rdynamic $(LDFLAGS)
+# Compilation parameters
+SCFLAGS = -Wall -Wextra -Wno-unused-parameter -fPIC $(CFLAGS)
+SLDFLAGS = -ldl $(LDFLAGS)
 
+# Debug
 ifeq ($(D),1)
-S_CFLAGS += -O0 -g
+SCFLAGS += -O0 -g
 endif
 
+# Build parameters
 ifeq ($(V),1)
 Q =
 cmd = $(2)
@@ -25,22 +32,27 @@ Q = @
 cmd = echo $(1); $(2)
 endif
 
-all: sheep
+# User targets
+all: libsheep sheep
 
-install: sheep
-	mkdir -p $(DESTDIR)$(bindir)
-	cp sheep/sheep $(DESTDIR)$(bindir)
+libsheep: sheep/libsheep-$(VERSION).so
 
 sheep: sheep/sheep
 
+# Build targets
 include sheep/Makefile
+libsheep-obj := $(addprefix sheep/, $(libsheep-obj))
 sheep-obj := $(addprefix sheep/, $(sheep-obj))
 
-sheep/sheep: $(sheep-obj)
+sheep/libsheep-$(VERSION).so: $(libsheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
-		$(CC) -o $@ $^ $(S_LDFLAGS))
+		$(CC) $(SCFLAGS) -o $@ $^ $(SLDFLAGS) -shared)
 
-$(sheep-obj): include/sheep/config.h sheep/make.deps
+sheep/sheep: libsheep $(sheep-obj)
+	$(Q)$(call cmd, "   LD     $@",					\
+		$(CC) $(SCFLAGS) -Lsheep -o $@ $(sheep-obj) -lsheep-$(VERSION))
+
+$(libsheep-obj): include/sheep/config.h sheep/make.deps
 
 include/sheep/config.h: Makefile
 	$(Q)$(call cmd, "   CF     $@",					\
@@ -51,23 +63,28 @@ include/sheep/config.h: Makefile
 sheep/make.deps:
 	$(Q)$(call cmd, "   MK     $@",					\
 		rm -f $@;						\
-		$(foreach obj,$(sheep-obj),				\
+		$(foreach obj,$(libsheep-obj),				\
 			$(CPP) -Iinclude -MM -MT $(obj)			\
 				$(basename $(obj)).c >> $@; ))
 
+# Cleanup
 ifneq ($(MAKECMDGOALS),clean)
 -include sheep/make.deps
 endif
 
-clean := sheep/sheep $(sheep-obj) include/sheep/config.h sheep/make.deps
+clean := sheep/libsheep-$(VERSION).so $(libsheep-obj)
+clean += sheep/sheep $(sheep-obj)
+clean += include/sheep/config.h sheep/make.deps
 
 clean:
 	$(Q)$(foreach subdir,$(sort $(dir $(clean))),			\
 		$(call cmd, "   CL     $(subdir)",			\
 			rm -f $(filter $(subdir)%,$(clean)); ))
 
+# Build library
 %.o: %.c
 	$(Q)$(call cmd, "   CC     $@",					\
-		$(CC) $(S_CFLAGS) -Iinclude -o $@ -c $<)
+		$(CC) $(SCFLAGS) -Iinclude -o $@ -c $<)
 
-.PHONY: all sheep clean
+# Misc
+.PHONY: all libsheep sheep clean

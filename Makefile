@@ -35,6 +35,8 @@ endif
 # User targets
 all: libsheep sheep lib
 
+install: install-libsheep install-sheep install-lib
+
 libsheep: sheep/libsheep-$(VERSION).so
 
 sheep: sheep/sheep
@@ -48,9 +50,18 @@ sheep/libsheep-$(VERSION).so: $(libsheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -o $@ $^ $(SLDFLAGS) -shared)
 
+install-libsheep: sheep/libsheep-$(VERSION).so
+	mkdir -p $(DESTDIR)$(libdir)
+	cp $^ $(DESTDIR)$(libdir)
+	ln -s $^ $(DESTDIR)$(libdir)/libsheep.so
+
 sheep/sheep: sheep/libsheep-$(VERSION).so $(sheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -Lsheep -o $@ $(sheep-obj) -lsheep-$(VERSION))
+
+install-sheep: sheep/sheep
+	mkdir -p $(DESTDIR)$(bindir)
+	cp $^ $(DESTDIR)$(bindir)
 
 $(libsheep-obj): include/sheep/config.h sheep/make.deps
 
@@ -71,6 +82,10 @@ include lib/Makefile
 lib := $(addprefix lib/, $(lib))
 
 lib: $(lib)
+
+install-lib: $(lib)
+	mkdir -p $(DESTDIR)$(libdir)/sheep-$(VERSION)
+	cp $^ $(DESTDIR)$(libdir)/sheep-$(VERSION)
 
 $(lib): sheep/libsheep-$(VERSION).so
 	$(Q)$(call cmd, "   LD     $@",					\
@@ -99,4 +114,6 @@ clean:
 		$(CC) $(SCFLAGS) -o $@ -c $<)
 
 # Misc
-.PHONY: all libsheep sheep lib clean
+PHONY := all libsheep sheep lib clean
+PHONY += install install-libsheep install-sheep install-lib
+.PHONY: $(PHONY)

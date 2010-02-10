@@ -15,7 +15,7 @@ bindir = $(prefix)/bin
 libdir = $(prefix)/lib
 
 # Compilation parameters
-SCFLAGS = -Wall -Wextra -Wno-unused-parameter -fPIC $(CFLAGS)
+SCFLAGS = -Wall -Wextra -Wno-unused-parameter -fPIC -Iinclude $(CFLAGS)
 SLDFLAGS = -ldl $(LDFLAGS)
 
 # Debug
@@ -33,7 +33,7 @@ cmd = echo $(1); $(2)
 endif
 
 # User targets
-all: libsheep sheep
+all: libsheep sheep lib
 
 libsheep: sheep/libsheep-$(VERSION).so
 
@@ -48,7 +48,7 @@ sheep/libsheep-$(VERSION).so: $(libsheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -o $@ $^ $(SLDFLAGS) -shared)
 
-sheep/sheep: libsheep $(sheep-obj)
+sheep/sheep: sheep/libsheep-$(VERSION).so $(sheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -Lsheep -o $@ $(sheep-obj) -lsheep-$(VERSION))
 
@@ -67,6 +67,17 @@ sheep/make.deps:
 			$(CPP) -Iinclude -MM -MT $(obj)			\
 				$(basename $(obj)).c >> $@; ))
 
+include lib/Makefile
+lib := $(addprefix lib/, $(lib))
+
+lib: $(lib)
+
+$(lib): sheep/libsheep-$(VERSION).so
+	$(Q)$(call cmd, "   LD     $@",					\
+		$(CC) $(SCFLAGS) -Lsheep -o $@ $(basename $@).c		\
+			-lsheep-$(VERSION) -shared			\
+			$($(subst lib/,,$(basename $@))-LDFLAGS))
+
 # Cleanup
 ifneq ($(MAKECMDGOALS),clean)
 -include sheep/make.deps
@@ -75,6 +86,7 @@ endif
 clean := sheep/libsheep-$(VERSION).so $(libsheep-obj)
 clean += sheep/sheep $(sheep-obj)
 clean += include/sheep/config.h sheep/make.deps
+clean += $(lib)
 
 clean:
 	$(Q)$(foreach subdir,$(sort $(dir $(clean))),			\
@@ -84,7 +96,7 @@ clean:
 # Build library
 %.o: %.c
 	$(Q)$(call cmd, "   CC     $@",					\
-		$(CC) $(SCFLAGS) -Iinclude -o $@ -c $<)
+		$(CC) $(SCFLAGS) -o $@ -c $<)
 
 # Misc
-.PHONY: all libsheep sheep clean
+.PHONY: all libsheep sheep lib clean

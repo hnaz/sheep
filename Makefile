@@ -80,6 +80,7 @@ sheep/make.deps:
 
 include lib/Makefile
 lib := $(addprefix lib/, $(lib))
+lib-so := $(filter %.so, $(lib))
 
 lib: $(lib)
 
@@ -87,7 +88,7 @@ install-lib: $(lib)
 	mkdir -p $(DESTDIR)$(libdir)/sheep-$(VERSION)
 	cp $^ $(DESTDIR)$(libdir)/sheep-$(VERSION)
 
-$(filter %.so, $(lib)): sheep/libsheep-$(VERSION).so
+$(lib-so): sheep/libsheep-$(VERSION).so
 	$(Q)$(call cmd, "   LD     $@",					\
 		$(CC) $(SCFLAGS) -Lsheep -o $@ $(basename $@).c		\
 			-lsheep-$(VERSION) -shared			\
@@ -101,7 +102,7 @@ endif
 clean := sheep/libsheep-$(VERSION).so $(libsheep-obj)
 clean += sheep/sheep $(sheep-obj)
 clean += include/sheep/config.h sheep/make.deps
-clean += $(lib)
+clean += $(lib-so)
 
 clean:
 	$(Q)$(foreach subdir,$(sort $(dir $(clean))),			\

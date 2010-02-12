@@ -23,15 +23,15 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 		struct sheep_function *parent, sheep_t sheep)
 {
 	struct sheep_function *function = sheep_data(sheep);
-	struct sheep_function *closure;
 
-	if (!function->foreign)
-		return sheep;
+	if (function->foreign) {
+		struct sheep_function *closure;
 
-	sheep = sheep_closure_function(vm, function);
-	closure = sheep_data(sheep);
-	closure->foreign = sheep_foreign_open(vm, basep, parent, function);
-
+		sheep = sheep_closure_function(vm, function);
+		closure = sheep_function(sheep);
+		closure->foreign =
+			sheep_foreign_open(vm, basep, parent, function);
+	}
 	return sheep;
 }
 

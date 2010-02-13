@@ -13,6 +13,7 @@ DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
 libdir = $(prefix)/lib
+moddir = $(libdir)/sheep-$(VERSION)
 
 # Compilation parameters
 SCFLAGS = -Wall -Wextra -Wno-unused-parameter -fPIC -Iinclude $(CFLAGS)
@@ -69,7 +70,8 @@ include/sheep/config.h: Makefile
 	$(Q)$(call cmd, "   CF     $@",					\
 		rm -f $@;						\
 		echo "#define SHEEP_VERSION \"$(VERSION)\"" >> $@;	\
-		echo "#define SHEEP_NAME \"$(NAME)\"" >> $@)
+		echo "#define SHEEP_NAME \"$(NAME)\"" >> $@;		\
+		echo "#define SHEEP_MODDIR \"$(moddir)\"" >> $@)
 
 sheep/make.deps:
 	$(Q)$(call cmd, "   MK     $@",					\
@@ -85,8 +87,8 @@ lib-so := $(filter %.so, $(lib))
 lib: $(lib)
 
 install-lib: $(lib)
-	mkdir -p $(DESTDIR)$(libdir)/sheep-$(VERSION)
-	cp $^ $(DESTDIR)$(libdir)/sheep-$(VERSION)
+	mkdir -p $(DESTDIR)$(moddir)
+	cp $^ $(DESTDIR)$(moddir)
 
 $(lib-so): sheep/libsheep-$(VERSION).so
 	$(Q)$(call cmd, "   LD     $@",					\

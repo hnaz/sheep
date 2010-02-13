@@ -4,6 +4,7 @@
  * Copyright (c) 2009 Johannes Weiner <hannes@cmpxchg.org>
  */
 #include <sheep/compile.h>
+#include <sheep/config.h>
 #include <sheep/object.h>
 #include <sheep/string.h>
 #include <sheep/vector.h>
@@ -206,12 +207,17 @@ unsigned int sheep_module_shared(struct sheep_vm *vm,
 	return slot;
 }
 
+static sheep_t builtin_load_path(struct sheep_vm *vm)
+{
+	return sheep_make_list(vm, 2,
+			sheep_make_string(vm, "."),
+			sheep_make_string(vm, SHEEP_MODDIR));
+}
+
 void sheep_module_builtins(struct sheep_vm *vm)
 {
 	load_path = sheep_module_shared(vm, &vm->main,
-					"load-path",
-					sheep_make_list(vm, 2,
-							sheep_make_string(vm, "."),
-							sheep_make_string(vm, "examples")));
+					"load-path", builtin_load_path(vm));
+
 	sheep_vm_variable(vm, "module", &sheep_nil);
 }

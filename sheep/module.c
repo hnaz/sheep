@@ -146,7 +146,7 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 
 	mod = sheep_zalloc(sizeof(struct sheep_module));
 	mod->name = sheep_strdup(name);
-	sheep_module_shared(vm, mod, "module", sheep_make_string(vm, name));
+	sheep_module_variable(vm, mod, "module", sheep_make_string(vm, name));
 
 	paths_ = vm->globals.items[load_path];
 	if (sheep_type(paths_) != &sheep_list_type) {
@@ -183,20 +183,7 @@ found:
 	return sheep_make_object(vm, &sheep_module_type, mod);
 }
 
-/**
- * sheep_module_shared - register a shared global slot
- * @vm: runtime
- * @module: binding environment
- * @name: name to associate the slot with
- * @sheep: initial slot value
- *
- * Allocates a global slot, stores @sheep it in and binds the slot to
- * @name in @module.
- *
- * The slot can be accessed and modified from sheep code by @name and
- * from C code through the returned slot index into vm->globals.items.
- */
-unsigned int sheep_module_shared(struct sheep_vm *vm,
+unsigned int sheep_module_variable(struct sheep_vm *vm,
 				struct sheep_module *module,
 				const char *name, sheep_t sheep)
 {
@@ -216,8 +203,8 @@ static sheep_t builtin_load_path(struct sheep_vm *vm)
 
 void sheep_module_builtins(struct sheep_vm *vm)
 {
-	load_path = sheep_module_shared(vm, &vm->main,
+	load_path = sheep_module_variable(vm, &vm->main,
 					"load-path", builtin_load_path(vm));
 
-	sheep_module_shared(vm, &vm->main, "module", &sheep_nil);
+	sheep_module_variable(vm, &vm->main, "module", &sheep_nil);
 }

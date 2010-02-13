@@ -7,9 +7,12 @@
  */
 #include <sheep/vector.h>
 #include <sheep/util.h>
+#include <limits.h>
 #include <string.h>
 
-#define BITS_PER_LONG	(sizeof(long) * 8)
+/* No standard wordsize definition? */
+#define BITS_PER_LONG	__WORDSIZE
+
 /**
  * fls - find position of the last (most-significant) set bit in a long word
  * @word: the word to search
@@ -20,10 +23,12 @@ static unsigned long fls(unsigned long word)
 {
 	int num = BITS_PER_LONG;
 
-	if (BITS_PER_LONG == 64 && !(word & (~0UL << 32))) {
+#if BITS_PER_LONG == 64
+	if (!(word & (~0UL << 32))) {
 		num -= 32;
 		word <<= 32;
 	}
+#endif
 	if (!(word & (~0UL << (BITS_PER_LONG - 16)))) {
 		num -= 16;
 		word <<= 16;

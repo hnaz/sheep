@@ -11,6 +11,7 @@
 #include <sheep/util.h>
 #include <sheep/gc.h>
 #include <sheep/vm.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #include <sheep/list.h>
@@ -205,6 +206,29 @@ sheep_t sheep_make_cons(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 	list->head = head;
 	list->tail = tail;
 	return sheep_make_object(vm, &sheep_list_type, list);
+}
+
+sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
+{
+	struct sheep_list *p;
+	sheep_t list;
+	va_list ap;
+
+	list = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, list);
+
+	p = sheep_list(list);
+
+	va_start(ap, nr);
+	while (nr--) {
+		p->head = va_arg(ap, sheep_t);
+		p->tail = sheep_make_cons(vm, NULL, NULL);
+		p = sheep_list(p->tail);
+	}
+	va_end(ap);
+
+	sheep_unprotect(vm, list);
+	return list;
 }
 
 int sheep_list_search(struct sheep_list *list, sheep_t object,

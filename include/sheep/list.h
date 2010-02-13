@@ -7,6 +7,7 @@
 #define _SHEEP_LIST_H
 
 #include <sheep/object.h>
+#include <stdarg.h>
 
 struct sheep_vm;
 
@@ -18,6 +19,7 @@ struct sheep_list {
 extern const struct sheep_type sheep_list_type;
 
 sheep_t sheep_make_cons(struct sheep_vm *, sheep_t, sheep_t);
+sheep_t sheep_make_list(struct sheep_vm *, unsigned int, ...);
 
 static inline struct sheep_list *sheep_list(sheep_t sheep)
 {

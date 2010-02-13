@@ -212,8 +212,6 @@ static sheep_t builtin_load_path(struct sheep_vm *vm)
 
 void sheep_module_builtins(struct sheep_vm *vm)
 {
-	load_path = sheep_module_variable(vm, &vm->main,
-					"load-path", builtin_load_path(vm));
-
+	load_path = sheep_vm_variable(vm, "load-path", builtin_load_path(vm));
 	sheep_module_variable(vm, &vm->main, "module", &sheep_nil);
 }

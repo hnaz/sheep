@@ -210,10 +210,10 @@ void sheep_module_builtins(struct sheep_vm *vm)
 {
 	load_path = sheep_module_shared(vm, &vm->main,
 					"load-path",
-					sheep_make_list(vm,
+					sheep_make_cons(vm,
 							sheep_make_string(vm, "."),
-							sheep_make_list(vm,
+							sheep_make_cons(vm,
 									sheep_make_string(vm, "examples"),
-									sheep_make_list(vm, NULL, NULL))));
+									sheep_make_cons(vm, NULL, NULL))));
 	sheep_vm_variable(vm, "module", &sheep_nil);
 }

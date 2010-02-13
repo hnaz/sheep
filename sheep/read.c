@@ -115,7 +115,7 @@ static sheep_t read_list(struct sheep_reader *reader,
 	sheep_t list, pos;
 	int c;
 
-	list = pos = sheep_make_list(vm, NULL, NULL);
+	list = pos = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, list);
 
 	for (c = next(reader, 0); c != EOF; c = next(reader, 0)) {
@@ -132,7 +132,7 @@ static sheep_t read_list(struct sheep_reader *reader,
 			return NULL;
 		if (node->head == &sheep_eof)
 			break;
-		pos = node->tail = sheep_make_list(vm, NULL, NULL);
+		pos = node->tail = sheep_make_cons(vm, NULL, NULL);
 	}
 
 	barf(reader, "end of file while reading list");

@@ -17,7 +17,7 @@ struct sheep_list {
 
 extern const struct sheep_type sheep_list_type;
 
-sheep_t sheep_make_list(struct sheep_vm *, sheep_t, sheep_t);
+sheep_t sheep_make_cons(struct sheep_vm *, sheep_t, sheep_t);
 
 static inline struct sheep_list *sheep_list(sheep_t sheep)
 {

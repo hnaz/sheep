@@ -55,13 +55,13 @@ static void setup_argv(struct sheep_vm *vm, int ac, char **av)
 	struct sheep_list *p;
 	sheep_t list;
 
-	list = sheep_make_list(vm, NULL, NULL);
+	list = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, list);
 
 	p = sheep_list(list);
 	while (ac--) {
 		p->head = sheep_make_string(vm, *av);
-		p->tail = sheep_make_list(vm, NULL, NULL);
+		p->tail = sheep_make_cons(vm, NULL, NULL);
 		p = sheep_list(p->tail);
 		av++;
 	}

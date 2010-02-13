@@ -203,7 +203,7 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, token_);
 	pos = orig = sheep_strdup(string);
 
-	list_ = sheep_make_list(vm, NULL, NULL);
+	list_ = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, list_);
 
 	token = sheep_rawstring(token_);
@@ -228,7 +228,7 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 			item = sheep_make_string(vm, do_split(&pos, token));
 
 		list->head = item;
-		list->tail = sheep_make_list(vm, NULL, NULL);
+		list->tail = sheep_make_cons(vm, NULL, NULL);
 		list = sheep_list(list->tail);
 	}
 	sheep_free(orig);

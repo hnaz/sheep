@@ -35,7 +35,7 @@ static sheep_t do_list_concat(struct sheep_vm *vm, sheep_t base, sheep_t tail)
 
 		node = sheep_list(base);
 		node->head = pos->head;
-		node->tail = sheep_make_list(vm, NULL, NULL);
+		node->tail = sheep_make_cons(vm, NULL, NULL);
 		base = node->tail;
 	}
 	return base;
@@ -48,7 +48,7 @@ static sheep_t list_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
 	sheep_protect(vm, a);
 	sheep_protect(vm, b);
 
-	result = pos = sheep_make_list(vm, NULL, NULL);
+	result = pos = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, result);
 
 	pos = do_list_concat(vm, result, a);
@@ -68,13 +68,13 @@ static sheep_t list_reverse(struct sheep_vm *vm, sheep_t sheep)
 
 	sheep_protect(vm, sheep);
 
-	new = sheep_make_list(vm, NULL, NULL);
+	new = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, new);
 
 	for (old = sheep_list(sheep); old->head; old = sheep_list(old->tail)) {
 		sheep_t new_head;
 
-		new_head = sheep_make_list(vm, old->head, new);
+		new_head = sheep_make_cons(vm, old->head, new);
 
 		sheep_unprotect(vm, new);
 		sheep_protect(vm, new_head);
@@ -197,7 +197,7 @@ const struct sheep_type sheep_list_type = {
 	.format = format_list,
 };
 
-sheep_t sheep_make_list(struct sheep_vm *vm, sheep_t head, sheep_t tail)
+sheep_t sheep_make_cons(struct sheep_vm *vm, sheep_t head, sheep_t tail)
 {
 	struct sheep_list *list;
 
@@ -228,7 +228,7 @@ static sheep_t builtin_cons(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t item, list, new;
 
-	new = sheep_make_list(vm, NULL, NULL);
+	new = sheep_make_cons(vm, NULL, NULL);
 
 	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
 		return NULL;
@@ -244,13 +244,13 @@ static sheep_t builtin_list(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t list;
 
-	list = sheep_make_list(vm, NULL, NULL);
+	list = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, list);
 
 	while (nr_args--) {
 		sheep_t new;
 
-		new = sheep_make_list(vm, NULL, list);
+		new = sheep_make_cons(vm, NULL, list);
 		sheep_list(new)->head = sheep_vector_pop(&vm->stack);
 
 		sheep_unprotect(vm, list);
@@ -345,7 +345,7 @@ static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, mapper);
 	sheep_protect(vm, old);
 
-	new = sheep_make_list(vm, NULL, NULL);
+	new = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, new);
 
 	l_old = sheep_list(old);
@@ -355,7 +355,7 @@ static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 		l_new->head = sheep_call(vm, mapper, 1, l_old->head);
 		if (!l_new->head)
 			goto out;
-		l_new->tail = sheep_make_list(vm, NULL, NULL);
+		l_new->tail = sheep_make_cons(vm, NULL, NULL);
 		l_new = sheep_list(l_new->tail);
 		l_old = sheep_list(l_old->tail);
 	}

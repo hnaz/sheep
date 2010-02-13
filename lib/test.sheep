@@ -2,7 +2,8 @@
   (with (nr 1)
     (function (result)
       (print nr ": " (if result "ok" "failed"))
-      (set nr (+ nr 1)))))
+      (set nr (+ nr 1))
+      (bool result))))
 
 # (block
 #   (test (= 1 0))

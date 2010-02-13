@@ -12,6 +12,7 @@ LDFLAGS =
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
+includedir = $(prefix)/include
 libdir = $(prefix)/lib
 moddir = $(libdir)/sheep-$(VERSION)
 
@@ -55,6 +56,8 @@ install-libsheep: sheep/libsheep-$(VERSION).so
 	mkdir -p $(DESTDIR)$(libdir)
 	cp $^ $(DESTDIR)$(libdir)
 	ln -s $^ $(DESTDIR)$(libdir)/libsheep.so
+	mkdir -p $(DESTDIR)$(includedir)
+	cp -r include/* $(DESTDIR)$(includedir)
 
 sheep/sheep: sheep/libsheep-$(VERSION).so $(sheep-obj)
 	$(Q)$(call cmd, "   LD     $@",					\

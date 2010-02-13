@@ -194,6 +194,15 @@ unsigned int sheep_module_variable(struct sheep_vm *vm,
 	return slot;
 }
 
+void sheep_module_function(struct sheep_vm *vm, struct sheep_module *module,
+			const char *name, sheep_alien_t alien)
+{
+	sheep_t sheep;
+
+	sheep = sheep_make_alien(vm, alien, name);
+	sheep_module_variable(vm, module, name, sheep);
+}
+
 static sheep_t builtin_load_path(struct sheep_vm *vm)
 {
 	return sheep_make_list(vm, 2,

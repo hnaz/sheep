@@ -64,8 +64,7 @@ enum env_level {
 	ENV_NONE,
 	ENV_LOCAL,
 	ENV_GLOBAL,
-	ENV_FOREIGN,
-	ENV_BUILTIN,
+	ENV_FOREIGN
 };
 
 static enum env_level lookup_env(struct sheep_compile *compile,
@@ -80,7 +79,6 @@ static enum env_level lookup_env(struct sheep_compile *compile,
 		if (!current->parent) {
 			if (sheep_map_get(&compile->vm->builtins, name, &entry))
 				return ENV_NONE;
-			current = NULL;
 			break;
 		}
 		if (current->flags & SHEEP_CONTEXT_FUNCTION)
@@ -91,8 +89,6 @@ static enum env_level lookup_env(struct sheep_compile *compile,
 	*dist = distance;
 	*slot = (unsigned long)entry;
 
-	if (!current)
-		return ENV_BUILTIN;
 	if (!current->parent)
 		return ENV_GLOBAL;
 	if (!distance)
@@ -129,14 +125,6 @@ static int compile_simple_name(struct sheep_compile *compile,
 		if (set)
 			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
 		sheep_emit(&function->code, SHEEP_FOREIGN, slot);
-		break;
-	case ENV_BUILTIN:
-		if (set) {
-			sheep_parser_error(compile, sheep,
-					"can not change read-only binding to");
-			return -1;
-		}
-		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		break;
 	}
 	return 0;

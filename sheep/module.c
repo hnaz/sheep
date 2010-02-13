@@ -219,5 +219,5 @@ void sheep_module_builtins(struct sheep_vm *vm)
 	load_path = sheep_module_shared(vm, &vm->main,
 					"load-path", builtin_load_path(vm));
 
-	sheep_vm_variable(vm, "module", &sheep_nil);
+	sheep_module_shared(vm, &vm->main, "module", &sheep_nil);
 }

@@ -12,7 +12,7 @@
 
 #include <sheep/name.h>
 
-static void free_name(struct sheep_vm *vm, sheep_t sheep)
+static void name_free(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_name *name;
 
@@ -22,7 +22,7 @@ static void free_name(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(name);
 }
 
-static int equal_name(sheep_t a, sheep_t b)
+static int name_equal(sheep_t a, sheep_t b)
 {
 	struct sheep_name *na, *nb;
 	unsigned int i;
@@ -39,7 +39,7 @@ static int equal_name(sheep_t a, sheep_t b)
 	return 1;
 }
 
-static void format_name(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void name_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_name *name;
 	unsigned int i;
@@ -52,10 +52,10 @@ static void format_name(sheep_t sheep, char **bufp, size_t *posp, int repr)
 
 const struct sheep_type sheep_name_type = {
 	.name = "name",
-	.free = free_name,
+	.free = name_free,
 	.compile = sheep_compile_name,
-	.equal = equal_name,
-	.format = format_name,
+	.equal = name_equal,
+	.format = name_format,
 };
 
 sheep_t sheep_make_name(struct sheep_vm *vm, const char *string)

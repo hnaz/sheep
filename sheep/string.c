@@ -14,6 +14,28 @@
 
 #include <sheep/string.h>
 
+static void string_free(struct sheep_vm *vm, sheep_t sheep)
+{
+	sheep_free(sheep_data(sheep));
+}
+
+static int string_test(sheep_t sheep)
+{
+	return strlen(sheep_rawstring(sheep)) > 0;
+}
+
+static int string_equal(sheep_t a, sheep_t b)
+{
+	return !strcmp(sheep_rawstring(a), sheep_rawstring(b));
+}
+
+static void string_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+{
+	const char *fmt = repr ? "\"%s\"" : "%s";
+
+	sheep_addprintf(bufp, posp, fmt, sheep_rawstring(sheep));
+}
+
 static size_t string_length(sheep_t sheep)
 {
 	return strlen(sheep_rawstring(sheep));
@@ -91,36 +113,14 @@ static const struct sheep_sequence string_sequence = {
 	.position = string_position,
 };
 
-static void free_string(struct sheep_vm *vm, sheep_t sheep)
-{
-	sheep_free(sheep_data(sheep));
-}
-
-static int test_string(sheep_t sheep)
-{
-	return strlen(sheep_rawstring(sheep)) > 0;
-}
-
-static int equal_string(sheep_t a, sheep_t b)
-{
-	return !strcmp(sheep_rawstring(a), sheep_rawstring(b));
-}
-
-static void format_string(sheep_t sheep, char **bufp, size_t *posp, int repr)
-{
-	const char *fmt = repr ? "\"%s\"" : "%s";
-
-	sheep_addprintf(bufp, posp, fmt, sheep_rawstring(sheep));
-}
-
 const struct sheep_type sheep_string_type = {
 	.name = "string",
-	.free = free_string,
+	.free = string_free,
 	.compile = sheep_compile_constant,
-	.test = test_string,
-	.equal = equal_string,
+	.test = string_test,
+	.equal = string_equal,
+	.format = string_format,
 	.sequence = &string_sequence,
-	.format = format_string,
 };
 
 sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str)

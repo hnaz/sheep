@@ -19,7 +19,7 @@
 
 #include <sheep/module.h>
 
-static void do_free_module(struct sheep_module *mod)
+static void free_module(struct sheep_module *mod)
 {
 	sheep_free(mod->name);
 	sheep_map_drain(&mod->env);
@@ -28,12 +28,12 @@ static void do_free_module(struct sheep_module *mod)
 	sheep_free(mod);
 }
 
-static void free_module(struct sheep_vm *vm, sheep_t sheep)
+static void module_free(struct sheep_vm *vm, sheep_t sheep)
 {
-	do_free_module(sheep_data(sheep));
+	free_module(sheep_data(sheep));
 }
 
-static void format_module(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void module_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_module *mod = sheep_data(sheep);
 
@@ -41,8 +41,8 @@ static void format_module(sheep_t sheep, char **bufp, size_t *posp, int repr)
 }
 
 const struct sheep_type sheep_module_type = {
-	.free = free_module,
-	.format = format_module,
+	.free = module_free,
+	.format = module_format,
 };
 
 enum {
@@ -177,7 +177,7 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 
 	fprintf(stderr, "load: %s not found\n", name);
 err:		
-	do_free_module(mod);
+	free_module(mod);
 	return NULL;
 found:
 	return sheep_make_object(vm, &sheep_module_type, mod);

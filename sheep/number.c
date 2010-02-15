@@ -16,12 +16,12 @@
 
 #include <sheep/number.h>
 
-static int test_number(sheep_t sheep)
+static int number_test(sheep_t sheep)
 {
 	return !!sheep_fixnum(sheep);
 }
 
-static void format_number(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void number_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	sheep_addprintf(bufp, posp, "%ld", sheep_fixnum(sheep));
 }
@@ -29,12 +29,12 @@ static void format_number(sheep_t sheep, char **bufp, size_t *posp, int repr)
 const struct sheep_type sheep_number_type = {
 	.name = "number",
 	.compile = sheep_compile_constant,
-	.test = test_number,
+	.test = number_test,
 	/*
 	 * Fixnums are encoded in the reference pointer, equality is
 	 * thus checked directly in sheep_equal().
 	 */
-	.format = format_number,
+	.format = number_format,
 };
 
 sheep_t sheep_make_number(struct sheep_vm *vm, long number)

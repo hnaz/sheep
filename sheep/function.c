@@ -25,7 +25,7 @@ static void free_freevar(struct sheep_vector *foreign)
 	sheep_free(foreign);
 }
 
-static void free_function(struct sheep_vm *vm, sheep_t sheep)
+static void function_free(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *function;
 
@@ -37,7 +37,7 @@ static void free_function(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(function);
 }
 
-static void format_function(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void function_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_function *function;
 
@@ -50,11 +50,11 @@ static void format_function(sheep_t sheep, char **bufp, size_t *posp, int repr)
 
 const struct sheep_type sheep_function_type = {
 	.name = "function",
-	.free = free_function,
-	.format = format_function,
+	.free = function_free,
+	.format = function_format,
 };
 
-static void mark_closure(sheep_t sheep)
+static void closure_mark(sheep_t sheep)
 {
 	struct sheep_function *closure;
 
@@ -62,7 +62,7 @@ static void mark_closure(sheep_t sheep)
 	sheep_foreign_mark(closure->foreign);
 }
 
-static void free_closure(struct sheep_vm *vm, sheep_t sheep)
+static void closure_free(struct sheep_vm *vm, sheep_t sheep)
 {
 	struct sheep_function *closure;
 
@@ -74,9 +74,9 @@ static void free_closure(struct sheep_vm *vm, sheep_t sheep)
 
 const struct sheep_type sheep_closure_type = {
 	.name = "function",
-	.mark = mark_closure,
-	.free = free_closure,
-	.format = format_function,
+	.mark = closure_mark,
+	.free = closure_free,
+	.format = function_format,
 };
 
 sheep_t sheep_make_function(struct sheep_vm *vm, const char *name)

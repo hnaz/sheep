@@ -10,12 +10,12 @@
 
 #include <sheep/alien.h>
 
-static void free_alien(struct sheep_vm *vm, sheep_t sheep)
+static void alien_free(struct sheep_vm *vm, sheep_t sheep)
 {
 	sheep_free(sheep_data(sheep));
 }
 
-static void format_alien(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void alien_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_alien *alien;
 
@@ -28,8 +28,8 @@ static void format_alien(sheep_t sheep, char **bufp, size_t *posp, int repr)
 
 const struct sheep_type sheep_alien_type = {
 	.name = "alien",
-	.free = free_alien,
-	.format = format_alien,
+	.free = alien_free,
+	.format = alien_format,
 };
 
 sheep_t sheep_make_alien(struct sheep_vm *vm, sheep_alien_t function,

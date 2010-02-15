@@ -12,12 +12,12 @@
 
 #include <sheep/bool.h>
 
-static int test_bool(sheep_t sheep)
+static int bool_test(sheep_t sheep)
 {
 	return sheep != &sheep_false;
 }
 
-static void format_bool(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void bool_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	if (sheep == &sheep_false)
 		sheep_addprintf(bufp, posp, "false");
@@ -28,8 +28,8 @@ static void format_bool(sheep_t sheep, char **bufp, size_t *posp, int repr)
 const struct sheep_type sheep_bool_type = {
 	.name = "bool",
 	.compile = sheep_compile_constant,
-	.test = test_bool,
-	.format = format_bool,
+	.test = bool_test,
+	.format = bool_format,
 };
 
 struct sheep_object sheep_true = {

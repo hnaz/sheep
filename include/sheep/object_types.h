@@ -16,10 +16,10 @@ struct sheep_context;
 struct sheep_vm;
 
 struct sheep_sequence {
-	unsigned long (*length)(sheep_t);
+	size_t (*length)(sheep_t);
 	sheep_t (*concat)(struct sheep_vm *, sheep_t, sheep_t);
 	sheep_t (*reverse)(struct sheep_vm *, sheep_t);
-	sheep_t (*nth)(struct sheep_vm *, unsigned long, sheep_t);
+	sheep_t (*nth)(struct sheep_vm *, size_t, sheep_t);
 	sheep_t (*position)(struct sheep_vm *, sheep_t, sheep_t);
 };
 

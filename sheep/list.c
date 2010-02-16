@@ -16,7 +16,7 @@
 
 #include <sheep/list.h>
 
-static unsigned long list_length(sheep_t sheep)
+static size_t list_length(sheep_t sheep)
 {
 	struct sheep_list *list;
 	unsigned long len;
@@ -89,7 +89,7 @@ static sheep_t list_reverse(struct sheep_vm *vm, sheep_t sheep)
 	return new;
 }
 
-static sheep_t list_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
+static sheep_t list_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 {
 	struct sheep_list *list;
 
@@ -105,8 +105,8 @@ static sheep_t list_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
 
 static sheep_t list_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
 {
-	unsigned long position = 0;
 	struct sheep_list *list;
+	size_t position = 0;
 
 	list = sheep_list(sheep);
 	while (list->head) {

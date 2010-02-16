@@ -15,15 +15,15 @@
 
 #include <sheep/string.h>
 
-static unsigned long string_length(sheep_t sheep)
+static size_t string_length(sheep_t sheep)
 {
 	return strlen(sheep_rawstring(sheep));
 }
 
 static sheep_t string_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
 {
-	unsigned long len_a, len;
 	const char *sa, *sb;
+	size_t len_a, len;
 	char *result;
 
 	sa = sheep_rawstring(a);
@@ -41,8 +41,8 @@ static sheep_t string_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
 
 static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
 {
-	unsigned long len, pos;
 	const char *string;
+	size_t len, pos;
 	char *result;
 
 	string = sheep_rawstring(sheep);
@@ -56,7 +56,7 @@ static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
 	return __sheep_make_string(vm, result);
 }
 
-static sheep_t string_nth(struct sheep_vm *vm, unsigned long n, sheep_t sheep)
+static sheep_t string_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 {
 	char new[2] = { 0, 0 };
 	const char *string;

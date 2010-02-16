@@ -6,7 +6,6 @@
 #include <sheep/compile.h>
 #include <sheep/object.h>
 #include <sheep/unpack.h>
-#include <sheep/bool.h> /* &sheep_true... fix me */
 #include <sheep/util.h>
 #include <sheep/gc.h>
 #include <sheep/vm.h>

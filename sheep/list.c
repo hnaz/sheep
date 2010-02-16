@@ -231,17 +231,19 @@ sheep_t sheep_make_list(struct sheep_vm *vm, unsigned int nr, ...)
 	return list;
 }
 
-int sheep_list_search(struct sheep_list *list, sheep_t object,
-		unsigned long *offset)
+int sheep_list_search(struct sheep_list *list, sheep_t object, size_t *offset)
 {
 	while (list->head) {
 		if (list->head == object)
 			return 1;
 		(*offset)++;
-		if (sheep_type(list->head) == &sheep_list_type)
-			if (sheep_list_search(sheep_list(list->head),
-						object, offset))
+		if (sheep_type(list->head) == &sheep_list_type) {
+			struct sheep_list *sublist;
+
+			sublist = sheep_list(list->head);
+			if (sheep_list_search(sublist, object, offset))
 				return 1;
+		}
 		list = sheep_list(list->tail);
 	}
 	return 0;

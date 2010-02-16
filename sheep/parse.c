@@ -19,8 +19,8 @@ void sheep_parser_error(struct sheep_compile *compile, sheep_t culprit,
 			const char *fmt, ...)
 {
 	struct sheep_expr *expr = compile->expr;
-	unsigned long position;
 	const char *repr;
+	size_t position;
 	va_list ap;
 
 	if (sheep_type(expr->object) == &sheep_list_type) {

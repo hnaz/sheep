@@ -79,7 +79,7 @@ static void list_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 static size_t list_length(sheep_t sheep)
 {
 	struct sheep_list *list;
-	unsigned long len;
+	size_t len;
 
 	list = sheep_list(sheep);
 	for (len = 0; list->head; list = sheep_list(list->tail))

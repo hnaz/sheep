@@ -83,10 +83,8 @@ static unsigned int collect_pool(struct sheep_vm *vm,
 	for (i = moved = 0; i < POOL_SIZE; i++) {
 		struct sheep_object *sheep = &pool->mem[i];
 
-		if (sheep->data & 1) {
-			sheep->data &= ~1;
+		if (sheep->data & 1)
 			continue;
-		}
 
 		if (sheep->type->free)
 			sheep->type->free(vm, sheep);

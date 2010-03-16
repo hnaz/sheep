@@ -140,15 +140,19 @@ alloc:
 
 static sheep_t alloc(struct sheep_vm *vm)
 {
-	struct sheep_object *sheep = vm->parts->free;
+	struct sheep_object *sheep;
 
-	if (++vm->parts->nr_used < POOL_SIZE)
+	sheep = vm->parts->free;
+	vm->parts->nr_used++;
+
+	if (vm->parts->nr_used < POOL_SIZE)
 		vm->parts->free = (struct sheep_object *)sheep->data;
 	else {
 		struct sheep_objects *pool;
 
 		pool = vm->parts;
 		vm->parts = vm->parts->next;
+
 		pool->next = vm->fulls;
 		vm->fulls = pool;
 	}

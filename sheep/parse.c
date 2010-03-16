@@ -111,12 +111,12 @@ static unsigned int __parse(struct sheep_list *form, const char *items,
 }
 
 static int parse(struct sheep_compile *compile, struct sheep_list *form,
-		struct sheep_list *child, const char *items, va_list ap)
+		struct sheep_list *subform, const char *items, va_list ap)
 {
 	unsigned int ret;
 	sheep_t mismatch;
 
-	ret = __parse(child, items, &mismatch, ap);
+	ret = __parse(subform, items, &mismatch, ap);
 	if (ret == PARSE_OK)
 		return 0;
 
@@ -130,13 +130,13 @@ static int parse(struct sheep_compile *compile, struct sheep_list *form,
 }
 
 int __sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
-		struct sheep_list *child, const char *items, ...)
+		struct sheep_list *subform, const char *items, ...)
 {
 	va_list ap;
 	int ret;
 
 	va_start(ap, items);
-	ret = parse(compile, form, child, items, ap);
+	ret = parse(compile, form, subform, items, ap);
 	va_end(ap);
 	return ret;
 }

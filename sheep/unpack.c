@@ -71,13 +71,15 @@ static const char *unpack(int control, sheep_t object,
 		if (type == &sheep_closure_type)
 			break;
 		return "callable";
-	case 't':
-		if (type != *itemp) {
-			type = *itemp;
-			return type->name;
-		}
+	case 't': {
+		struct sheep_type *custom;
+
+		custom = (struct sheep_type *)itemp;
+		if (type != custom)
+			return custom->name;
 		itemp = nextp;
 		break;
+	}
 	}
 
 	if (want == control)

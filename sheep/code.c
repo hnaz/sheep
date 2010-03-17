@@ -48,9 +48,11 @@ void sheep_code_finalize(struct sheep_code *code)
 }
 
 static const char *opnames[] = {
-	"DROP", "LOCAL", "SET_LOCAL", "FOREIGN", "SET_FOREIGN",
-	"GLOBAL", "SET_GLOBAL", "CLOSURE", "CALL", "TAILCALL", "RET",
+	"DROP", "DUP", "LOCAL", "SET_LOCAL", "FOREIGN", "SET_FOREIGN",
+	"GLOBAL", "SET_GLOBAL", "HASH", "SET_HASH",
+	"CLOSURE", "CALL", "TAILCALL", "RET",
 	"BRT", "BRF", "BR",
+	"LOAD",
 };
 
 void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
@@ -77,6 +79,10 @@ void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
 	case SHEEP_CLOSURE:
 		sheep = vm->globals.items[arg];
 		break;
+	case SHEEP_HASH:
+	case SHEEP_SET_HASH:
+		printf("; %s\n", vm->keys[arg]);
+		return;
 	default:
 		puts("");
 		return;

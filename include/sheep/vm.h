@@ -20,6 +20,7 @@ struct sheep_vm {
 	struct sheep_vector protected;
 	int gc_disabled;
 
+	char **keys;
 	struct sheep_vector globals;
 
 	/* Compiler */
@@ -32,6 +33,10 @@ struct sheep_vm {
 	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
 };
+
+unsigned int sheep_vm_key(struct sheep_vm *, const char *);
+
+void sheep_vm_mark(struct sheep_vm *);
 
 static inline unsigned int sheep_vm_constant(struct sheep_vm *vm, sheep_t sheep)
 {
@@ -48,7 +53,5 @@ void sheep_vm_function(struct sheep_vm *, const char *, sheep_alien_t);
 
 void sheep_vm_init(struct sheep_vm *, int, char **);
 void sheep_vm_exit(struct sheep_vm *);
-
-void sheep_vm_mark(struct sheep_vm *);
 
 #endif /* _SHEEP_VM_H */

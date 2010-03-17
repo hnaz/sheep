@@ -19,6 +19,37 @@
 
 #include <sheep/vm.h>
 
+unsigned int sheep_vm_key(struct sheep_vm *vm, const char *key)
+{
+	unsigned int slot = 0;
+
+	if (vm->keys) {
+		while (vm->keys[slot]) {
+			if (!strcmp(vm->keys[slot], key))
+				return slot;
+			slot++;
+		}
+	}
+
+	vm->keys = sheep_realloc(vm->keys, sizeof(char *) * (slot + 2));
+	vm->keys[slot] = sheep_strdup(key);
+	vm->keys[slot + 1] = NULL;
+	return slot;
+}
+
+static void drain_keys(struct sheep_vm *vm)
+{
+	unsigned int slot;
+
+	if (!vm->keys)
+		return;
+
+	for (slot = 0; vm->keys[slot]; slot++)
+		sheep_free(vm->keys[slot]);
+
+	sheep_free(vm->keys);
+}
+
 void sheep_vm_mark(struct sheep_vm *vm)
 {
 	unsigned int i;
@@ -91,5 +122,6 @@ void sheep_vm_exit(struct sheep_vm *vm)
 	sheep_core_exit(vm);
 	sheep_evaluator_exit(vm);
 	sheep_free(vm->globals.items);
+	drain_keys(vm);
 	sheep_gc_exit(vm);
 }

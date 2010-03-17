@@ -6,9 +6,11 @@
 #include <sheep/function.h>
 #include <sheep/foreign.h>
 #include <sheep/object.h>
+#include <sheep/string.h>
 #include <sheep/alien.h>
 #include <sheep/bool.h>
 #include <sheep/code.h>
+#include <sheep/name.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/gc.h>
@@ -18,6 +20,38 @@
 #include <stdio.h>
 
 #include <sheep/eval.h>
+
+static sheep_t hash(struct sheep_vm *vm, sheep_t container,
+		unsigned int key_slot, sheep_t value)
+{
+	struct sheep_vector *slots;
+	const char *key, *obj;
+	struct sheep_map *map;
+	void *entry;
+
+	key = vm->keys[key_slot];
+
+	if (sheep_type(container) == &sheep_module_type) {
+		struct sheep_module *mod = sheep_data(container);
+
+		slots = &vm->globals;
+		map = &mod->env;
+	} else
+		goto err;
+
+	if (sheep_map_get(map, key, &entry))
+		goto err;
+
+	if (value)
+		slots->items[(unsigned int)entry] = value;
+
+	return slots->items[(unsigned int)entry];
+err:
+	obj = sheep_repr(container);
+	fprintf(stderr, "can not find %s in %s\n", key, obj);
+	sheep_free(obj);
+	return NULL;
+}
 
 static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 		struct sheep_function *parent, sheep_t sheep)
@@ -118,6 +152,10 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 		case SHEEP_DROP:
 			sheep_vector_pop(&vm->stack);
 			break;
+		case SHEEP_DUP:
+			tmp = vm->stack.items[vm->stack.nr_items - 1];
+			sheep_vector_push(&vm->stack, tmp);
+			break;
 		case SHEEP_LOCAL:
 			tmp = vm->stack.items[basep + arg];
 			sheep_vector_push(&vm->stack, tmp);
@@ -157,6 +195,18 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 		case SHEEP_SET_GLOBAL:
 			tmp = sheep_vector_pop(&vm->stack);
 			vm->globals.items[arg] = tmp;
+			break;
+		case SHEEP_HASH:
+			tmp = sheep_vector_pop(&vm->stack);
+			tmp = hash(vm, tmp, arg, NULL);
+			if (!tmp)
+				goto err;
+			sheep_vector_push(&vm->stack, tmp);
+			break;
+		case SHEEP_SET_HASH:
+			tmp = sheep_vector_pop(&vm->stack);
+			if (!hash(vm, tmp, arg, sheep_vector_pop(&vm->stack)))
+				goto err;
 			break;
 		case SHEEP_CLOSURE:
 			tmp = vm->globals.items[arg];
@@ -252,6 +302,12 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 		case SHEEP_BR:
 			codep += arg;
 			continue;
+		case SHEEP_LOAD:
+			tmp = sheep_module_load(vm, vm->keys[arg]);
+			if (!tmp)
+				goto err;
+			sheep_vector_push(&vm->stack, tmp);
+			break;
 		default:
 			abort();
 		}

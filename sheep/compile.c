@@ -96,79 +96,60 @@ static enum env_level lookup_env(struct sheep_compile *compile,
 	return ENV_FOREIGN;
 }
 
-static int compile_simple_name(struct sheep_compile *compile,
-			struct sheep_function *function,
-			struct sheep_context *context,
-			sheep_t sheep, int set)
-{
-	unsigned int dist, slot;
-	const char *name;
-
-	name = sheep_name(sheep)->parts[0];
-
-	switch (lookup_env(compile, context, name, &dist, &slot)) {
-	case ENV_NONE:
-		sheep_parser_error(compile, sheep, "unbound name");
-		return -1;
-	case ENV_LOCAL:
-		if (set)
-			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-		sheep_emit(&function->code, SHEEP_LOCAL, slot);
-		break;
-	case ENV_GLOBAL:
-		if (set)
-			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
-		break;
-	case ENV_FOREIGN:
-		slot = sheep_foreign_slot(function, dist, slot);
-		if (set)
-			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
-		sheep_emit(&function->code, SHEEP_FOREIGN, slot);
-		break;
-	}
-	return 0;
-}
-
 static int compile_name(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context,
 			sheep_t sheep, int set)
 {
-	struct sheep_module *mod;
+	unsigned int dist, slot, i = 0;
 	struct sheep_name *name;
-	unsigned int i = 0;
-	void *entry;
-
-	name = sheep_name(sheep);
-	if (name->nr_parts == 1)
-		return compile_simple_name(compile, function,
-					context, sheep, set);
-
-	mod = compile->module;
-	do {
-		sheep_t m;
-
-		if (sheep_map_get(&mod->env, name->parts[i], &entry))
-			goto err;
-
-		m = compile->vm->globals.items[(unsigned long)entry];
-		if (sheep_type(m) != &sheep_module_type)
-			goto err;
-		mod = sheep_data(m);
-	} while (++i < name->nr_parts - 1);
-
-	if (sheep_map_get(&mod->env, name->parts[i], &entry))
-		goto err;
 
 	if (set)
-		sheep_emit(&function->code, SHEEP_SET_GLOBAL,
-			(unsigned long)entry);
-	sheep_emit(&function->code, SHEEP_GLOBAL, (unsigned long)entry);
+		sheep_emit(&function->code, SHEEP_DUP, 0);
+
+	name = sheep_name(sheep);
+	switch (lookup_env(compile, context, name->parts[0], &dist, &slot)) {
+	case ENV_NONE:
+		sheep_parser_error(compile, sheep, "unbound name");
+		return -1;
+	case ENV_LOCAL:
+		if (set && name->nr_parts == 1)
+			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
+		else
+			sheep_emit(&function->code, SHEEP_LOCAL, slot);
+		break;
+	case ENV_GLOBAL:
+		if (set && name->nr_parts == 1)
+			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
+		else
+			sheep_emit(&function->code, SHEEP_GLOBAL, slot);
+		break;
+	case ENV_FOREIGN:
+		slot = sheep_foreign_slot(function, dist, slot);
+		if (set && name->nr_parts == 1)
+			sheep_emit(&function->code, SHEEP_SET_FOREIGN, slot);
+		else
+			sheep_emit(&function->code, SHEEP_FOREIGN, slot);
+		break;
+	}
+
+	for (i = name->nr_parts - 1; i; i--) {
+		enum sheep_opcode opcode;
+		unsigned int key_slot;
+		const char *key;
+
+		key = name->parts[name->nr_parts - i];
+		key_slot = sheep_vm_key(compile->vm, key);
+
+		if (set && i == 1)
+			opcode = SHEEP_SET_HASH;
+		else
+			opcode = SHEEP_HASH;
+
+		sheep_emit(&function->code, opcode, key_slot);
+	}
+		
 	return 0;
-err:
-	sheep_parser_error(compile, sheep, "unbound");
-	return -1;
 }
 
 int sheep_compile_name(struct sheep_compile *compile,

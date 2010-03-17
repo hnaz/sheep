@@ -167,14 +167,14 @@ static int compile_variable(struct sheep_compile *compile,
 	if (sheep_compile_object(compile, function, context, value))
 		return -1;
 
+	sheep_emit(&function->code, SHEEP_DUP, 0);
+
 	if (context->parent) {
 		slot = sheep_function_local(function);
 		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-		sheep_emit(&function->code, SHEEP_LOCAL, slot);
 	} else {
 		slot = sheep_vm_global(compile->vm);
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-		sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 	}
 	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	return 0;
@@ -232,14 +232,14 @@ static int compile_function(struct sheep_compile *compile,
 	if (name) {
 		unsigned int slot;
 
+		sheep_emit(&function->code, SHEEP_DUP, 0);
+
 		if (context->parent) {
 			slot = sheep_function_local(function);
 			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-			sheep_emit(&function->code, SHEEP_LOCAL, slot);
 		} else {
 			slot = sheep_vm_global(compile->vm);
 			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-			sheep_emit(&function->code, SHEEP_GLOBAL, slot);
 		}
 		sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	}
@@ -400,30 +400,24 @@ static int compile_load(struct sheep_compile *compile,
 {
 	unsigned int slot;
 	const char *name;
-	int ret = -1;
-	sheep_t mod;
-
-	if (context->parent) {
-		sheep_parser_error(compile, args->head, "non-toplevel");
-		return -1;
-	}
 
 	if (sheep_parse(compile, args, "s", &name))
 		return -1;
 
-	sheep_protect(compile->vm, sheep_list(args->tail)->head);
+	slot = sheep_vm_key(compile->vm, name);
+	sheep_emit(&function->code, SHEEP_LOAD, slot);
 
-	mod = sheep_module_load(compile->vm, name);
-	if (!mod)
-		goto out;
+	sheep_emit(&function->code, SHEEP_DUP, 0);
 
-	slot = sheep_vm_constant(compile->vm, mod);
-	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
+	if (context->parent) {
+		slot = sheep_function_local(function);
+		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
+	} else {
+		slot = sheep_vm_global(compile->vm);
+		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
+	}
 	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
-	ret = 0;
-out:
-	sheep_unprotect(compile->vm, sheep_list(args->tail)->head);
-	return ret;
+	return 0;
 }
 
 void sheep_core_init(struct sheep_vm *vm)

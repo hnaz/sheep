@@ -157,15 +157,21 @@ static int compile_variable(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context, struct sheep_list *args)
 {
+	SHEEP_DEFINE_MAP(env);
+	struct sheep_context block = {
+		.env = &env,
+		.parent = context,
+	};
 	unsigned int slot;
 	const char *name;
 	sheep_t value;
+	int ret = -1;
 
 	if (sheep_parse(compile, args, "se", &name, &value))
-		return -1;
+		goto out;
 
-	if (sheep_compile_object(compile, function, context, value))
-		return -1;
+	if (sheep_compile_object(compile, function, &block, value))
+		goto out;
 
 	sheep_emit(&function->code, SHEEP_DUP, 0);
 
@@ -177,7 +183,10 @@ static int compile_variable(struct sheep_compile *compile,
 		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
 	}
 	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
-	return 0;
+	ret = 0;
+out:
+	sheep_map_drain(&env);
+	return ret;
 }
 
 /* (function name? (arg*) expr*) */

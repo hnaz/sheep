@@ -59,7 +59,7 @@ static unsigned int load_so(struct sheep_vm *vm, const char *path,
 
 	handle = dlopen(path, RTLD_NOW);
 	if (!handle) {
-		fprintf(stderr, "load: dlopen(%s) failed?!\n", path);
+		fprintf(stderr, "load: dlopen(%s) failed: %s\n", path, dlerror());
 		return LOAD_SKIP;
 	}
 

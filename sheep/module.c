@@ -23,8 +23,14 @@ static void free_module(struct sheep_module *mod)
 {
 	sheep_free(mod->name);
 	sheep_map_drain(&mod->env);
+#if 0
+	/*
+	 * XXX: dlclose() is not a good idea when there are still
+	 * objects pointing into that memory.
+	 */
 	if (mod->handle)
 		dlclose(mod->handle);
+#endif
 	sheep_free(mod);
 }
 

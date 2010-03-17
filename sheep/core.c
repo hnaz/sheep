@@ -390,16 +390,25 @@ static int compile_set(struct sheep_compile *compile,
 		struct sheep_context *context, struct sheep_list *args)
 {
 	struct sheep_name *name;
+	SHEEP_DEFINE_MAP(env);
+	struct sheep_context block = {
+		.env = &env,
+		.parent = context,
+	};
 	sheep_t value;
+	int ret = -1;
 
 	if (sheep_parse(compile, args, "ne", &name, &value))
-		return -1;
+		goto out;
 
-	if (sheep_compile_object(compile, function, context, value))
-		return -1;
+	if (sheep_compile_object(compile, function, &block, value))
+		goto out;
 
-	return sheep_compile_set(compile, function, context,
+	ret = sheep_compile_set(compile, function, context,
 				sheep_list(args->tail)->head);
+out:
+	sheep_map_drain(&env);
+	return ret;
 }
 
 /* (load name) */

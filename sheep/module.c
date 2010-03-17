@@ -60,22 +60,24 @@ static unsigned int load_so(struct sheep_vm *vm, const char *path,
 	handle = dlopen(path, RTLD_NOW);
 	if (!handle) {
 		fprintf(stderr, "load: dlopen(%s) failed: %s\n", path, dlerror());
-		return LOAD_SKIP;
+		goto err;
 	}
 
 	init = dlsym(handle, "init");
 	if (!init) {
 		fprintf(stderr, "load: %s has no init()\n", path);
-		goto err;
+		goto err_handle;
 	}
 
 	if (init(vm, mod))
-		goto err;
+		goto err_handle;
 
 	mod->handle = handle;
 	return LOAD_OK;
-err:
+
+err_handle:
 	dlclose(handle);
+err:
 	return LOAD_FAIL;
 }
 
@@ -83,14 +85,12 @@ static unsigned int load_sheep(struct sheep_vm *vm, const char *path,
 			struct sheep_module *mod)
 {
 	struct sheep_reader reader;
+	int ret = LOAD_FAIL;
 	FILE *fp;
-	int ret;
 
 	fp = fopen(path, "r");
 	if (!fp)
-		return LOAD_SKIP;
-
-	ret = LOAD_FAIL;
+		goto out;
 
 	sheep_reader_init(&reader, path, fp);
 	while (1) {
@@ -114,6 +114,7 @@ static unsigned int load_sheep(struct sheep_vm *vm, const char *path,
 	ret = LOAD_OK;
 out_file:
 	fclose(fp);
+out:
 	return ret;
 }
 
@@ -121,19 +122,16 @@ static unsigned int module_load(struct sheep_vm *vm, const char *path,
 				const char *name, struct sheep_module *mod)
 {
 	char filename[1024];
-	int ret = LOAD_SKIP;
 
 	snprintf(filename, sizeof(filename), "%s/%s.so", path, name);
-	if (!access(filename, R_OK)) {
-		ret = load_so(vm, filename, mod);
-		if (ret != LOAD_SKIP)
-			return ret;
-	}
+	if (!access(filename, R_OK))
+		return load_so(vm, filename, mod);
 
 	snprintf(filename, sizeof(filename), "%s/%s.sheep", path, name);
 	if (!access(filename, R_OK))
-		ret = load_sheep(vm, filename, mod);
-	return ret;
+		return load_sheep(vm, filename, mod);
+
+	return LOAD_SKIP;
 }
 
 static unsigned int load_path;

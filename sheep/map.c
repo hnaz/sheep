@@ -16,10 +16,9 @@ struct sheep_map_entry {
 
 static int hash(const char *name)
 {
-	size_t len = strlen(name);
 	int key = 0;
 
-	while (len--)
+	while (*name)
 		key += (key << 5) + *name++;
 	return key < 0 ? -key : key;
 }

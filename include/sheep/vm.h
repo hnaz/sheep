@@ -45,7 +45,14 @@ static inline unsigned int sheep_vm_constant(struct sheep_vm *vm, sheep_t sheep)
 
 static inline unsigned int sheep_vm_global(struct sheep_vm *vm)
 {
-	return sheep_vector_push(&vm->globals, NULL);
+	/*
+	 * Default value for slots: bindings are compile-time static
+	 * but initialization happens at runtime.  The only situation
+	 * where this is needed is for interactive mode, when the
+	 * initialization form fails evaluation and we continue with
+	 * the slot bound.
+	 */
+	return sheep_vector_push(&vm->globals, &sheep_nil);
 }
 
 unsigned int sheep_vm_variable(struct sheep_vm *, const char *, sheep_t);

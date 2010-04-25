@@ -11,6 +11,7 @@
 #include <sheep/code.h>
 #include <sheep/list.h>
 #include <sheep/name.h>
+#include <sheep/type.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/gc.h>
@@ -270,6 +271,52 @@ out:
 	return ret;
 }
 
+/* (type name slotnames*) */
+static int compile_type(struct sheep_compile *compile,
+			struct sheep_function *function,
+			struct sheep_context *context, struct sheep_list *args)
+{
+	const char **slotnames = NULL;
+	unsigned int nr_slots = 0;
+	struct sheep_list *names;
+	unsigned int cslot;
+	const char *name;
+	sheep_t class;
+
+	if (sheep_parse(compile, args, "sR", &name, &names))
+		return -1;
+
+	do {
+		const char *slotname;
+
+		if (__sheep_parse(compile, args, names, "sr", &slotname, &names))
+			goto err;
+
+		slotnames = sheep_realloc(slotnames, sizeof(char *) * ++nr_slots);
+		slotnames[nr_slots - 1] = sheep_strdup(slotname);
+	} while (names->head);
+
+	class = sheep_make_typeclass(compile->vm, name, slotnames, nr_slots);
+
+	cslot = sheep_vm_constant(compile->vm, class);
+	sheep_emit(&function->code, SHEEP_GLOBAL, cslot);
+	sheep_emit(&function->code, SHEEP_DUP, 0);
+	if (context->parent) {
+		cslot = sheep_function_local(function);
+		sheep_emit(&function->code, SHEEP_SET_LOCAL, cslot);
+	} else {
+		cslot = sheep_vm_global(compile->vm);
+		sheep_emit(&function->code, SHEEP_SET_GLOBAL, cslot);
+	}
+	sheep_map_set(context->env, name, (void *)(unsigned long)cslot);
+	return 0;
+err:
+	while (nr_slots--)
+		sheep_free(slotnames[nr_slots]);
+	sheep_free(slotnames);
+	return -1;
+}
+
 static int do_compile_chain(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context,
@@ -445,6 +492,7 @@ void sheep_core_init(struct sheep_vm *vm)
 	sheep_map_set(&vm->specials, "with", compile_with);
 	sheep_map_set(&vm->specials, "variable", compile_variable);
 	sheep_map_set(&vm->specials, "function", compile_function);
+	sheep_map_set(&vm->specials, "type", compile_type);
 	sheep_map_set(&vm->specials, "or", compile_or);
 	sheep_map_set(&vm->specials, "and", compile_and);
 	sheep_map_set(&vm->specials, "if", compile_if);

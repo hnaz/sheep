@@ -11,6 +11,7 @@
 #include <sheep/bool.h>
 #include <sheep/code.h>
 #include <sheep/name.h>
+#include <sheep/type.h>
 #include <sheep/util.h>
 #include <sheep/map.h>
 #include <sheep/gc.h>
@@ -24,9 +25,9 @@
 static sheep_t hash(struct sheep_vm *vm, sheep_t container,
 		unsigned int key_slot, sheep_t value)
 {
-	struct sheep_vector *slots;
 	const char *key, *obj;
 	struct sheep_map *map;
+	sheep_t *slots;
 	void *entry;
 
 	key = vm->keys[key_slot];
@@ -34,8 +35,13 @@ static sheep_t hash(struct sheep_vm *vm, sheep_t container,
 	if (sheep_type(container) == &sheep_module_type) {
 		struct sheep_module *mod = sheep_data(container);
 
-		slots = &vm->globals;
+		slots = (sheep_t *)vm->globals.items;
 		map = &mod->env;
+	} else if (sheep_type(container) == &sheep_typeobject_type) {
+		struct sheep_typeobject *object = sheep_data(container);
+
+		slots = object->values;
+		map = &object->map;
 	} else
 		goto err;
 
@@ -43,9 +49,9 @@ static sheep_t hash(struct sheep_vm *vm, sheep_t container,
 		goto err;
 
 	if (value)
-		slots->items[(unsigned int)entry] = value;
+		slots[(unsigned int)entry] = value;
 
-	return slots->items[(unsigned int)entry];
+	return slots[(unsigned int)entry];
 err:
 	obj = sheep_repr(container);
 	fprintf(stderr, "can not find %s in %s\n", key, obj);

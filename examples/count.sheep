@@ -1,0 +1,14 @@
+#!/usr/bin/sheep
+# count.sheep FILENAME
+
+(load io)
+
+(if (not (= (length argv) 2))
+  (print "usage: " (nth 0 argv) " filename")
+  (with (in (io:open (nth 1 argv) false))
+    (function count-bytes (count)
+      (if (io:read in 1)
+        (count-bytes (+ count 1))
+        count))
+    (print (nth 1 argv) ": "
+           (count-bytes 0) " bytes")))

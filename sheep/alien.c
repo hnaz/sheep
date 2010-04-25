@@ -15,6 +15,18 @@ static void alien_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(sheep_data(sheep));
 }
 
+static enum sheep_call alien_call(struct sheep_vm *vm, sheep_t callable,
+				unsigned int nr_args, sheep_t *valuep)
+{
+	struct sheep_alien *alien;
+
+	alien = sheep_data(callable);
+	*valuep = alien->function(vm, nr_args);
+	if (!*valuep)
+		return SHEEP_CALL_FAIL;
+	return SHEEP_CALL_DONE;
+}
+
 static void alien_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_alien *alien;
@@ -29,6 +41,7 @@ static void alien_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 const struct sheep_type sheep_alien_type = {
 	.name = "alien",
 	.free = alien_free,
+	.call = alien_call,
 	.format = alien_format,
 };
 

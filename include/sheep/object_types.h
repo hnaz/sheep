@@ -23,6 +23,12 @@ struct sheep_sequence {
 	sheep_t (*position)(struct sheep_vm *, sheep_t, sheep_t);
 };
 
+enum sheep_call {
+	SHEEP_CALL_DONE,
+	SHEEP_CALL_EVAL,
+	SHEEP_CALL_FAIL,
+};
+
 struct sheep_type {
 	const char *name;
 
@@ -31,6 +37,9 @@ struct sheep_type {
 
 	int (*compile)(struct sheep_compile *, struct sheep_function *,
 		struct sheep_context *, sheep_t);
+
+	enum sheep_call (*call)(struct sheep_vm *, sheep_t,
+		unsigned int, sheep_t *);
 
 	int (*test)(sheep_t);
 	int (*equal)(sheep_t, sheep_t);

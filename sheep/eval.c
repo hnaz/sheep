@@ -69,34 +69,18 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 	return sheep;
 }
 
-static int precall(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args,
-		sheep_t *value)
+static enum sheep_call precall(struct sheep_vm *vm, sheep_t callable,
+			unsigned int nr_args, sheep_t *valuep)
 {
-	struct sheep_function *function;
+	const struct sheep_type *type;
 
-	if (sheep_type(callable) == &sheep_alien_type) {
-		struct sheep_alien *alien;
-
-		alien = sheep_data(callable);
-		*value = alien->function(vm, nr_args);
-		return 1 - 2 * !*value;
+	type = sheep_type(callable);
+	if (!type->call) {
+		fprintf(stderr, "can not call object of type %s\n",
+			type->name);
+		return SHEEP_CALL_FAIL;
 	}
-
-	if ((sheep_type(callable) != &sheep_function_type) &&
-	    (sheep_type(callable) != &sheep_closure_type)) {
-		fprintf(stderr, "can not call %s\n",
-			sheep_type(callable)->name);
-		return -1;
-	}
-
-	function = sheep_data(callable);
-	if (function->nr_parms != nr_args) {
-		fprintf(stderr, "%s: too %s arguments\n",
-			function->name,
-			function->nr_parms < nr_args ? "many" : "few");
-		return -1;
-	}
-	return 0;
+	return type->call(vm, callable, nr_args, valuep);
 }
 
 static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
@@ -218,12 +202,12 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 
 			done = precall(vm, tmp, arg, &tmp);
 			switch (done) {
-			case -1:
+			case SHEEP_CALL_FAIL:
 				goto err;
-			case 1:
+			case SHEEP_CALL_DONE:
 				sheep_vector_push(&vm->stack, tmp);
 				break;
-			default:
+			case SHEEP_CALL_EVAL:
 				sheep_foreign_save(vm, basep);
 				splice_arguments(vm, basep, arg);
 
@@ -242,12 +226,12 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 
 			done = precall(vm, tmp, arg, &tmp);
 			switch (done) {
-			case -1:
+			case SHEEP_CALL_FAIL:
 				goto err;
-			case 1:
+			case SHEEP_CALL_DONE:
 				sheep_vector_push(&vm->stack, tmp);
 				break;
-			default:
+			case SHEEP_CALL_EVAL:
 				sheep_vector_push(&vm->calls, codep);
 				sheep_vector_push(&vm->calls, (void *)basep);
 				sheep_vector_push(&vm->calls, function);
@@ -327,14 +311,14 @@ static sheep_t call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args)
 	sheep_t value;
 
 	switch (precall(vm, callable, nr_args, &value)) {
-	case -1:
+	case SHEEP_CALL_FAIL:
 		return NULL;
-	case 1:
+	case SHEEP_CALL_DONE:
 		return value;
-	case 0:
-	default:
+	case SHEEP_CALL_EVAL:
 		return sheep_eval(vm, callable);
 	}
+	sheep_bug("precall returned bull");
 }
 
 sheep_t sheep_apply(struct sheep_vm *vm, sheep_t callable,

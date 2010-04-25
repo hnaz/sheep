@@ -37,6 +37,21 @@ static void function_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(function);
 }
 
+static enum sheep_call function_call(struct sheep_vm *vm, sheep_t callable,
+				unsigned int nr_args, sheep_t *valuep)
+{
+	struct sheep_function *function;
+
+	function = sheep_function(callable);
+	if (function->nr_parms != nr_args) {
+		fprintf(stderr, "%s: too %s arguments\n",
+			function->name,
+			function->nr_parms < nr_args ? "many" : "few");
+		return SHEEP_CALL_FAIL;
+	}
+	return SHEEP_CALL_EVAL;
+}
+
 static void function_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 {
 	struct sheep_function *function;
@@ -51,6 +66,7 @@ static void function_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 const struct sheep_type sheep_function_type = {
 	.name = "function",
 	.free = function_free,
+	.call = function_call,
 	.format = function_format,
 };
 
@@ -76,6 +92,7 @@ const struct sheep_type sheep_closure_type = {
 	.name = "function",
 	.mark = closure_mark,
 	.free = closure_free,
+	.call = function_call,
 	.format = function_format,
 };
 

@@ -7,8 +7,8 @@
   (print "usage: " (nth 0 argv) " filename")
   (with (in (io:open (nth 1 argv) false))
     (function count-bytes (count)
-      (if (io:read in 1)
-        (count-bytes (+ count 1))
-        count))
-    (print (nth 1 argv) ": "
-           (count-bytes 0) " bytes")))
+      (with (bytes (length (io:read in 4096)))
+        (if bytes
+          (count-bytes (+ count bytes))
+          count)))
+    (print (nth 1 argv) ": " (count-bytes 0) " bytes")))

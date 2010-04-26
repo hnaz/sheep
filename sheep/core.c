@@ -153,6 +153,24 @@ static int compile_with(struct sheep_compile *compile,
 	return ret;
 }
 
+static void compile_set_return(struct sheep_compile *compile,
+			struct sheep_function *function,
+			struct sheep_context *context,
+			const char *name)
+{
+	unsigned int slot;
+
+	sheep_emit(&function->code, SHEEP_DUP, 0);
+	if (context->parent) {
+		slot = sheep_function_local(function);
+		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
+	} else {
+		slot = sheep_vm_global(compile->vm);
+		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
+	}
+	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+}
+
 /* (variable name expr) */
 static int compile_variable(struct sheep_compile *compile,
 			struct sheep_function *function,
@@ -163,7 +181,6 @@ static int compile_variable(struct sheep_compile *compile,
 		.env = &env,
 		.parent = context,
 	};
-	unsigned int slot;
 	const char *name;
 	sheep_t value;
 	int ret = -1;
@@ -173,17 +190,7 @@ static int compile_variable(struct sheep_compile *compile,
 
 	if (sheep_compile_object(compile, function, &block, value))
 		goto out;
-
-	sheep_emit(&function->code, SHEEP_DUP, 0);
-
-	if (context->parent) {
-		slot = sheep_function_local(function);
-		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-	} else {
-		slot = sheep_vm_global(compile->vm);
-		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-	}
-	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
+	compile_set_return(compile, function, context, name);
 	ret = 0;
 out:
 	sheep_map_drain(&env);
@@ -238,21 +245,8 @@ static int compile_function(struct sheep_compile *compile,
 
 	cslot = sheep_vm_constant(compile->vm, sheep);
 	sheep_emit(&function->code, SHEEP_CLOSURE, cslot);
-
-	if (name) {
-		unsigned int slot;
-
-		sheep_emit(&function->code, SHEEP_DUP, 0);
-
-		if (context->parent) {
-			slot = sheep_function_local(function);
-			sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-		} else {
-			slot = sheep_vm_global(compile->vm);
-			sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-		}
-		sheep_map_set(context->env, name, (void *)(unsigned long)slot);
-	}
+	if (name)
+		compile_set_return(compile, function, context, name);
 
 	sheep_protect(compile->vm, sheep);
 	ret = do_compile_block(compile, childfun, context, &env, body, 1);
@@ -279,7 +273,7 @@ static int compile_type(struct sheep_compile *compile,
 	const char **slotnames = NULL;
 	unsigned int nr_slots = 0;
 	struct sheep_list *names;
-	unsigned int cslot;
+	unsigned int slot;
 	const char *name;
 	sheep_t class;
 
@@ -298,17 +292,10 @@ static int compile_type(struct sheep_compile *compile,
 
 	class = sheep_make_typeclass(compile->vm, name, slotnames, nr_slots);
 
-	cslot = sheep_vm_constant(compile->vm, class);
-	sheep_emit(&function->code, SHEEP_GLOBAL, cslot);
-	sheep_emit(&function->code, SHEEP_DUP, 0);
-	if (context->parent) {
-		cslot = sheep_function_local(function);
-		sheep_emit(&function->code, SHEEP_SET_LOCAL, cslot);
-	} else {
-		cslot = sheep_vm_global(compile->vm);
-		sheep_emit(&function->code, SHEEP_SET_GLOBAL, cslot);
-	}
-	sheep_map_set(context->env, name, (void *)(unsigned long)cslot);
+	slot = sheep_vm_constant(compile->vm, class);
+	sheep_emit(&function->code, SHEEP_GLOBAL, slot);
+	compile_set_return(compile, function, context, name);
+
 	return 0;
 err:
 	while (nr_slots--)
@@ -471,17 +458,8 @@ static int compile_load(struct sheep_compile *compile,
 
 	slot = sheep_vm_key(compile->vm, name);
 	sheep_emit(&function->code, SHEEP_LOAD, slot);
+	compile_set_return(compile, function, context, name);
 
-	sheep_emit(&function->code, SHEEP_DUP, 0);
-
-	if (context->parent) {
-		slot = sheep_function_local(function);
-		sheep_emit(&function->code, SHEEP_SET_LOCAL, slot);
-	} else {
-		slot = sheep_vm_global(compile->vm);
-		sheep_emit(&function->code, SHEEP_SET_GLOBAL, slot);
-	}
-	sheep_map_set(context->env, name, (void *)(unsigned long)slot);
 	return 0;
 }
 

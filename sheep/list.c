@@ -402,32 +402,32 @@ static sheep_t builtin_apply(struct sheep_vm *vm, unsigned int nr_args)
 /* (map function list) */
 static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 {
-	sheep_t mapper, old, new, result = NULL;
-	struct sheep_list *l_old, *l_new;
+	sheep_t mapper, old_, new_, result = NULL;
+	struct sheep_list *old, *new;
 
-	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old))
+	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old_))
 		return NULL;
 	sheep_protect(vm, mapper);
-	sheep_protect(vm, old);
+	sheep_protect(vm, old_);
 
-	new = sheep_make_cons(vm, NULL, NULL);
-	sheep_protect(vm, new);
+	new_ = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, new_);
 
-	l_old = sheep_list(old);
-	l_new = sheep_list(new);
+	old = sheep_list(old_);
+	new = sheep_list(new_);
 
-	while (l_old->head) {
-		l_new->head = sheep_call(vm, mapper, 1, l_old->head);
-		if (!l_new->head)
+	while (old->head) {
+		new->head = sheep_call(vm, mapper, 1, old->head);
+		if (!new->head)
 			goto out;
-		l_new->tail = sheep_make_cons(vm, NULL, NULL);
-		l_new = sheep_list(l_new->tail);
-		l_old = sheep_list(l_old->tail);
+		new->tail = sheep_make_cons(vm, NULL, NULL);
+		new = sheep_list(new->tail);
+		old = sheep_list(old->tail);
 	}
-	result = new;
+	result = new_;
 out:
-	sheep_unprotect(vm, new);
-	sheep_unprotect(vm, old);
+	sheep_unprotect(vm, new_);
+	sheep_unprotect(vm, old_);
 	sheep_unprotect(vm, mapper);
 
 	return result;

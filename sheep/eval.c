@@ -49,9 +49,9 @@ static sheep_t hash(struct sheep_vm *vm, sheep_t container,
 		goto err;
 
 	if (value)
-		slots[(unsigned int)entry] = value;
+		slots[(unsigned long)entry] = value;
 
-	return slots[(unsigned int)entry];
+	return slots[(unsigned long)entry];
 err:
 	obj = sheep_repr(container);
 	fprintf(stderr, "can not find %s in %s\n", key, obj);

@@ -28,6 +28,9 @@
 (function name (&rest parameters)
   &rest body)
 
+(type name
+  &rest slot-names)
+
 (load module-name)
 
 2. builtin functions
@@ -74,6 +77,8 @@
 
 (find predicate list)
 
+(filter predicate list)
+
 (map function list)
 
 (reduce function list)
@@ -89,8 +94,6 @@ IMPL: (slice from to sequence)
 (position item sequence)
 
 IMPL: (remove item sequence)
-
-IMPL: (filter predicate sequence)
 
 IMPL: (sort predicate sequence)
 

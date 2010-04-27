@@ -35,7 +35,7 @@
 	     (if (zerop (car state))
 		 0
 	       (goto-char (1+ (nth 1 state)))
-	       (if (looking-at "\\(block\\|with\\|variable\\|function\\|if\\)\\>")
+	       (if (looking-at sheep-specials)
 		   ;; Block start
 		   (1+ (current-column))
 		 (forward-sexp)
@@ -75,10 +75,14 @@
     (modify-syntax-entry ?\# "<   " table)
     table))
 
+(defvar sheep-specials
+  (rx symbol-start
+      (| "and" "block" "function" "if" "load" "or" "quote"
+	 "set" "type" "variable" "with")
+      symbol-end))
+
 (defvar sheep-font-lock-keywords
-  `(,(rx symbol-start
-	 (or "quote" "block" "or" "and" "if" "with" "variable" "set" "function")
-	 symbol-end)))
+  `(,sheep-specials))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.sheep\\'" . sheep-mode))

@@ -348,6 +348,45 @@ static sheep_t builtin_find(struct sheep_vm *vm, unsigned int nr_args)
 	return result;
 }
 
+/* (filter predicate list) */
+static sheep_t builtin_filter(struct sheep_vm *vm, unsigned int nr_args)
+{
+	sheep_t filter, old_, new_, result = NULL;
+	struct sheep_list *old, *new;
+
+	if (sheep_unpack_stack("filter", vm, nr_args, "cl", &filter, &old_))
+		return NULL;
+	sheep_protect(vm, filter);
+	sheep_protect(vm, old_);
+
+	new_ = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, new_);
+
+	old = sheep_list(old_);
+	new = sheep_list(new_);
+
+	while (old->head) {
+		sheep_t value;
+
+		value = sheep_call(vm, filter, 1, old->head);
+		if (!value)
+			goto out;
+		if (sheep_test(value)) {
+			new->head = old->head;
+			new->tail = sheep_make_cons(vm, NULL, NULL);
+			new = sheep_list(new->tail);
+		}
+		old = sheep_list(old->tail);
+	}
+	result = new_;
+out:
+	sheep_unprotect(vm, new_);
+	sheep_unprotect(vm, old_);
+	sheep_unprotect(vm, filter);
+
+	return result;
+}
+
 /* (apply function list) */
 static sheep_t builtin_apply(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -435,6 +474,7 @@ void sheep_list_builtins(struct sheep_vm *vm)
 	sheep_vm_function(vm, "head", builtin_head);
 	sheep_vm_function(vm, "tail", builtin_tail);
 	sheep_vm_function(vm, "find", builtin_find);
+	sheep_vm_function(vm, "filter", builtin_filter);
 	sheep_vm_function(vm, "apply", builtin_apply);
 	sheep_vm_function(vm, "map", builtin_map);
 	sheep_vm_function(vm, "reduce", builtin_reduce);

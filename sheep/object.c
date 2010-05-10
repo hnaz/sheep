@@ -50,7 +50,7 @@ static int test_nil(sheep_t sheep)
 
 static void format_nil(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
-	sheep_strbuf_addf(sb, "nil");
+	sheep_strbuf_add(sb, "nil");
 }
 
 const struct sheep_type sheep_nil_type = {

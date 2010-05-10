@@ -64,16 +64,16 @@ static void list_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 	struct sheep_list *list;
 
 	list = sheep_list(sheep);
-	sheep_strbuf_addf(sb, "(");
+	sheep_strbuf_add(sb, "(");
 	while (list->head) {
 		sheep = list->head;
 		__sheep_format(sheep, sb, 1);
 		list = sheep_list(list->tail);
 		if (!list->head)
 			break;
-		sheep_strbuf_addf(sb, " ");
+		sheep_strbuf_add(sb, " ");
 	}
-	sheep_strbuf_addf(sb, ")");
+	sheep_strbuf_add(sb, ")");
 }
 
 static size_t list_length(sheep_t sheep)

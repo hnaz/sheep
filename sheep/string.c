@@ -44,9 +44,10 @@ static int string_equal(sheep_t a, sheep_t b)
 
 static void string_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
-	const char *fmt = repr ? "\"%s\"" : "%s";
-
-	sheep_strbuf_addf(sb, fmt, sheep_rawstring(sheep));
+	if (repr)
+		sheep_strbuf_addf(sb, "\"%s\"", sheep_rawstring(sheep));
+	else
+		sheep_strbuf_add(sb, sheep_rawstring(sheep));
 }
 
 static size_t string_length(sheep_t sheep)

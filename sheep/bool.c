@@ -20,9 +20,9 @@ static int bool_test(sheep_t sheep)
 static void bool_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	if (sheep == &sheep_false)
-		sheep_strbuf_addf(sb, "false");
+		sheep_strbuf_add(sb, "false");
 	else
-		sheep_strbuf_addf(sb, "true");
+		sheep_strbuf_add(sb, "true");
 }
 
 const struct sheep_type sheep_bool_type = {

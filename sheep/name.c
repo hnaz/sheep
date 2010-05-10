@@ -45,7 +45,7 @@ static void name_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 	unsigned int i;
 
 	name = sheep_name(sheep);
-	sheep_strbuf_addf(sb, "%s", name->parts[0]);
+	sheep_strbuf_add(sb, name->parts[0]);
 	for (i = 1; i < name->nr_parts; i++)
 		sheep_strbuf_addf(sb, ":%s", name->parts[i]);
 }

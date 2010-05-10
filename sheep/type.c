@@ -36,12 +36,12 @@ static void typeobject_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(object);
 }
 
-static void typeobject_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void typeobject_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_typeobject *object;
 
 	object = sheep_data(sheep);
-	sheep_addprintf(bufp, posp, "#<object '%p'>", object);
+	sheep_strbuf_addf(sb, "#<object '%p'>", object);
 }
 
 const struct sheep_type sheep_typeobject_type = {
@@ -88,12 +88,12 @@ static enum sheep_call typeclass_call(struct sheep_vm *vm, sheep_t callable,
 	return SHEEP_CALL_DONE;
 }
 
-static void typeclass_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void typeclass_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_typeclass *class;
 
 	class = sheep_data(sheep);
-	sheep_addprintf(bufp, posp, "#<type '%s'>", class->name);
+	sheep_strbuf_addf(sb, "#<type '%s'>", class->name);
 }
 
 const struct sheep_type sheep_typeclass_type = {

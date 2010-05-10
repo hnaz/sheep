@@ -17,12 +17,12 @@ static int bool_test(sheep_t sheep)
 	return sheep != &sheep_false;
 }
 
-static void bool_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void bool_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	if (sheep == &sheep_false)
-		sheep_addprintf(bufp, posp, "false");
+		sheep_strbuf_addf(sb, "false");
 	else
-		sheep_addprintf(bufp, posp, "true");
+		sheep_strbuf_addf(sb, "true");
 }
 
 const struct sheep_type sheep_bool_type = {

@@ -39,11 +39,11 @@ static void module_free(struct sheep_vm *vm, sheep_t sheep)
 	free_module(sheep_data(sheep));
 }
 
-static void module_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void module_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_module *mod = sheep_data(sheep);
 
-	sheep_addprintf(bufp, posp, "#<module '%s'>", mod->name);
+	sheep_strbuf_addf(sb, "#<module '%s'>", mod->name);
 }
 
 const struct sheep_type sheep_module_type = {

@@ -42,11 +42,11 @@ static int string_equal(sheep_t a, sheep_t b)
 	return !memcmp(sa->bytes, sb->bytes, sa->nr_bytes);
 }
 
-static void string_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void string_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	const char *fmt = repr ? "\"%s\"" : "%s";
 
-	sheep_addprintf(bufp, posp, fmt, sheep_rawstring(sheep));
+	sheep_strbuf_addf(sb, fmt, sheep_rawstring(sheep));
 }
 
 static size_t string_length(sheep_t sheep)
@@ -149,27 +149,27 @@ sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 	return __sheep_make_string(vm, sheep_strdup(str), strlen(str));
 }
 
-void __sheep_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+void __sheep_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
-	sheep_type(sheep)->format(sheep, bufp, posp, repr);
+	sheep_type(sheep)->format(sheep, sb, repr);
 }
 
 char *sheep_format(sheep_t sheep)
 {
-	char *buf = NULL;
-	size_t pos = 0;
+	struct sheep_strbuf sb;
 
-	__sheep_format(sheep, &buf, &pos, 0);
-	return buf;
+	memset(&sb, 0, sizeof(struct sheep_strbuf));
+	__sheep_format(sheep, &sb, 0);
+	return sb.bytes;
 }
 
 char *sheep_repr(sheep_t sheep)
 {
-	char *buf = NULL;
-	size_t pos = 0;
+	struct sheep_strbuf sb;
 
-	__sheep_format(sheep, &buf, &pos, 1);
-	return buf;
+	memset(&sb, 0, sizeof(struct sheep_strbuf));
+	__sheep_format(sheep, &sb, 1);
+	return sb.bytes;
 }
 
 /* (string expression) */

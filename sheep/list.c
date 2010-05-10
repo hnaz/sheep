@@ -59,21 +59,21 @@ static int list_equal(sheep_t a, sheep_t b)
 	return !(la->head || lb->head);
 }
 
-static void list_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void list_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_list *list;
 
 	list = sheep_list(sheep);
-	sheep_addprintf(bufp, posp, "(");
+	sheep_strbuf_addf(sb, "(");
 	while (list->head) {
 		sheep = list->head;
-		__sheep_format(sheep, bufp, posp, 1);
+		__sheep_format(sheep, sb, 1);
 		list = sheep_list(list->tail);
 		if (!list->head)
 			break;
-		sheep_addprintf(bufp, posp, " ");
+		sheep_strbuf_addf(sb, " ");
 	}
-	sheep_addprintf(bufp, posp, ")");
+	sheep_strbuf_addf(sb, ")");
 }
 
 static size_t list_length(sheep_t sheep)

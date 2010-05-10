@@ -48,9 +48,9 @@ static int test_nil(sheep_t sheep)
 	return 0;
 }
 
-static void format_nil(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void format_nil(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
-	sheep_addprintf(bufp, posp, "nil");
+	sheep_strbuf_addf(sb, "nil");
 }
 
 const struct sheep_type sheep_nil_type = {

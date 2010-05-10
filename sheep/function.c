@@ -52,15 +52,15 @@ static enum sheep_call function_call(struct sheep_vm *vm, sheep_t callable,
 	return SHEEP_CALL_EVAL;
 }
 
-static void function_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void function_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_function *function;
 
-	function = sheep_data(sheep);
+	function = sheep_function(sheep);
 	if (function->name)
-		sheep_addprintf(bufp, posp, "#<function '%s'>", function->name);
+		sheep_strbuf_addf(sb, "#<function '%s'>", function->name);
 	else
-		sheep_addprintf(bufp, posp, "#<function '%p'>", function);
+		sheep_strbuf_addf(sb, "#<function '%p'>", function);
 }
 
 const struct sheep_type sheep_function_type = {

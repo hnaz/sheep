@@ -36,9 +36,9 @@ static void file_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(file);
 }
 
-static void file_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void file_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
-	sheep_addprintf(bufp, posp, "#<file '%p'>", sheep);
+	sheep_strbuf_addf(sb, "#<file '%p'>", sheep);
 }
 
 static const struct sheep_type file_type = {

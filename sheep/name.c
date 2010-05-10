@@ -39,15 +39,15 @@ static int name_equal(sheep_t a, sheep_t b)
 	return 1;
 }
 
-static void name_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
+static void name_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 {
 	struct sheep_name *name;
 	unsigned int i;
 
 	name = sheep_name(sheep);
-	sheep_addprintf(bufp, posp, "%s", name->parts[0]);
+	sheep_strbuf_addf(sb, "%s", name->parts[0]);
 	for (i = 1; i < name->nr_parts; i++)
-		sheep_addprintf(bufp, posp, ":%s", name->parts[i]);
+		sheep_strbuf_addf(sb, ":%s", name->parts[i]);
 }
 
 const struct sheep_type sheep_name_type = {

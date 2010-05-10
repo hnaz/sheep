@@ -44,35 +44,28 @@ void sheep_free(const void *mem)
 	free((void *)mem);
 }
 
-#define DEFAULT_BUF		64
+#define DEFAULT_BUF 64
 
-int sheep_addprintf(char **bufp, size_t *pos, const char *fmt, ...)
+void sheep_strbuf_addf(struct sheep_strbuf *sb, const char *fmt, ...)
 {
 	va_list ap;
-	int len;
+	size_t len;
 
-	*bufp = sheep_realloc(*bufp, *pos + DEFAULT_BUF);
+	sb->bytes = sheep_realloc(sb->bytes, sb->nr_bytes + DEFAULT_BUF);
 
 	va_start(ap, fmt);
-	len = vsnprintf(*bufp + *pos, DEFAULT_BUF, fmt, ap);
+	len = vsnprintf(sb->bytes + sb->nr_bytes, DEFAULT_BUF, fmt, ap);
 	va_end(ap);
 
-	sheep_bug_on(len < 0);
-
 	if (len >= DEFAULT_BUF) {
-		int bytes = len + 1;
-
-		*bufp = sheep_realloc(*bufp, *pos + bytes);
+		sb->bytes = sheep_realloc(sb->bytes, sb->nr_bytes + len + 1);
 
 		va_start(ap, fmt);
-		len = vsnprintf(*bufp + *pos, bytes, fmt, ap);
+		len = vsnprintf(sb->bytes + sb->nr_bytes, len + 1, fmt, ap);
 		va_end(ap);
-
-		sheep_bug_on(len < 0);
-		sheep_bug_on(len > bytes - 1);
 	}
-	*pos += len;
-	return len;
+
+	sb->nr_bytes += len;
 }
 
 void sheep_bug(const char *fmt, ...)

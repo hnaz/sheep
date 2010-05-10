@@ -7,6 +7,7 @@
 #define _SHEEP_STRING_H
 
 #include <sheep/object.h>
+#include <sheep/util.h>
 #include <stdlib.h>
 
 struct sheep_vm;
@@ -31,7 +32,7 @@ static inline const char *sheep_rawstring(sheep_t sheep)
 	return sheep_string(sheep)->bytes;
 }
 
-void __sheep_format(sheep_t, char **, size_t *, int);
+void __sheep_format(sheep_t, struct sheep_strbuf *, int);
 char *sheep_format(sheep_t);
 char *sheep_repr(sheep_t);
 

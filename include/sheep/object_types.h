@@ -13,6 +13,7 @@ typedef struct sheep_object * sheep_t;
 struct sheep_function;
 struct sheep_compile;
 struct sheep_context;
+struct sheep_strbuf;
 struct sheep_vm;
 
 struct sheep_sequence {
@@ -44,7 +45,7 @@ struct sheep_type {
 	int (*test)(sheep_t);
 	int (*equal)(sheep_t, sheep_t);
 
-	void (*format)(sheep_t, char **, size_t *, int);
+	void (*format)(sheep_t, struct sheep_strbuf *, int);
 
 	const struct sheep_sequence *sequence;
 };

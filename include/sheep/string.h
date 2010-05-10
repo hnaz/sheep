@@ -11,14 +11,24 @@
 
 struct sheep_vm;
 
+struct sheep_string {
+	const char *bytes;
+	size_t nr_bytes;
+};
+
 extern const struct sheep_type sheep_string_type;
 
-sheep_t __sheep_make_string(struct sheep_vm *, const char *);
+sheep_t __sheep_make_string(struct sheep_vm *, const char *, size_t);
 sheep_t sheep_make_string(struct sheep_vm *, const char *);
+
+static inline struct sheep_string *sheep_string(sheep_t sheep)
+{
+	return sheep_data(sheep);
+}
 
 static inline const char *sheep_rawstring(sheep_t sheep)
 {
-	return sheep_data(sheep);
+	return sheep_string(sheep)->bytes;
 }
 
 void __sheep_format(sheep_t, char **, size_t *, int);

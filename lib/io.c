@@ -107,7 +107,7 @@ static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 	nr_bytes = fread(buf, 1, nr_bytes, file->filp);
 	buf[nr_bytes] = 0;
 
-	return __sheep_make_string(vm, buf);
+	return __sheep_make_string(vm, buf, nr_bytes);
 }
 
 /* (write file string) */

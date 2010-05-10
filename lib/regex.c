@@ -57,7 +57,7 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 		sub = sheep_malloc(len + 1);
 		memcpy(sub, string + start, len);
 		sub[len] = 0;
-		list->head = __sheep_make_string(vm, sub);
+		list->head = __sheep_make_string(vm, sub, len);
 
 		list->tail = sheep_make_cons(vm, NULL, NULL);
 		list = sheep_list(list->tail);

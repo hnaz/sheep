@@ -16,17 +16,30 @@
 
 static void string_free(struct sheep_vm *vm, sheep_t sheep)
 {
-	sheep_free(sheep_data(sheep));
+	struct sheep_string *string;
+
+	string = sheep_string(sheep);
+	sheep_free(string->bytes);
+	sheep_free(string);
 }
 
 static int string_test(sheep_t sheep)
 {
-	return strlen(sheep_rawstring(sheep)) > 0;
+	struct sheep_string *string;
+
+	string = sheep_string(sheep);
+	return string->nr_bytes != 0;
 }
 
 static int string_equal(sheep_t a, sheep_t b)
 {
-	return !strcmp(sheep_rawstring(a), sheep_rawstring(b));
+	struct sheep_string *sa, *sb;
+
+	sa = sheep_string(a);
+	sb = sheep_string(b);
+	if (sa->nr_bytes != sb->nr_bytes)
+		return 0;
+	return !memcmp(sa->bytes, sb->bytes, sa->nr_bytes);
 }
 
 static void string_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
@@ -38,54 +51,52 @@ static void string_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
 
 static size_t string_length(sheep_t sheep)
 {
-	return strlen(sheep_rawstring(sheep));
+	struct sheep_string *string;
+
+	string = sheep_string(sheep);
+	return string->nr_bytes;
 }
 
 static sheep_t string_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
 {
-	const char *sa, *sb;
-	size_t len_a, len;
+	struct sheep_string *sa, *sb;
 	char *result;
+	size_t len;
 
-	sa = sheep_rawstring(a);
-	sb = sheep_rawstring(b);
-
-	len_a = strlen(sa);
-	len = len_a + strlen(sb);
-
+	sa = sheep_string(a);
+	sb = sheep_string(b);
+	len = sa->nr_bytes + sb->nr_bytes;
 	result = sheep_malloc(len + 1);
-	memcpy(result, sa, len_a);
-	strcpy(result + len_a, sb);
-
-	return __sheep_make_string(vm, result);
+	memcpy(result, sa->bytes, sa->nr_bytes);
+	memcpy(result + sa->nr_bytes, sb->bytes, sb->nr_bytes);
+	result[len] = 0;
+	return __sheep_make_string(vm, result, len);
 }
 
 static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)
 {
-	const char *string;
-	size_t len, pos;
+	struct sheep_string *string;
 	char *result;
+	size_t pos;
 
-	string = sheep_rawstring(sheep);
-	len = strlen(string);
-	result = sheep_malloc(len + 1);
-
-	for (pos = 0; pos < len; pos++)
-		result[pos] = string[len - pos - 1];
+	string = sheep_string(sheep);
+	result = sheep_malloc(string->nr_bytes + 1);
+	for (pos = 0; pos < string->nr_bytes; pos++)
+		result[pos] = string->bytes[string->nr_bytes - pos - 1];
 	result[pos] = 0;
-
-	return __sheep_make_string(vm, result);
+	return __sheep_make_string(vm, result, pos);
 }
 
 static sheep_t string_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 {
-	char new[2] = { 0, 0 };
-	const char *string;
+	struct sheep_string *string;
+	char *new;
 
-	string = sheep_rawstring(sheep);
-	if (strlen(string) > n)
-		new[0] = string[n];
-	return sheep_make_string(vm, new);
+	string = sheep_string(sheep);
+	new = sheep_zalloc(1 + 1);
+	if (string->nr_bytes > n)
+		new[0] = string->bytes[n];
+	return __sheep_make_string(vm, new, 1);
 }
 
 static sheep_t string_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
@@ -123,14 +134,19 @@ const struct sheep_type sheep_string_type = {
 	.sequence = &string_sequence,
 };
 
-sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str)
+sheep_t __sheep_make_string(struct sheep_vm *vm, const char *str, size_t len)
 {
-	return sheep_make_object(vm, &sheep_string_type, (char *)str);
+	struct sheep_string *string;
+
+	string = sheep_malloc(sizeof(struct sheep_string));
+	string->bytes = str;
+	string->nr_bytes = len;
+	return sheep_make_object(vm, &sheep_string_type, string);
 }
 
 sheep_t sheep_make_string(struct sheep_vm *vm, const char *str)
 {
-	return __sheep_make_string(vm, sheep_strdup(str));
+	return __sheep_make_string(vm, sheep_strdup(str), strlen(str));
 }
 
 void __sheep_format(sheep_t sheep, char **bufp, size_t *posp, int repr)
@@ -169,7 +185,7 @@ static sheep_t builtin_string(struct sheep_vm *vm, unsigned int nr_args)
 		return sheep;
 
 	buf = sheep_repr(sheep);
-	return __sheep_make_string(vm, buf);
+	return __sheep_make_string(vm, buf, strlen(buf));
 }
 
 static char *do_split(char **stringp, const char *delim)
@@ -188,25 +204,26 @@ static char *do_split(char **stringp, const char *delim)
 	return result;
 }
 
-/* (split string string) */
+/* (split delimiter string) */
 static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 {
-	const char *string, *token;
+	sheep_t string_, delim_, list_;
 	struct sheep_list *list;
-	sheep_t list_, token_;
+	const char *delim;
 	char *pos, *orig;
 	int empty;
 
-	if (sheep_unpack_stack("split", vm, nr_args, "sS", &token_, &string))
+	if (sheep_unpack_stack("split", vm, nr_args, "ss", &delim_, &string_))
 		return NULL;
-	sheep_protect(vm, token_);
-	pos = orig = sheep_strdup(string);
+
+	sheep_protect(vm, delim_);
+	pos = orig = sheep_strdup(sheep_rawstring(string_));
 
 	list_ = sheep_make_cons(vm, NULL, NULL);
 	sheep_protect(vm, list_);
 
-	token = sheep_rawstring(token_);
-	empty = !strlen(token);
+	delim = sheep_rawstring(delim_);
+	empty = sheep_string(delim_)->nr_bytes == 0;
 
 	list = sheep_list(list_);
 	while (pos) {
@@ -224,7 +241,7 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 			else
 				pos++;
 		} else
-			item = sheep_make_string(vm, do_split(&pos, token));
+			item = sheep_make_string(vm, do_split(&pos, delim));
 
 		list->head = item;
 		list->tail = sheep_make_cons(vm, NULL, NULL);
@@ -233,7 +250,7 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_free(orig);
 
 	sheep_unprotect(vm, list_);
-	sheep_unprotect(vm, token_);
+	sheep_unprotect(vm, delim_);
 
 	return list_;
 }
@@ -242,10 +259,10 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 {
 	char *new = NULL, *result = NULL;
-	size_t length = 0, dlength;
+	struct sheep_string *delim;
 	struct sheep_list *list;
 	sheep_t delim_, list_;
-	const char *delim;
+	size_t length = 0;
 
 	if (sheep_unpack_stack("join", vm, nr_args, "sl", &delim_, &list_))
 		return NULL;
@@ -253,25 +270,23 @@ static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, delim_);
 	sheep_protect(vm, list_);
 
-	delim = sheep_rawstring(delim_);
+	delim = sheep_string(delim_);
 	list = sheep_list(list_);
 
-	dlength = strlen(delim);
-
 	while (list->head) {
-		const char *string;
+		struct sheep_string *string;
 		size_t newlength;
 
 		if (sheep_unpack_list("join", list, "Sr", &string, &list))
 			goto out;
 
-		newlength = length + strlen(string);
+		newlength = length + string->nr_bytes;
 		if (list->head)
-			newlength += dlength;
+			newlength += delim->nr_bytes;
 		new = sheep_realloc(new, newlength + 1);
-		strcpy(new + length, string);
+		strcpy(new + length, string->bytes);
 		if (list->head)
-			strcpy(new + newlength - dlength, delim);
+			strcpy(new + newlength - delim->nr_bytes, delim->bytes);
 		length = newlength;
 	}
 
@@ -284,7 +299,7 @@ out:
 	sheep_unprotect(vm, delim_);
 
 	if (result)
-		return __sheep_make_string(vm, result);
+		return __sheep_make_string(vm, result, length);
 	return NULL;
 }
 

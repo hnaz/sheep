@@ -118,7 +118,7 @@ static sheep_t list_concat(struct sheep_vm *vm, sheep_t sheep,
 		sheep_t list;
 
 		list = vm->stack.items[vm->stack.nr_items - nr_args + i];
-		if (sheep_unpack("concat", list, 'l', &list))
+		if (sheep_unpack("concat", vm, list, 'l', &list))
 			goto out;
 
 		pos = do_list_concat(vm, pos, list);
@@ -456,7 +456,7 @@ static sheep_t builtin_reduce(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_protect(vm, list_);
 
 	list = sheep_list(list_);
-	if (sheep_unpack_list("reduce", list, "oor", &a, &b, &list))
+	if (sheep_unpack_list("reduce", vm, list, "oor", &a, &b, &list))
 		goto out;
 
 	value = sheep_call(vm, reducer, 2, a, b);

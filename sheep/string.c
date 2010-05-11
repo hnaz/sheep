@@ -73,7 +73,7 @@ static sheep_t string_concat(struct sheep_vm *vm, sheep_t sheep,
 		sheep_t string_;
 
 		string_ = vm->stack.items[vm->stack.nr_items - nr_args + i];
-		if (sheep_unpack("concat", string_, 'S', &string)) {
+		if (sheep_unpack("concat", vm, string_, 'S', &string)) {
 			sheep_free(sb.bytes);
 			return NULL;
 		}
@@ -289,7 +289,7 @@ static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 		struct sheep_string *string;
 		size_t newlength;
 
-		if (sheep_unpack_list("join", list, "Sr", &string, &list))
+		if (sheep_unpack_list("join", vm, list, "Sr", &string, &list))
 			goto out;
 
 		newlength = length + string->nr_bytes;

@@ -35,7 +35,7 @@ static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 	}
 
 	object = vm->stack.items[vm->stack.nr_items - nr_args];
-	if (sheep_unpack("concat", object, 'q', &object))
+	if (sheep_unpack("concat", vm, object, 'q', &object))
 		return NULL;
 
 	return sheep_sequence(object)->concat(vm, object, nr_args);

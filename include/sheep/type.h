@@ -25,6 +25,8 @@ struct sheep_typeclass {
 	unsigned int nr_slots;
 };
 
+extern const struct sheep_type sheep_typeclass_type;
+
 sheep_t sheep_make_typeclass(struct sheep_vm *, const char *,
 			const char **, unsigned int);
 

@@ -51,6 +51,7 @@ void sheep_strbuf_add(struct sheep_strbuf *sb, const char *str)
 	len = strlen(str);
 	sb->bytes = sheep_realloc(sb->bytes, sb->nr_bytes + len + 1);
 	memcpy(sb->bytes + sb->nr_bytes, str, len + 1);
+	sb->nr_bytes += len;
 }
 
 #define DEFAULT_BUF 64

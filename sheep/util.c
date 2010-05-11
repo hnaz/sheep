@@ -44,14 +44,17 @@ void sheep_free(const void *mem)
 	free((void *)mem);
 }
 
+void sheep_strbuf_addn(struct sheep_strbuf *sb, const char *str, size_t n)
+{
+	sb->bytes = sheep_realloc(sb->bytes, sb->nr_bytes + n + 1);
+	memcpy(sb->bytes + sb->nr_bytes, str, n);
+	sb->nr_bytes += n;
+	sb->bytes[sb->nr_bytes] = 0;
+}
+
 void sheep_strbuf_add(struct sheep_strbuf *sb, const char *str)
 {
-	size_t len;
-
-	len = strlen(str);
-	sb->bytes = sheep_realloc(sb->bytes, sb->nr_bytes + len + 1);
-	memcpy(sb->bytes + sb->nr_bytes, str, len + 1);
-	sb->nr_bytes += len;
+	sheep_strbuf_addn(sb, str, strlen(str));
 }
 
 #define DEFAULT_BUF 64

@@ -11,6 +11,7 @@
 #include <sheep/list.h>
 #include <stdarg.h>
 
+int sheep_unpack(const char *, sheep_t, const char, ...);
 int sheep_unpack_list(const char *, struct sheep_list *, const char *, ...);
 int sheep_unpack_stack(const char *, struct sheep_vm *, unsigned int,
 		const char *, ...);

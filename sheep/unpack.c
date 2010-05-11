@@ -94,6 +94,30 @@ static const char *unpack(int control, sheep_t object,
 	return NULL;
 }
 
+int sheep_unpack(const char *caller, sheep_t object, const char item, ...)
+{
+	void **itemp, *next = NULL;
+	const char *wanted;
+	va_list ap;
+
+	va_start(ap, item);
+	itemp = va_arg(ap, void **);
+
+	wanted = unpack(item, object, itemp, &next);
+	if (wanted) {
+		fprintf(stderr, "%s: expected %s, got %s\n",
+			caller, wanted, sheep_type(object)->name);
+		va_end(ap);
+		return -1;
+	}
+
+	if (next)
+		*va_arg(ap, void **) = next;
+
+	va_end(ap);
+	return 0;
+}
+
 int sheep_unpack_list(const char *caller, struct sheep_list *list,
 		const char *items, ...)
 {

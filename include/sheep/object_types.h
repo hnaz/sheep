@@ -18,7 +18,7 @@ struct sheep_vm;
 
 struct sheep_sequence {
 	size_t (*length)(sheep_t);
-	sheep_t (*concat)(struct sheep_vm *, sheep_t, sheep_t);
+	sheep_t (*concat)(struct sheep_vm *, sheep_t, unsigned int);
 	sheep_t (*reverse)(struct sheep_vm *, sheep_t);
 	sheep_t (*nth)(struct sheep_vm *, size_t, sheep_t);
 	sheep_t (*position)(struct sheep_vm *, sheep_t, sheep_t);

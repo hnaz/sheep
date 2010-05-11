@@ -25,6 +25,7 @@ struct sheep_strbuf {
 	char *bytes;
 	size_t nr_bytes;
 };
+void sheep_strbuf_addn(struct sheep_strbuf *, const char *, size_t);
 void sheep_strbuf_add(struct sheep_strbuf *, const char *);
 void sheep_strbuf_addf(struct sheep_strbuf *, const char *, ...);
 

@@ -58,20 +58,31 @@ static size_t string_length(sheep_t sheep)
 	return string->nr_bytes;
 }
 
-static sheep_t string_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
+static sheep_t string_concat(struct sheep_vm *vm, sheep_t sheep,
+			unsigned int nr_args)
 {
-	struct sheep_string *sa, *sb;
-	char *result;
-	size_t len;
+	struct sheep_string *string;
+	struct sheep_strbuf sb;
+	unsigned int i;
 
-	sa = sheep_string(a);
-	sb = sheep_string(b);
-	len = sa->nr_bytes + sb->nr_bytes;
-	result = sheep_malloc(len + 1);
-	memcpy(result, sa->bytes, sa->nr_bytes);
-	memcpy(result + sa->nr_bytes, sb->bytes, sb->nr_bytes);
-	result[len] = 0;
-	return __sheep_make_string(vm, result, len);
+	memset(&sb, 0, sizeof(struct sheep_strbuf));
+
+	string = sheep_string(sheep);
+	sheep_strbuf_addn(&sb, string->bytes, string->nr_bytes);
+	for (i = 1; i < nr_args; i++) {
+		sheep_t string_;
+
+		string_ = vm->stack.items[vm->stack.nr_items - nr_args + i];
+		if (sheep_unpack("concat", string_, 'S', &string)) {
+			sheep_free(sb.bytes);
+			return NULL;
+		}
+
+		sheep_strbuf_addn(&sb, string->bytes, string->nr_bytes);
+	}
+
+	vm->stack.nr_items -= nr_args;
+	return __sheep_make_string(vm, sb.bytes, sb.nr_bytes);
 }
 
 static sheep_t string_reverse(struct sheep_vm *vm, sheep_t sheep)

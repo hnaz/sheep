@@ -24,21 +24,21 @@ static sheep_t builtin_length(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_make_number(vm, len);
 }
 
-/* (concat a b) */
+/* (concat first &rest rest) */
 static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 {
-	sheep_t a, b;
+	sheep_t object;
 
-	if (sheep_unpack_stack("concat", vm, nr_args, "qq", &a, &b))
-		return NULL;
-
-	if (sheep_type(a) != sheep_type(b)) {
-		fprintf(stderr, "concat: can not concat %s and %s\n",
-			sheep_type(a)->name, sheep_type(b)->name);
+	if (!nr_args) {
+		fprintf(stderr, "concat: too few arguments\n");
 		return NULL;
 	}
 
-	return sheep_sequence(a)->concat(vm, a, b);
+	object = vm->stack.items[vm->stack.nr_items - nr_args];
+	if (sheep_unpack("concat", object, 'q', &object))
+		return NULL;
+
+	return sheep_sequence(object)->concat(vm, object, nr_args);
 }
 
 /* (reverse sequence) */

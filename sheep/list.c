@@ -102,22 +102,32 @@ static sheep_t do_list_concat(struct sheep_vm *vm, sheep_t base, sheep_t tail)
 	return base;
 }
 
-static sheep_t list_concat(struct sheep_vm *vm, sheep_t a, sheep_t b)
+static sheep_t list_concat(struct sheep_vm *vm, sheep_t sheep,
+			unsigned int nr_args)
 {
-	sheep_t result, pos;
+	sheep_t start, pos, result = NULL;
+	unsigned int i;
 
-	sheep_protect(vm, a);
-	sheep_protect(vm, b);
+	sheep_protect(vm, sheep);
 
-	result = pos = sheep_make_cons(vm, NULL, NULL);
-	sheep_protect(vm, result);
+	start = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, start);
 
-	pos = do_list_concat(vm, result, a);
-	do_list_concat(vm, pos, b);
+	pos = do_list_concat(vm, start, sheep);
+	for (i = 1; i < nr_args; i++) {
+		sheep_t list;
 
-	sheep_unprotect(vm, result);
-	sheep_unprotect(vm, b);
-	sheep_unprotect(vm, a);
+		list = vm->stack.items[vm->stack.nr_items - nr_args + i];
+		if (sheep_unpack("concat", list, 'l', &list))
+			goto out;
+
+		pos = do_list_concat(vm, pos, list);
+	}
+	vm->stack.nr_items -= nr_args;
+	result = start;
+out:
+	sheep_unprotect(vm, start);
+	sheep_unprotect(vm, sheep);
 
 	return result;
 }

@@ -45,6 +45,7 @@ static void typeobject_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 }
 
 const struct sheep_type sheep_typeobject_type = {
+	.name = "object",
 	.mark = typeobject_mark,
 	.free = typeobject_free,
 	.format = typeobject_format,
@@ -97,6 +98,7 @@ static void typeclass_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 }
 
 const struct sheep_type sheep_typeclass_type = {
+	.name = "type",
 	.free = typeclass_free,
 	.call = typeclass_call,
 	.format = typeclass_format,

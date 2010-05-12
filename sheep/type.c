@@ -94,7 +94,10 @@ static void typeclass_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 	struct sheep_typeclass *class;
 
 	class = sheep_data(sheep);
-	sheep_strbuf_addf(sb, "#<type '%s'>", class->name);
+	if (repr)
+		sheep_strbuf_addf(sb, "#<type '%s'>", class->name);
+	else
+		sheep_strbuf_add(sb, class->name);
 }
 
 const struct sheep_type sheep_typeclass_type = {

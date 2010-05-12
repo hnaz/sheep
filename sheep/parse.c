@@ -31,16 +31,17 @@ void sheep_parser_error(struct sheep_compile *compile, sheep_t culprit,
 	} else
 		position = 0;
 
-	fprintf(stderr, "%s:%lu: ", expr->filename,
-		(unsigned long)expr->lines.items[position]);
+	repr = sheep_repr(culprit);
+	fprintf(stderr, "%s:%lu: %s: ", expr->filename,
+		(unsigned long)expr->lines.items[position],
+		repr);
+	sheep_free(repr);
 
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
-	repr = sheep_repr(culprit);
-	fprintf(stderr, " `%s'\n", repr);
-	sheep_free(repr);
+	fprintf(stderr, "\n");
 }
 
 enum {
@@ -121,9 +122,9 @@ static int parse(struct sheep_compile *compile, struct sheep_list *form,
 		return 0;
 
 	if (ret == PARSE_MISMATCH)
-		sheep_parser_error(compile, mismatch, "parser error at");
+		sheep_parser_error(compile, mismatch, "unexpected expression");
 	else
-		sheep_parser_error(compile, form->head, "too %s arguments to",
+		sheep_parser_error(compile, form->head, "too %s arguments",
 				ret == PARSE_TOO_MANY ? "many" : "few");
 
 	return -1;

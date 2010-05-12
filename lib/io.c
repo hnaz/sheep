@@ -54,7 +54,7 @@ static sheep_t open(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t write;
 	FILE *filp;
 
-	if (sheep_unpack_stack("open", vm, nr_args, "Sb", &path, &write))
+	if (sheep_unpack_stack(vm, nr_args, "Sb", &path, &write))
 		return NULL;
 
 	if (sheep_test(write))
@@ -79,7 +79,7 @@ static sheep_t close(struct sheep_vm *vm, unsigned int nr_args)
 {
 	struct file *file;
 
-	if (sheep_unpack_stack("close", vm, nr_args, "T", &file_type, &file))
+	if (sheep_unpack_stack(vm, nr_args, "T", &file_type, &file))
 		return NULL;
 
 	if (file_close(file))
@@ -94,8 +94,7 @@ static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 	struct file *file;
 	char *buf;
 
-	if (sheep_unpack_stack("read", vm, nr_args, "TN",
-				&file_type, &file, &nr_bytes))
+	if (sheep_unpack_stack(vm, nr_args, "TN", &file_type, &file, &nr_bytes))
 		return NULL;
 
 	if (!file->filp) {
@@ -117,8 +116,7 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 	const char *string;
 	struct file *file;
 
-	if (sheep_unpack_stack("write", vm, nr_args, "TS",
-				&file_type, &file, &string))
+	if (sheep_unpack_stack(vm, nr_args, "TS", &file_type, &file, &string))
 		return NULL;
 
 	if (!file->filp) {

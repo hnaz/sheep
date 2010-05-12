@@ -94,8 +94,7 @@ static const char *unpack(int control, sheep_t object,
 	return NULL;
 }
 
-int sheep_unpack(const char *caller, struct sheep_vm *vm,
-		sheep_t object, const char item, ...)
+int sheep_unpack(struct sheep_vm *vm, sheep_t object, const char item, ...)
 {
 	void **itemp, *next = NULL;
 	const char *wanted;
@@ -119,8 +118,8 @@ int sheep_unpack(const char *caller, struct sheep_vm *vm,
 	return 0;
 }
 
-int sheep_unpack_list(const char *caller, struct sheep_vm *vm,
-		struct sheep_list *list, const char *items, ...)
+int sheep_unpack_list(struct sheep_vm *vm, struct sheep_list *list,
+		const char *items, ...)
 {
 	va_list ap;
 
@@ -166,8 +165,8 @@ int sheep_unpack_list(const char *caller, struct sheep_vm *vm,
 	return -1;
 }
 
-int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
-		unsigned int nr_args, const char *items, ...)
+int sheep_unpack_stack(struct sheep_vm *vm, unsigned int nr_args,
+		const char *items, ...)
 {
 	unsigned long base, index;
 	va_list ap;

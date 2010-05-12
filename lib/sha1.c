@@ -14,7 +14,7 @@ static sheep_t sha1(struct sheep_vm *vm, unsigned int nr_args)
 	const char *text;
 	unsigned int i;
 
-	if (sheep_unpack_stack("sha1", vm, nr_args, "S", &text))
+	if (sheep_unpack_stack(vm, nr_args, "S", &text))
 		return NULL;
 
 	SHA1((const unsigned char *)text, strlen(text), hash);

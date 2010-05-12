@@ -45,7 +45,7 @@ static sheep_t builtin_equal(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t a, b;
 
-	if (sheep_unpack_stack("=", vm, nr_args, "oo", &a, &b))
+	if (sheep_unpack_stack(vm, nr_args, "oo", &a, &b))
 		return NULL;
 
 	if (sheep_equal(a, b))
@@ -58,7 +58,7 @@ static sheep_t builtin_bool(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
-	if (sheep_unpack_stack("bool", vm, nr_args, "o", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "o", &sheep))
 		return NULL;
 
 	if (sheep_test(sheep))
@@ -71,7 +71,7 @@ static sheep_t builtin_not(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
-	if (sheep_unpack_stack("not", vm, nr_args, "o", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "o", &sheep))
 		return NULL;
 
 	if (sheep_test(sheep))

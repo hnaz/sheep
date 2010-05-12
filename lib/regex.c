@@ -29,7 +29,7 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 	regex_t reg;
 	int status;
 
-	if (sheep_unpack_stack("open", vm, nr_args, "Ss", &regex, &string_))
+	if (sheep_unpack_stack(vm, nr_args, "Ss", &regex, &string_))
 		return NULL;
 	sheep_protect(vm, string_);
 

@@ -118,7 +118,7 @@ static sheep_t list_concat(struct sheep_vm *vm, sheep_t sheep,
 		sheep_t list;
 
 		list = vm->stack.items[vm->stack.nr_items - nr_args + i];
-		if (sheep_unpack("concat", vm, list, 'l', &list))
+		if (sheep_unpack(vm, list, 'l', &list))
 			goto out;
 
 		pos = do_list_concat(vm, pos, list);
@@ -266,7 +266,7 @@ static sheep_t builtin_cons(struct sheep_vm *vm, unsigned int nr_args)
 
 	new = sheep_make_cons(vm, NULL, NULL);
 
-	if (sheep_unpack_stack("cons", vm, nr_args, "ol", &item, &list))
+	if (sheep_unpack_stack(vm, nr_args, "ol", &item, &list))
 		return NULL;
 
 	sheep_list(new)->head = item;
@@ -305,7 +305,7 @@ static sheep_t builtin_head(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *list;
 	sheep_t sheep;
 
-	if (sheep_unpack_stack("head", vm, nr_args, "l", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "l", &sheep))
 		return NULL;
 
 	list = sheep_list(sheep);
@@ -320,7 +320,7 @@ static sheep_t builtin_tail(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *list;
 	sheep_t sheep;
 
-	if (sheep_unpack_stack("tail", vm, nr_args, "l", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "l", &sheep))
 		return NULL;
 
 	list = sheep_list(sheep);
@@ -335,7 +335,7 @@ static sheep_t builtin_find(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t predicate, list_, result = &sheep_nil;
 	struct sheep_list *list;
 
-	if (sheep_unpack_stack("find", vm, nr_args, "cl", &predicate, &list_))
+	if (sheep_unpack_stack(vm, nr_args, "cl", &predicate, &list_))
 		return NULL;
 	sheep_protect(vm, predicate);
 	sheep_protect(vm, list_);
@@ -364,7 +364,7 @@ static sheep_t builtin_filter(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t filter, old_, new_, result = NULL;
 	struct sheep_list *old, *new;
 
-	if (sheep_unpack_stack("filter", vm, nr_args, "cl", &filter, &old_))
+	if (sheep_unpack_stack(vm, nr_args, "cl", &filter, &old_))
 		return NULL;
 	sheep_protect(vm, filter);
 	sheep_protect(vm, old_);
@@ -403,7 +403,7 @@ static sheep_t builtin_apply(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_list *list;
 	sheep_t callable;
 
-	if (sheep_unpack_stack("apply", vm, nr_args, "cL", &callable, &list))
+	if (sheep_unpack_stack(vm, nr_args, "cL", &callable, &list))
 		return NULL;
 
 	return sheep_apply(vm, callable, list);
@@ -415,7 +415,7 @@ static sheep_t builtin_map(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t mapper, old_, new_, result = NULL;
 	struct sheep_list *old, *new;
 
-	if (sheep_unpack_stack("map", vm, nr_args, "cl", &mapper, &old_))
+	if (sheep_unpack_stack(vm, nr_args, "cl", &mapper, &old_))
 		return NULL;
 	sheep_protect(vm, mapper);
 	sheep_protect(vm, old_);
@@ -449,14 +449,14 @@ static sheep_t builtin_reduce(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t reducer, list_, a, b, value, result = NULL;
 	struct sheep_list *list;
 
-	if (sheep_unpack_stack("reduce", vm, nr_args, "cl", &reducer, &list_))
+	if (sheep_unpack_stack(vm, nr_args, "cl", &reducer, &list_))
 		return NULL;
 
 	sheep_protect(vm, reducer);
 	sheep_protect(vm, list_);
 
 	list = sheep_list(list_);
-	if (sheep_unpack_list("reduce", vm, list, "oor", &a, &b, &list))
+	if (sheep_unpack_list(vm, list, "oor", &a, &b, &list))
 		goto out;
 
 	value = sheep_call(vm, reducer, 2, a, b);

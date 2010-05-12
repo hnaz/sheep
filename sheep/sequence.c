@@ -17,7 +17,7 @@ static sheep_t builtin_length(struct sheep_vm *vm, unsigned int nr_args)
 	unsigned int len;
 	sheep_t seq;
 
-	if (sheep_unpack_stack("length", vm, nr_args, "q", &seq))
+	if (sheep_unpack_stack(vm, nr_args, "q", &seq))
 		return NULL;
 
 	len = sheep_sequence(seq)->length(seq);
@@ -35,7 +35,7 @@ static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 	}
 
 	object = vm->stack.items[vm->stack.nr_items - nr_args];
-	if (sheep_unpack("concat", vm, object, 'q', &object))
+	if (sheep_unpack(vm, object, 'q', &object))
 		return NULL;
 
 	return sheep_sequence(object)->concat(vm, object, nr_args);
@@ -46,7 +46,7 @@ static sheep_t builtin_reverse(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t seq;
 
-	if (sheep_unpack_stack("reverse", vm, nr_args, "q", &seq))
+	if (sheep_unpack_stack(vm, nr_args, "q", &seq))
 		return NULL;
 
 	return sheep_sequence(seq)->reverse(vm, seq);
@@ -58,7 +58,7 @@ static sheep_t builtin_nth(struct sheep_vm *vm, unsigned int nr_args)
 	unsigned long n;
 	sheep_t seq;
 
-	if (sheep_unpack_stack("nth", vm, nr_args, "Nq", &n, &seq))
+	if (sheep_unpack_stack(vm, nr_args, "Nq", &n, &seq))
 		return NULL;
 
 	return sheep_sequence(seq)->nth(vm, n, seq);
@@ -69,7 +69,7 @@ static sheep_t builtin_position(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t item, seq;
 
-	if (sheep_unpack_stack("position", vm, nr_args, "oq", &item, &seq))
+	if (sheep_unpack_stack(vm, nr_args, "oq", &item, &seq))
 		return NULL;
 
 	return sheep_sequence(seq)->position(vm, item, seq);

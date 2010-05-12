@@ -130,7 +130,7 @@ static sheep_t builtin_disassemble(struct sheep_vm *vm, unsigned int nr_args)
 	struct sheep_function *function;
 	unsigned int nr_foreigns;
 
-	if (sheep_unpack_stack("disassemble", vm, nr_args, "F", &function))
+	if (sheep_unpack_stack(vm, nr_args, "F", &function))
 		return NULL;
 
 	if (function->foreign)

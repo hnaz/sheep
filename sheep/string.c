@@ -73,7 +73,7 @@ static sheep_t string_concat(struct sheep_vm *vm, sheep_t sheep,
 		sheep_t string_;
 
 		string_ = vm->stack.items[vm->stack.nr_items - nr_args + i];
-		if (sheep_unpack("concat", vm, string_, 'S', &string)) {
+		if (sheep_unpack(vm, string_, 'S', &string)) {
 			sheep_free(sb.bytes);
 			return NULL;
 		}
@@ -190,7 +190,7 @@ static sheep_t builtin_string(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t sheep;
 	char *buf;
 
-	if (sheep_unpack_stack("string", vm, nr_args, "o", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "o", &sheep))
 		return NULL;
 
 	if (sheep_type(sheep) == &sheep_string_type)
@@ -225,7 +225,7 @@ static sheep_t builtin_split(struct sheep_vm *vm, unsigned int nr_args)
 	char *pos, *orig;
 	int empty;
 
-	if (sheep_unpack_stack("split", vm, nr_args, "ss", &delim_, &string_))
+	if (sheep_unpack_stack(vm, nr_args, "ss", &delim_, &string_))
 		return NULL;
 
 	sheep_protect(vm, delim_);
@@ -276,7 +276,7 @@ static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t delim_, list_;
 	size_t length = 0;
 
-	if (sheep_unpack_stack("join", vm, nr_args, "sl", &delim_, &list_))
+	if (sheep_unpack_stack(vm, nr_args, "sl", &delim_, &list_))
 		return NULL;
 
 	sheep_protect(vm, delim_);
@@ -289,7 +289,7 @@ static sheep_t builtin_join(struct sheep_vm *vm, unsigned int nr_args)
 		struct sheep_string *string;
 		size_t newlength;
 
-		if (sheep_unpack_list("join", vm, list, "Sr", &string, &list))
+		if (sheep_unpack_list(vm, list, "Sr", &string, &list))
 			goto out;
 
 		newlength = length + string->nr_bytes;

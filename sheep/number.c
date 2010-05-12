@@ -63,7 +63,7 @@ static sheep_t builtin_number(struct sheep_vm *vm, unsigned int nr_args)
 {
 	sheep_t sheep;
 
-	if (sheep_unpack_stack("number", vm, nr_args, "o", &sheep))
+	if (sheep_unpack_stack(vm, nr_args, "o", &sheep))
 		return NULL;
 
 	if (sheep_type(sheep) == &sheep_number_type)
@@ -94,12 +94,12 @@ enum relation {
 };
 
 static sheep_t do_cmp(struct sheep_vm *vm, unsigned int nr_args,
-		const char *name, enum relation relation)
+		enum relation relation)
 {
 	int result = result;
 	long a, b;
 
-	if (sheep_unpack_stack(name, vm, nr_args, "NN", &a, &b))
+	if (sheep_unpack_stack(vm, nr_args, "NN", &a, &b))
 		return NULL;
 
 	switch (relation) {
@@ -125,36 +125,36 @@ static sheep_t do_cmp(struct sheep_vm *vm, unsigned int nr_args,
 /* (< a b) */
 static sheep_t builtin_less(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_cmp(vm, nr_args, "<", LESS);
+	return do_cmp(vm, nr_args, LESS);
 }
 
 /* (<= a b) */
 static sheep_t builtin_lesseq(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_cmp(vm, nr_args, "<=", LESSEQ);
+	return do_cmp(vm, nr_args, LESSEQ);
 }
 
 /* (>= a b) */
 static sheep_t builtin_moreeq(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_cmp(vm, nr_args, ">=", MOREEQ);
+	return do_cmp(vm, nr_args, MOREEQ);
 }
 
 /* (> a b) */
 static sheep_t builtin_more(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_cmp(vm, nr_args, ">", MORE);
+	return do_cmp(vm, nr_args, MORE);
 }
 
 static sheep_t do_binop(struct sheep_vm *vm, unsigned int nr_args,
-			const char *operation)
+			char operation)
 {
 	long value, a, b;
 
-	if (sheep_unpack_stack(operation, vm, nr_args, "NN", &a, &b))
+	if (sheep_unpack_stack(vm, nr_args, "NN", &a, &b))
 		return NULL;
 
-	switch (*operation) {
+	switch (operation) {
 	case '+':
 		value = a + b;
 		break;
@@ -195,7 +195,7 @@ static sheep_t do_binop(struct sheep_vm *vm, unsigned int nr_args,
 /* (+ a b) */
 static sheep_t builtin_plus(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "+");
+	return do_binop(vm, nr_args, '+');
 }
 
 /* (- a &optional b) */
@@ -204,30 +204,30 @@ static sheep_t builtin_minus(struct sheep_vm *vm, unsigned int nr_args)
 	if (nr_args == 1) {
 		long number;
 
-		if (sheep_unpack_stack("-", vm, nr_args, "N", &number))
+		if (sheep_unpack_stack(vm, nr_args, "N", &number))
 			return NULL;
 		return sheep_make_number(vm, -number);
 	}
 
-	return do_binop(vm, nr_args, "-");
+	return do_binop(vm, nr_args, '-');
 }
 
 /* (* a b) */
 static sheep_t builtin_multiply(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "*");
+	return do_binop(vm, nr_args, '*');
 }
 
 /* (/ a b) */
 static sheep_t builtin_divide(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "/");
+	return do_binop(vm, nr_args, '/');
 }
 
 /* (% a b) */
 static sheep_t builtin_modulo(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "%");
+	return do_binop(vm, nr_args, '%');
 }
 
 /* (~ number) */
@@ -235,7 +235,7 @@ static sheep_t builtin_lnot(struct sheep_vm *vm, unsigned int nr_args)
 {
 	long number;
 
-	if (sheep_unpack_stack("~", vm, nr_args, "N", &number))
+	if (sheep_unpack_stack(vm, nr_args, "N", &number))
 		return NULL;
 
 	return sheep_make_number(vm, ~number);
@@ -244,31 +244,31 @@ static sheep_t builtin_lnot(struct sheep_vm *vm, unsigned int nr_args)
 /* (| a b) */
 static sheep_t builtin_lor(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "|");
+	return do_binop(vm, nr_args, '|');
 }
 
 /* (& a b) */
 static sheep_t builtin_land(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "&");
+	return do_binop(vm, nr_args, '&');
 }
 
 /* (^ a b) */
 static sheep_t builtin_lxor(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "^");
+	return do_binop(vm, nr_args, '^');
 }
 
 /* (<< a b) */
 static sheep_t builtin_shiftl(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, "<<");
+	return do_binop(vm, nr_args, '<');
 }
 
 /* (>> a b) */
 static sheep_t builtin_shiftr(struct sheep_vm *vm, unsigned int nr_args)
 {
-	return do_binop(vm, nr_args, ">>");
+	return do_binop(vm, nr_args, '>');
 }
 
 void sheep_number_builtins(struct sheep_vm *vm)

@@ -57,10 +57,17 @@ static void function_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 	struct sheep_function *function;
 
 	function = sheep_function(sheep);
-	if (function->name)
-		sheep_strbuf_addf(sb, "#<function '%s'>", function->name);
-	else
-		sheep_strbuf_addf(sb, "#<function '%p'>", function);
+	if (repr) {
+		if (function->name)
+			sheep_strbuf_addf(sb, "#<function '%s'>", function->name);
+		else
+			sheep_strbuf_addf(sb, "#<function '%p'>", function);
+	} else {
+		if (function->name)
+			sheep_strbuf_add(sb, function->name);
+		else
+			sheep_strbuf_add(sb, "<anonymous function>");
+	}
 }
 
 const struct sheep_type sheep_function_type = {

@@ -19,11 +19,13 @@ static enum sheep_call alien_call(struct sheep_vm *vm, sheep_t callable,
 				unsigned int nr_args, sheep_t *valuep)
 {
 	struct sheep_alien *alien;
+	sheep_t value;
 
 	alien = sheep_data(callable);
-	*valuep = alien->function(vm, nr_args);
-	if (!*valuep)
+	value = alien->function(vm, nr_args);
+	if (!value)
 		return SHEEP_CALL_FAIL;
+	*valuep = value;
 	return SHEEP_CALL_DONE;
 }
 

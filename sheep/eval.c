@@ -54,7 +54,7 @@ static sheep_t hash(struct sheep_vm *vm, sheep_t container,
 	return slots[(unsigned long)entry];
 err:
 	obj = sheep_repr(container);
-	fprintf(stderr, "can not find %s in %s\n", key, obj);
+	sheep_error(vm, "can not find `%s' in `%s'", key, obj);
 	sheep_free(obj);
 	return NULL;
 }
@@ -82,8 +82,7 @@ static enum sheep_call precall(struct sheep_vm *vm, sheep_t callable,
 
 	type = sheep_type(callable);
 	if (!type->call) {
-		fprintf(stderr, "can not call object of type %s\n",
-			type->name);
+		sheep_error(vm, "can not call `%s'", type->name);
 		return SHEEP_CALL_FAIL;
 	}
 	return type->call(vm, callable, nr_args, valuep);
@@ -121,6 +120,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 	struct sheep_function *current;
 	unsigned long basep, *codep;
 	unsigned int nesting = 0;
+	sheep_t problem = NULL;
 
 	sheep_protect(vm, function);
 
@@ -209,6 +209,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			done = precall(vm, tmp, arg, &tmp);
 			switch (done) {
 			case SHEEP_CALL_FAIL:
+				problem = tmp;
 				goto err;
 			case SHEEP_CALL_DONE:
 				sheep_vector_push(&vm->stack, tmp);
@@ -233,6 +234,7 @@ sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
 			done = precall(vm, tmp, arg, &tmp);
 			switch (done) {
 			case SHEEP_CALL_FAIL:
+				problem = tmp;
 				goto err;
 			case SHEEP_CALL_DONE:
 				sheep_vector_push(&vm->stack, tmp);
@@ -308,6 +310,8 @@ out:
 err:
 	vm->stack.nr_items = 0;
 	vm->calls.nr_items -= 3 * nesting;
+	if (!vm->calls.nr_items)
+		sheep_report_error(vm, problem);
 	sheep_unprotect(vm, function);
 	return NULL;
 }

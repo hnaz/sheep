@@ -106,8 +106,8 @@ int sheep_unpack(const char *caller, struct sheep_vm *vm,
 
 	wanted = unpack(item, object, itemp, &next);
 	if (wanted) {
-		fprintf(stderr, "%s: expected %s, got %s\n",
-			caller, wanted, sheep_type(object)->name);
+		sheep_error(vm, "expected %s, got %s",
+			wanted, sheep_type(object)->name);
 		va_end(ap);
 		return -1;
 	}
@@ -144,8 +144,8 @@ int sheep_unpack_list(const char *caller, struct sheep_vm *vm,
 
 		wanted = unpack(*items, list->head, itemp, &next);
 		if (wanted) {
-			fprintf(stderr, "%s: expected %s, got %s\n",
-				caller, wanted, sheep_type(list->head)->name);
+			sheep_error(vm, "expected %s, got %s",
+				wanted, sheep_type(list->head)->name);
 			va_end(ap);
 			return -1;
 		}
@@ -161,8 +161,8 @@ int sheep_unpack_list(const char *caller, struct sheep_vm *vm,
 	if (!*items && !list->head)
 		return 0;
 
-	fprintf(stderr, "%s: too %s arguments\n",
-		caller, !!*items - !!list->head > 0 ? "few" : "many");
+	sheep_error(vm, "too %s arguments",
+		!!*items - !!list->head > 0 ? "few" : "many");
 	return -1;
 }
 
@@ -173,7 +173,7 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 	va_list ap;
 
 	if (strlen(items) != nr_args) {
-		fprintf(stderr, "%s: too %s arguments\n", caller,
+		sheep_error(vm, "too %s arguments",
 			strlen(items) > nr_args ? "few" : "many");
 		return -1;
 	}
@@ -192,8 +192,8 @@ int sheep_unpack_stack(const char *caller, struct sheep_vm *vm,
 
 		wanted = unpack(*items, object, itemp, &next);
 		if (wanted) {
-			fprintf(stderr, "%s: expected %s, got %s\n",
-				caller, wanted, sheep_type(object)->name);
+			sheep_error(vm, "expected %s, got %s",
+				wanted, sheep_type(object)->name);
 			va_end(ap);
 			return -1;
 		}

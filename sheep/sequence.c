@@ -30,7 +30,7 @@ static sheep_t builtin_concat(struct sheep_vm *vm, unsigned int nr_args)
 	sheep_t object;
 
 	if (!nr_args) {
-		fprintf(stderr, "concat: too few arguments\n");
+		sheep_error(vm, "too few arguments\n");
 		return NULL;
 	}
 

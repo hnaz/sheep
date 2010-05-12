@@ -77,14 +77,12 @@ static sheep_t builtin_number(struct sheep_vm *vm, unsigned int nr_args)
 		case 0:
 			return number;
 		default:
-			fprintf(stderr, "number: can not convert \"%s\"\n",
-				str);
+			sheep_error(vm, "can not convert \"%s\"", str);
 			return NULL;
 		}
 	}
 
-	fprintf(stderr, "number: can not convert %s\n",
-		sheep_type(sheep)->name);
+	sheep_error(vm, "can not convert `%s'", sheep_type(sheep)->name);
 	return NULL;
 }
 

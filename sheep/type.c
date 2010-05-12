@@ -72,8 +72,8 @@ static enum sheep_call typeclass_call(struct sheep_vm *vm, sheep_t callable,
 
 	class = sheep_data(callable);
 	if (nr_args != class->nr_slots) {
-		fprintf(stderr, "%s has %d slots, %d values given\n",
-			class->name, class->nr_slots, nr_args);
+		sheep_error(vm, "type has %d slots, %d values given",
+			class->nr_slots, nr_args);
 		return SHEEP_CALL_FAIL;
 	}
 

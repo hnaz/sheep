@@ -65,13 +65,13 @@ static unsigned int load_so(struct sheep_vm *vm, const char *path,
 
 	handle = dlopen(path, RTLD_NOW);
 	if (!handle) {
-		fprintf(stderr, "load: dlopen(%s) failed: %s\n", path, dlerror());
+		sheep_error(vm, "dlopen(%s) failed: %s", path, dlerror());
 		goto err;
 	}
 
 	init = dlsym(handle, "init");
 	if (!init) {
-		fprintf(stderr, "load: %s has no init()\n", path);
+		sheep_error(vm, "%s has no init()", path);
 		goto err_handle;
 	}
 
@@ -154,7 +154,7 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 
 	paths_ = vm->globals.items[load_path];
 	if (sheep_type(paths_) != &sheep_list_type) {
-		fprintf(stderr, "load: load-path is not a list\n");
+		sheep_error(vm, "`load-path' is not a list");
 		goto err;
 	}
 
@@ -163,7 +163,7 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 		const char *path;
 
 		if (sheep_type(paths->head) != &sheep_string_type) {
-			fprintf(stderr, "load: bogus load-path contents\n");
+			sheep_error(vm, "bogus paths in `load-path'");
 			goto err;
 		}
 
@@ -179,8 +179,8 @@ sheep_t sheep_module_load(struct sheep_vm *vm, const char *name)
 		}
 	}
 
-	fprintf(stderr, "load: %s not found\n", name);
-err:		
+	sheep_error(vm, "module `%s' not found", name);
+err:
 	free_module(mod);
 	return NULL;
 found:

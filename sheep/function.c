@@ -44,8 +44,7 @@ static enum sheep_call function_call(struct sheep_vm *vm, sheep_t callable,
 
 	function = sheep_function(callable);
 	if (function->nr_parms != nr_args) {
-		fprintf(stderr, "%s: too %s arguments\n",
-			function->name,
+		sheep_error(vm, "too %s arguments",
 			function->nr_parms < nr_args ? "many" : "few");
 		return SHEEP_CALL_FAIL;
 	}

@@ -116,7 +116,7 @@ static sheep_t string_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
 	const char *str, *pos;
 
 	if (sheep_type(item) != &sheep_string_type) {
-		fprintf(stderr, "position: string can not contain %s\n",
+		sheep_error(vm, "string can not contain `%s'",
 			sheep_type(item)->name);
 		return NULL;
 	}

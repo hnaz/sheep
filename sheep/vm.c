@@ -13,11 +13,53 @@
 #include <sheep/core.h>
 #include <sheep/eval.h>
 #include <sheep/list.h>
+#include <sheep/type.h>
 #include <sheep/util.h>
 #include <sheep/gc.h>
+#include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <sheep/vm.h>
+
+#define DEFAULT_ERRBUF		128
+
+void sheep_error(struct sheep_vm *vm, const char *fmt, ...)
+{
+	va_list ap;
+	size_t len;
+
+	sheep_bug_on(vm->error);
+	vm->error = sheep_malloc(DEFAULT_ERRBUF);
+
+	va_start(ap, fmt);
+	len = vsnprintf(vm->error, DEFAULT_ERRBUF, fmt, ap);
+	va_end(ap);
+
+	if (len >= DEFAULT_ERRBUF) {
+		vm->error = sheep_realloc(vm->error, len + 1);
+		va_start(ap, fmt);
+		vsprintf(vm->error, fmt, ap);
+		va_end(ap);
+	}
+}
+
+void sheep_report_error(struct sheep_vm *vm, sheep_t sheep)
+{
+	sheep_bug_on(!vm->error);
+
+	if (sheep) {
+		char *context;
+
+		context = sheep_format(sheep);
+		fprintf(stderr, "%s: ", context);
+		sheep_free(context);
+	}
+	fprintf(stderr, "%s\n", vm->error);
+
+	sheep_free(vm->error);
+	vm->error = NULL;
+}
 
 unsigned int sheep_vm_key(struct sheep_vm *vm, const char *key)
 {

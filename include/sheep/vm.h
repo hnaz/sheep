@@ -12,6 +12,7 @@
 #include <sheep/vector.h>
 #include <sheep/alien.h>
 #include <sheep/map.h>
+#include <stdarg.h>
 
 struct sheep_vm {
 	/* Object management */
@@ -32,7 +33,11 @@ struct sheep_vm {
 	struct sheep_indirect *pending;
 	struct sheep_vector stack;
 	struct sheep_vector calls;	/* [lastpc lastbasep lastfunction] */
+	char *error;
 };
+
+void sheep_error(struct sheep_vm *, const char *, ...);
+void sheep_report_error(struct sheep_vm *, sheep_t);
 
 unsigned int sheep_vm_key(struct sheep_vm *, const char *);
 

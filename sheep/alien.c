@@ -34,10 +34,10 @@ static void alien_format(sheep_t sheep, struct sheep_strbuf *sb, int repr)
 	struct sheep_alien *alien;
 
 	alien = sheep_data(sheep);
-	if (alien->name)
+	if (repr)
 		sheep_strbuf_addf(sb, "#<alien '%s'>", alien->name);
 	else
-		sheep_strbuf_addf(sb, "#<alien '%p'>", alien);
+		sheep_strbuf_add(sb, alien->name);
 }
 
 const struct sheep_type sheep_alien_type = {

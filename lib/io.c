@@ -63,7 +63,7 @@ static sheep_t open(struct sheep_vm *vm, unsigned int nr_args)
 		filp = fopen(path->bytes, "r");
 
 	if (!filp) {
-		fprintf(stderr, "%s: can not open file\n", path->bytes);
+		sheep_error(vm, "can not open `%s'", path->bytes);
 		return NULL;
 	}
 
@@ -98,7 +98,7 @@ static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 
 	if (!file->filp) {
-		fprintf(stderr, "reading from closed file\n");
+		sheep_error(vm, "file is already closed");
 		return NULL;
 	}
 
@@ -120,7 +120,7 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 
 	if (!file->filp) {
-		fprintf(stderr, "writing to closed file\n");
+		sheep_error(vm, "file is already closed");
 		return NULL;
 	}
 

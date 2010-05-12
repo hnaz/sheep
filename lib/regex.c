@@ -36,7 +36,7 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 
 	regex = sheep_rawstring(regex_);
 	if (regcomp(&reg, regex, REG_EXTENDED)) {
-		fprintf(stderr, "match: invalid regular expression\n");
+		sheep_error(vm, "invalid regular expression");
 		goto out;
 	}
 

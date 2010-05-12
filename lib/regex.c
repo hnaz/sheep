@@ -22,17 +22,19 @@
 static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 {
 	regmatch_t matches[MAX_MATCHES];
-	sheep_t string_, result = NULL;
+	sheep_t regex_, string_, result = NULL;
 	const char *regex, *string;
 	struct sheep_list *list;
 	unsigned int i;
 	regex_t reg;
 	int status;
 
-	if (sheep_unpack_stack(vm, nr_args, "Ss", &regex, &string_))
+	if (sheep_unpack_stack(vm, nr_args, "ss", &regex_, &string_))
 		return NULL;
+
 	sheep_protect(vm, string_);
 
+	regex = sheep_rawstring(regex_);
 	if (regcomp(&reg, regex, REG_EXTENDED)) {
 		fprintf(stderr, "match: invalid regular expression\n");
 		goto out;

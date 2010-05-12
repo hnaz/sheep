@@ -11,13 +11,13 @@ static sheep_t sha1(struct sheep_vm *vm, unsigned int nr_args)
 {
 	char hexdigest[SHA_DIGEST_LENGTH * 2 + 1];
 	unsigned char hash[SHA_DIGEST_LENGTH];
-	const char *text;
+	struct sheep_string *text;
 	unsigned int i;
 
 	if (sheep_unpack_stack(vm, nr_args, "S", &text))
 		return NULL;
 
-	SHA1((const unsigned char *)text, strlen(text), hash);
+	SHA1((const unsigned char *)text->bytes, text->nr_bytes, hash);
 
 	for (i = 0; i < SHA_DIGEST_LENGTH; i++)
 		sprintf(hexdigest + i * 2, "%02x", hash[i]);

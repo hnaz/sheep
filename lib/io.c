@@ -49,8 +49,8 @@ static const struct sheep_type file_type = {
 /* (open pathname mode) */
 static sheep_t open(struct sheep_vm *vm, unsigned int nr_args)
 {
+	struct sheep_string *path;
 	struct file *file;
-	const char *path;
 	sheep_t write;
 	FILE *filp;
 
@@ -58,12 +58,12 @@ static sheep_t open(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 
 	if (sheep_test(write))
-		filp = fopen(path, "w");
+		filp = fopen(path->bytes, "w");
 	else
-		filp = fopen(path, "r");
+		filp = fopen(path->bytes, "r");
 
 	if (!filp) {
-		fprintf(stderr, "%s: can not open file\n", path);
+		fprintf(stderr, "%s: can not open file\n", path->bytes);
 		return NULL;
 	}
 
@@ -112,8 +112,8 @@ static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 /* (write file string) */
 static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 {
+	struct sheep_string *string;
 	unsigned long nr_bytes;
-	const char *string;
 	struct file *file;
 
 	if (sheep_unpack_stack(vm, nr_args, "TS", &file_type, &file, &string))
@@ -124,8 +124,7 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 		return NULL;
 	}
 
-	nr_bytes = strlen(string);
-	nr_bytes = fwrite(string, 1, nr_bytes, file->filp);
+	nr_bytes = fwrite(string->bytes, 1, string->nr_bytes, file->filp);
 
 	return sheep_make_number(vm, nr_bytes);
 }

@@ -129,11 +129,45 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 	return sheep_make_number(vm, nr_bytes);
 }
 
+/* (readline file) */
+static sheep_t readline(struct sheep_vm *vm, unsigned int nr_args)
+{
+	char *str = NULL, *endp = NULL, buf[512];
+	unsigned long len = 0;
+	struct file *file;
+
+	if (sheep_unpack_stack(vm, nr_args, "T", &file_type, &file))
+		return NULL;
+
+	if (!file->filp) {
+		sheep_error(vm, "file is already closed");
+		return NULL;
+	}
+
+	while (!endp && fgets(buf, sizeof(buf), file->filp)) {
+		unsigned long delta;
+
+		endp = strpbrk(buf, "\r\n");
+		if (!endp)
+			delta = strlen(buf);
+		else
+			delta = endp - buf;
+
+		str = sheep_realloc(str, len + delta + 1);
+		strncpy(str + len, buf, delta);
+		len += delta;
+	}
+	str[len] = 0;
+
+	return __sheep_make_string(vm, str, len);
+}
+
 int init(struct sheep_vm *vm, struct sheep_module *module)
 {
 	sheep_module_function(vm, module, "open", open);
 	sheep_module_function(vm, module, "close", close);
 	sheep_module_function(vm, module, "read", read);
 	sheep_module_function(vm, module, "write", write);
+	sheep_module_function(vm, module, "readline", readline);
 	return 0;
 }

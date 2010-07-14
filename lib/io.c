@@ -10,6 +10,7 @@
 #include <sheep/bool.h>
 #include <sheep/util.h>
 #include <sheep/vm.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -87,6 +88,14 @@ static sheep_t close(struct sheep_vm *vm, unsigned int nr_args)
 	return &sheep_false;
 }
 
+static bool file_check(struct sheep_vm *vm, struct file *file)
+{
+	if (file->filp)
+		return true;
+	sheep_error(vm, "file is already closed");
+	return false;
+}
+
 /* (read file number-of-bytes) */
 static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 {
@@ -97,10 +106,8 @@ static sheep_t read(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack(vm, nr_args, "TN", &file_type, &file, &nr_bytes))
 		return NULL;
 
-	if (!file->filp) {
-		sheep_error(vm, "file is already closed");
+	if (!file_check(vm, file))
 		return NULL;
-	}
 
 	buf = sheep_malloc(nr_bytes + 1);
 	nr_bytes = fread(buf, 1, nr_bytes, file->filp);
@@ -119,10 +126,8 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack(vm, nr_args, "TS", &file_type, &file, &string))
 		return NULL;
 
-	if (!file->filp) {
-		sheep_error(vm, "file is already closed");
+	if (!file_check(vm, file))
 		return NULL;
-	}
 
 	nr_bytes = fwrite(string->bytes, 1, string->nr_bytes, file->filp);
 
@@ -139,10 +144,8 @@ static sheep_t readline(struct sheep_vm *vm, unsigned int nr_args)
 	if (sheep_unpack_stack(vm, nr_args, "T", &file_type, &file))
 		return NULL;
 
-	if (!file->filp) {
-		sheep_error(vm, "file is already closed");
+	if (!file_check(vm, file))
 		return NULL;
-	}
 
 	while (!endp && fgets(buf, sizeof(buf), file->filp)) {
 		unsigned long delta;

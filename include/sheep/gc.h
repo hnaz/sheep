@@ -6,7 +6,7 @@
 #ifndef _SHEEP_GC_H
 #define _SHEEP_GC_H
 
-#include <sheep/object_types.h>
+#include <sheep/types.h>
 
 struct sheep_vm;
 

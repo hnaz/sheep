@@ -6,8 +6,8 @@
 #ifndef _SHEEP_OBJECT_H
 #define _SHEEP_OBJECT_H
 
-#include <sheep/object_types.h>
 #include <sheep/number.h>
+#include <sheep/types.h>
 
 sheep_t sheep_make_object(struct sheep_vm *, const struct sheep_type *, void *);
 

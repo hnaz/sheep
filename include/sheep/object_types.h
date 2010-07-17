@@ -21,6 +21,7 @@ struct sheep_sequence {
 	sheep_t (*concat)(struct sheep_vm *, sheep_t, unsigned int);
 	sheep_t (*reverse)(struct sheep_vm *, sheep_t);
 	sheep_t (*nth)(struct sheep_vm *, size_t, sheep_t);
+	sheep_t (*slice)(struct sheep_vm *, sheep_t, size_t, size_t);
 	sheep_t (*position)(struct sheep_vm *, sheep_t, sheep_t);
 };
 

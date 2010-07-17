@@ -173,6 +173,42 @@ static sheep_t list_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 	return sheep;
 }
 
+static sheep_t list_slice(struct sheep_vm *vm, sheep_t sheep,
+			size_t from, size_t to)
+{
+	struct sheep_list *list, *pos;
+	sheep_t new, result = NULL;
+	size_t index = 0;
+
+	sheep_protect(vm, sheep);
+
+	new = sheep_make_cons(vm, NULL, NULL);
+	sheep_protect(vm, new);
+
+	list = sheep_list(sheep);
+	pos = sheep_list(new);
+
+	while (index < to && list->head) {
+		if (index >= from) {
+			pos->head = list->head;
+			pos->tail = sheep_make_cons(vm, NULL, NULL);
+			pos = sheep_list(pos->tail);
+		}
+		list = sheep_list(list->tail);
+		index++;
+
+	}
+	if (index == to)
+		result = new;
+	else
+		sheep_error(vm, "index %ld out of range [0, %ld)", to, index);
+
+	sheep_unprotect(vm, new);
+	sheep_unprotect(vm, sheep);
+
+	return result;
+}
+
 static sheep_t list_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
 {
 	struct sheep_list *list;
@@ -194,6 +230,7 @@ static const struct sheep_sequence list_sequence = {
 	.concat = list_concat,
 	.reverse = list_reverse,
 	.nth = list_nth,
+	.slice = list_slice,
 	.position = list_position,
 };
 

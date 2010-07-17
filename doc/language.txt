@@ -89,7 +89,7 @@
 
 (reverse sequence)
 
-IMPL: (slice from to sequence)
+(slice sequence from to)
 
 (position item sequence)
 

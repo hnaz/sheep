@@ -111,6 +111,26 @@ static sheep_t string_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 	return __sheep_make_string(vm, new, 1);
 }
 
+static sheep_t string_slice(struct sheep_vm *vm, sheep_t sheep,
+			size_t from, size_t to)
+{
+	struct sheep_string *string;
+	size_t length = 0;
+	char *new;
+
+	string = sheep_string(sheep);
+	if (to > string->nr_bytes) {
+		sheep_error(vm, "index %ld out of range [0, %ld)",
+			to, string->nr_bytes);
+		return NULL;
+	}
+	length = to - from;
+	new = sheep_malloc(length + 1);
+	memcpy(new, string->bytes + from, length);
+	new[length] = 0;
+	return __sheep_make_string(vm, new, length);
+}
+
 static sheep_t string_position(struct sheep_vm *vm, sheep_t item, sheep_t sheep)
 {
 	const char *str, *pos;
@@ -133,6 +153,7 @@ static const struct sheep_sequence string_sequence = {
 	.concat = string_concat,
 	.reverse = string_reverse,
 	.nth = string_nth,
+	.slice = string_slice,
 	.position = string_position,
 };
 

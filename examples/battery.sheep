@@ -1,0 +1,21 @@
+#!/usr/bin/sheep
+#
+# battery - read first battery state on Linux
+
+(load io)
+
+(function percentage (part total)
+  (/ (* part 100) total))
+
+(function sysfs-number (path)
+  (number (io:readline (io:open path false))))
+
+(function battery-charge (name attr)
+  (sysfs-number
+   (concat "/sys/class/power_supply/" name "/charge_" attr)))
+
+(function battery-state (name)
+  (percentage (battery-charge name "now")
+              (battery-charge name "full")))
+
+(print "Battery 0: " (battery-state "BAT0") "%")

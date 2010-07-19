@@ -76,7 +76,7 @@ static void mark_protected(struct sheep_vector *protected)
 }
 
 static unsigned int collect_pool(struct sheep_vm *vm,
-				struct sheep_objects *pool)
+				 struct sheep_objects *pool)
 {
 	unsigned int i, moved;
 

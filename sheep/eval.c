@@ -22,8 +22,10 @@
 
 #include <sheep/eval.h>
 
-static sheep_t hash(struct sheep_vm *vm, sheep_t container,
-		unsigned int key_slot, sheep_t value)
+static sheep_t hash(struct sheep_vm *vm,
+		    sheep_t container,
+		    unsigned int key_slot,
+		    sheep_t value)
 {
 	const char *key, *obj;
 	struct sheep_map *map;
@@ -59,8 +61,10 @@ err:
 	return NULL;
 }
 
-static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
-		struct sheep_function *parent, sheep_t sheep)
+static sheep_t closure(struct sheep_vm *vm,
+		       unsigned long basep,
+		       struct sheep_function *parent,
+		       sheep_t sheep)
 {
 	struct sheep_function *function = sheep_data(sheep);
 
@@ -75,8 +79,10 @@ static sheep_t closure(struct sheep_vm *vm, unsigned long basep,
 	return sheep;
 }
 
-static enum sheep_call precall(struct sheep_vm *vm, sheep_t callable,
-			unsigned int nr_args, sheep_t *valuep)
+static enum sheep_call precall(struct sheep_vm *vm,
+			       sheep_t callable,
+			       unsigned int nr_args,
+			       sheep_t *valuep)
 {
 	const struct sheep_type *type;
 
@@ -88,8 +94,9 @@ static enum sheep_call precall(struct sheep_vm *vm, sheep_t callable,
 	return type->call(vm, callable, nr_args, valuep);
 }
 
-static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
-			unsigned int nr_args)
+static void splice_arguments(struct sheep_vm *vm,
+			     unsigned long basep,
+			     unsigned int nr_args)
 {
 	unsigned int t;
 
@@ -100,7 +107,7 @@ static void splice_arguments(struct sheep_vm *vm, unsigned long basep,
 }
 
 static unsigned long finalize_frame(struct sheep_vm *vm,
-				struct sheep_function *function)
+				    struct sheep_function *function)
 {
 	unsigned int nr;
 
@@ -331,8 +338,9 @@ static sheep_t call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args)
 	sheep_bug("precall returned bull");
 }
 
-sheep_t sheep_apply(struct sheep_vm *vm, sheep_t callable,
-		struct sheep_list *args)
+sheep_t sheep_apply(struct sheep_vm *vm,
+		    sheep_t callable,
+		    struct sheep_list *args)
 {
 	unsigned int nr_args = 0;
 
@@ -344,8 +352,10 @@ sheep_t sheep_apply(struct sheep_vm *vm, sheep_t callable,
 	return call(vm, callable, nr_args);
 }
 
-sheep_t sheep_call(struct sheep_vm *vm, sheep_t callable,
-		unsigned int nr_args, ...)
+sheep_t sheep_call(struct sheep_vm *vm,
+		   sheep_t callable,
+		   unsigned int nr_args,
+		   ...)
 {
 	unsigned int nr = nr_args;
 	va_list ap;

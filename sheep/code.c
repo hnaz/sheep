@@ -55,8 +55,10 @@ static const char *opnames[] = {
 	"LOAD",
 };
 
-void sheep_code_dump(struct sheep_vm *vm, struct sheep_function *function,
-		unsigned long basep, enum sheep_opcode op, unsigned int arg)
+void sheep_code_dump(struct sheep_vm *vm,
+		     struct sheep_function *function,
+		     unsigned long basep,
+		     enum sheep_opcode op, unsigned int arg)
 {
 	struct sheep_indirect *indirect;
 	sheep_t sheep;

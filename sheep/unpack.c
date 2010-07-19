@@ -21,8 +21,10 @@
 
 #include <sheep/unpack.h>
 
-static const char *unpack(int control, sheep_t object,
-			void **itemp, void **nextp)
+static const char *unpack(int control,
+			  sheep_t object,
+			  void **itemp,
+			  void **nextp)
 {
 	const struct sheep_type *type = sheep_type(object);
 	int want;
@@ -118,8 +120,10 @@ int sheep_unpack(struct sheep_vm *vm, sheep_t object, const char item, ...)
 	return 0;
 }
 
-int sheep_unpack_list(struct sheep_vm *vm, struct sheep_list *list,
-		const char *items, ...)
+int sheep_unpack_list(struct sheep_vm *vm,
+		      struct sheep_list *list,
+		      const char *items,
+		      ...)
 {
 	va_list ap;
 
@@ -165,8 +169,10 @@ int sheep_unpack_list(struct sheep_vm *vm, struct sheep_list *list,
 	return -1;
 }
 
-int sheep_unpack_stack(struct sheep_vm *vm, unsigned int nr_args,
-		const char *items, ...)
+int sheep_unpack_stack(struct sheep_vm *vm,
+		       unsigned int nr_args,
+		       const char *items,
+		       ...)
 {
 	unsigned long base, index;
 	va_list ap;

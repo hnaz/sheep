@@ -58,8 +58,9 @@ static size_t string_length(sheep_t sheep)
 	return string->nr_bytes;
 }
 
-static sheep_t string_concat(struct sheep_vm *vm, sheep_t sheep,
-			unsigned int nr_args)
+static sheep_t string_concat(struct sheep_vm *vm,
+			     sheep_t sheep,
+			     unsigned int nr_args)
 {
 	struct sheep_string *string;
 	struct sheep_strbuf sb;
@@ -111,8 +112,10 @@ static sheep_t string_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 	return __sheep_make_string(vm, new, 1);
 }
 
-static sheep_t string_slice(struct sheep_vm *vm, sheep_t sheep,
-			size_t from, size_t to)
+static sheep_t string_slice(struct sheep_vm *vm,
+			    sheep_t sheep,
+			    size_t from,
+			    size_t to)
 {
 	struct sheep_string *string;
 	size_t length = 0;

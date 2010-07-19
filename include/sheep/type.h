@@ -27,7 +27,9 @@ struct sheep_typeclass {
 
 extern const struct sheep_type sheep_typeclass_type;
 
-sheep_t sheep_make_typeclass(struct sheep_vm *, const char *,
-			const char **, unsigned int);
+sheep_t sheep_make_typeclass(struct sheep_vm *,
+			     const char *,
+			     const char **,
+			     unsigned int);
 
 #endif /* _SHEEP_TYPE_H */

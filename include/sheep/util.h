@@ -34,7 +34,7 @@ void __noreturn sheep_bug(const char *, ...);
 #define sheep_bug_on(cond)						\
 	do if (cond)							\
 		   sheep_bug("Unexpected condition `%s' in %s:%d",	\
-			   #cond, __FILE__, __LINE__);			\
+			     #cond, __FILE__, __LINE__);		\
 	while (0)
 
 #endif /* _SHEEP_UTIL_H */

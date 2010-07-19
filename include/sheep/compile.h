@@ -13,11 +13,12 @@
 #include <sheep/map.h>
 #include <sheep/vm.h>
 
-sheep_t __sheep_compile(struct sheep_vm *, struct sheep_module *,
+sheep_t __sheep_compile(struct sheep_vm *,
+			struct sheep_module *,
 			struct sheep_expr *);
 
 static inline sheep_t sheep_compile(struct sheep_vm *vm,
-				struct sheep_expr *expr)
+				    struct sheep_expr *expr)
 {
 	return __sheep_compile(vm, &vm->main, expr);
 }
@@ -46,20 +47,29 @@ struct sheep_context {
  */
 
 static inline int sheep_compile_object(struct sheep_compile *compile,
-				struct sheep_function *function,
-				struct sheep_context *context, sheep_t sheep)
+				       struct sheep_function *function,
+				       struct sheep_context *context,
+				       sheep_t sheep)
 {
 	return sheep_type(sheep)->compile(compile, function, context, sheep);
 }
 
-int sheep_compile_constant(struct sheep_compile *, struct sheep_function *,
-			struct sheep_context *, sheep_t);
-int sheep_compile_name(struct sheep_compile *, struct sheep_function *,
-		struct sheep_context *, sheep_t);
-int sheep_compile_set(struct sheep_compile *, struct sheep_function *,
-		struct sheep_context *, sheep_t);
-int sheep_compile_list(struct sheep_compile *, struct sheep_function *,
-		struct sheep_context *, sheep_t);
+int sheep_compile_constant(struct sheep_compile *,
+			   struct sheep_function *,
+			   struct sheep_context *,
+			   sheep_t);
+int sheep_compile_name(struct sheep_compile *,
+		       struct sheep_function *,
+		       struct sheep_context *,
+		       sheep_t);
+int sheep_compile_set(struct sheep_compile *,
+		      struct sheep_function *,
+		      struct sheep_context *,
+		      sheep_t);
+int sheep_compile_list(struct sheep_compile *,
+		       struct sheep_function *,
+		       struct sheep_context *,
+		       sheep_t);
 
 void sheep_propagate_foreigns(struct sheep_function *, struct sheep_function *);
 

@@ -37,8 +37,10 @@ static void function_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(function);
 }
 
-static enum sheep_call function_call(struct sheep_vm *vm, sheep_t callable,
-				unsigned int nr_args, sheep_t *valuep)
+static enum sheep_call function_call(struct sheep_vm *vm,
+				     sheep_t callable,
+				     unsigned int nr_args,
+				     sheep_t *valuep)
 {
 	struct sheep_function *function;
 
@@ -113,7 +115,7 @@ sheep_t sheep_make_function(struct sheep_vm *vm, const char *name)
 }
 
 sheep_t sheep_closure_function(struct sheep_vm *vm,
-			struct sheep_function *function)
+			       struct sheep_function *function)
 {
 	struct sheep_function *closure;
 

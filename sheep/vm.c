@@ -109,7 +109,8 @@ void sheep_vm_mark(struct sheep_vm *vm)
 }
 
 unsigned int sheep_vm_variable(struct sheep_vm *vm,
-			const char *name, sheep_t value)
+			       const char *name,
+			       sheep_t value)
 {
 	unsigned int slot;
 

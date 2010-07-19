@@ -22,10 +22,14 @@ extern const struct sheep_type sheep_module_type;
 
 sheep_t sheep_module_load(struct sheep_vm *, const char *);
 
-unsigned int sheep_module_variable(struct sheep_vm *, struct sheep_module *,
-				const char *, sheep_t);
-void sheep_module_function(struct sheep_vm *, struct sheep_module *,
-			const char *, sheep_alien_t);
+unsigned int sheep_module_variable(struct sheep_vm *,
+				   struct sheep_module *,
+				   const char *,
+				   sheep_t);
+void sheep_module_function(struct sheep_vm *,
+			   struct sheep_module *,
+			   const char *,
+			   sheep_alien_t);
 
 void sheep_module_builtins(struct sheep_vm *);
 

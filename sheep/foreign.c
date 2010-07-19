@@ -13,7 +13,8 @@
 
 /* foreign slot allocation at compile time */
 unsigned int sheep_foreign_slot(struct sheep_function *function,
-				unsigned int dist, unsigned int slot)
+				unsigned int dist,
+				unsigned int slot)
 {
 	struct sheep_freevar *freevar;
 	struct sheep_vector *foreign;
@@ -46,7 +47,7 @@ unsigned int sheep_foreign_slot(struct sheep_function *function,
 
 /* foreign slot upward propagation at function finalization */
 void sheep_foreign_propagate(struct sheep_function *parent,
-			struct sheep_function *child)
+			     struct sheep_function *child)
 {
 	unsigned int i;
 
@@ -70,7 +71,7 @@ void sheep_foreign_propagate(struct sheep_function *parent,
 }
 
 static struct sheep_indirect *open_indirect(struct sheep_vm *vm,
-					unsigned long index)
+					    unsigned long index)
 {
 	struct sheep_indirect *new, *prev = NULL, *next = vm->pending;
 

@@ -18,7 +18,8 @@
 
 #include <sheep/compile.h>
 
-sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
+sheep_t __sheep_compile(struct sheep_vm *vm,
+			struct sheep_module *module,
 			struct sheep_expr *expr)
 {
 	struct sheep_function *function;
@@ -50,8 +51,9 @@ sheep_t __sheep_compile(struct sheep_vm *vm, struct sheep_module *module,
 }
 
 int sheep_compile_constant(struct sheep_compile *compile,
-			struct sheep_function *function,
-			struct sheep_context *context, sheep_t sheep)
+			   struct sheep_function *function,
+			   struct sheep_context *context,
+			   sheep_t sheep)
 {
 	unsigned int slot;
 
@@ -68,8 +70,10 @@ enum env_level {
 };
 
 static enum env_level lookup_env(struct sheep_compile *compile,
-				struct sheep_context *context, const char *name,
-				unsigned int *dist, unsigned int *slot)
+				 struct sheep_context *context,
+				 const char *name,
+				 unsigned int *dist,
+				 unsigned int *slot)
 {
 	struct sheep_context *current = context;
 	unsigned int distance = 0;
@@ -99,7 +103,8 @@ static enum env_level lookup_env(struct sheep_compile *compile,
 static int compile_name(struct sheep_compile *compile,
 			struct sheep_function *function,
 			struct sheep_context *context,
-			sheep_t sheep, int set)
+			sheep_t sheep,
+			int set)
 {
 	unsigned int dist, slot, i = 0;
 	struct sheep_name *name;
@@ -153,22 +158,25 @@ static int compile_name(struct sheep_compile *compile,
 }
 
 int sheep_compile_name(struct sheep_compile *compile,
-		struct sheep_function *function,
-		struct sheep_context *context, sheep_t sheep)
+		       struct sheep_function *function,
+		       struct sheep_context *context,
+		       sheep_t sheep)
 {
 	return compile_name(compile, function, context, sheep, 0);
 }
 
 int sheep_compile_set(struct sheep_compile *compile,
-		struct sheep_function *function,
-		struct sheep_context *context, sheep_t sheep)
+		      struct sheep_function *function,
+		      struct sheep_context *context,
+		      sheep_t sheep)
 {
 	return compile_name(compile, function, context, sheep, 1);
 }
 
 static int compile_call(struct sheep_compile *compile,
 			struct sheep_function *function,
-			struct sheep_context *context, struct sheep_list *form)
+			struct sheep_context *context,
+			struct sheep_list *form)
 {
 	SHEEP_DEFINE_MAP(env);
 	struct sheep_context block = {
@@ -202,8 +210,9 @@ out:
 }
 
 int sheep_compile_list(struct sheep_compile *compile,
-		struct sheep_function *function,
-		struct sheep_context *context, sheep_t sheep)
+		       struct sheep_function *function,
+		       struct sheep_context *context,
+		       sheep_t sheep)
 {
 	struct sheep_list *list;
 

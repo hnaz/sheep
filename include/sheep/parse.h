@@ -13,9 +13,14 @@
 
 void sheep_parser_error(struct sheep_compile *, sheep_t, const char *, ...);
 
-int __sheep_parse(struct sheep_compile *, struct sheep_list *,
-		struct sheep_list *, const char *, ...);
-int sheep_parse(struct sheep_compile *, struct sheep_list *,
-		const char *, ...);
+int __sheep_parse(struct sheep_compile *,
+		  struct sheep_list *,
+		  struct sheep_list *,
+		  const char *,
+		  ...);
+int sheep_parse(struct sheep_compile *,
+		struct sheep_list *,
+		const char *,
+		...);
 
 #endif /* _SHEEP_PARSE_H */

@@ -24,7 +24,8 @@ static int hash(const char *name)
 }
 
 static struct sheep_map_entry **find(struct sheep_map *map,
-				const char *name, int *create)
+				     const char *name,
+				     int *create)
 {
 	struct sheep_map_entry **pentry, *entry;
 	int index;

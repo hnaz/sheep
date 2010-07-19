@@ -55,7 +55,9 @@ static int issep(int c, int string)
 }
 
 static int read_token(struct sheep_reader *reader,
-		char *buf, int len, int string)
+		      char *buf,
+		      int len,
+		      int string)
 {
 	int i, c = c;
 
@@ -85,7 +87,8 @@ static sheep_t read_string(struct sheep_reader *reader, struct sheep_vm *vm)
 }
 
 static sheep_t read_atom(struct sheep_reader *reader,
-			struct sheep_vm *vm, int c)
+			 struct sheep_vm *vm,
+			 int c)
 {
 	sheep_t sheep;
 	char buf[512];
@@ -105,12 +108,13 @@ static sheep_t read_atom(struct sheep_reader *reader,
 }
 
 static sheep_t read_sexp(struct sheep_reader *reader,
-			struct sheep_vector *lines,
-			struct sheep_vm *vm, int c);
+			 struct sheep_vector *lines,
+			 struct sheep_vm *vm,
+			 int c);
 
 static sheep_t read_list(struct sheep_reader *reader,
-			struct sheep_vector *lines,
-			struct sheep_vm *vm)
+			 struct sheep_vector *lines,
+			 struct sheep_vm *vm)
 {
 	sheep_t list, pos;
 	int c;
@@ -141,8 +145,9 @@ static sheep_t read_list(struct sheep_reader *reader,
 }
 
 static sheep_t read_sexp(struct sheep_reader *reader,
-			struct sheep_vector *lines,
-			struct sheep_vm *vm, int c)
+			 struct sheep_vector *lines,
+			 struct sheep_vm *vm,
+			 int c)
 {
 	if (c == EOF)
 		return &sheep_eof;

@@ -57,8 +57,9 @@ enum {
 	LOAD_FAIL,
 };
 
-static unsigned int load_so(struct sheep_vm *vm, const char *path,
-			struct sheep_module *mod)
+static unsigned int load_so(struct sheep_vm *vm,
+			    const char *path,
+			    struct sheep_module *mod)
 {
 	int (*init)(struct sheep_vm *, struct sheep_module *);
 	void *handle;
@@ -87,8 +88,9 @@ err:
 	return LOAD_FAIL;
 }
 
-static unsigned int load_sheep(struct sheep_vm *vm, const char *path,
-			struct sheep_module *mod)
+static unsigned int load_sheep(struct sheep_vm *vm,
+			       const char *path,
+			       struct sheep_module *mod)
 {
 	struct sheep_reader reader;
 	int ret = LOAD_FAIL;
@@ -124,8 +126,10 @@ out:
 	return ret;
 }
 
-static unsigned int module_load(struct sheep_vm *vm, const char *path,
-				const char *name, struct sheep_module *mod)
+static unsigned int module_load(struct sheep_vm *vm,
+				const char *path,
+				const char *name,
+				struct sheep_module *mod)
 {
 	char filename[1024];
 
@@ -188,8 +192,9 @@ found:
 }
 
 unsigned int sheep_module_variable(struct sheep_vm *vm,
-				struct sheep_module *module,
-				const char *name, sheep_t sheep)
+				   struct sheep_module *module,
+				   const char *name,
+				   sheep_t sheep)
 {
 	unsigned int slot;
 
@@ -198,8 +203,10 @@ unsigned int sheep_module_variable(struct sheep_vm *vm,
 	return slot;
 }
 
-void sheep_module_function(struct sheep_vm *vm, struct sheep_module *module,
-			const char *name, sheep_alien_t alien)
+void sheep_module_function(struct sheep_vm *vm,
+			   struct sheep_module *module,
+			   const char *name,
+			   sheep_alien_t alien)
 {
 	sheep_t sheep;
 

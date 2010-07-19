@@ -15,8 +15,10 @@
 
 #include <sheep/parse.h>
 
-void sheep_parser_error(struct sheep_compile *compile, sheep_t culprit,
-			const char *fmt, ...)
+void sheep_parser_error(struct sheep_compile *compile,
+			sheep_t culprit,
+			const char *fmt,
+			...)
 {
 	struct sheep_expr *expr = compile->expr;
 	const char *repr;
@@ -51,8 +53,10 @@ enum {
 	PARSE_TOO_MANY
 };
 
-static unsigned int __parse(struct sheep_list *form, const char *items,
-			sheep_t *mismatchp, va_list ap)
+static unsigned int __parse(struct sheep_list *form,
+			    const char *items,
+			    sheep_t *mismatchp,
+			    va_list ap)
 {
 	while (*items) {
 		struct sheep_name *name;
@@ -111,8 +115,11 @@ static unsigned int __parse(struct sheep_list *form, const char *items,
 	return PARSE_OK;
 }
 
-static int parse(struct sheep_compile *compile, struct sheep_list *form,
-		struct sheep_list *subform, const char *items, va_list ap)
+static int parse(struct sheep_compile *compile,
+		 struct sheep_list *form,
+		 struct sheep_list *subform,
+		 const char *items,
+		 va_list ap)
 {
 	unsigned int ret;
 	sheep_t mismatch;
@@ -130,8 +137,11 @@ static int parse(struct sheep_compile *compile, struct sheep_list *form,
 	return -1;
 }
 
-int __sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
-		struct sheep_list *subform, const char *items, ...)
+int __sheep_parse(struct sheep_compile *compile,
+		  struct sheep_list *form,
+		  struct sheep_list *subform,
+		  const char *items,
+		  ...)
 {
 	va_list ap;
 	int ret;
@@ -142,8 +152,10 @@ int __sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
 	return ret;
 }
 
-int sheep_parse(struct sheep_compile *compile, struct sheep_list *form,
-		const char *items, ...)
+int sheep_parse(struct sheep_compile *compile,
+		struct sheep_list *form,
+		const char *items,
+		...)
 {
 	va_list ap;
 	int ret;

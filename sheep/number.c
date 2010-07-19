@@ -93,8 +93,9 @@ enum relation {
 	MORE,
 };
 
-static sheep_t do_cmp(struct sheep_vm *vm, unsigned int nr_args,
-		enum relation relation)
+static sheep_t do_cmp(struct sheep_vm *vm,
+		      unsigned int nr_args,
+		      enum relation relation)
 {
 	int result = result;
 	long a, b;
@@ -146,7 +147,8 @@ static sheep_t builtin_more(struct sheep_vm *vm, unsigned int nr_args)
 	return do_cmp(vm, nr_args, MORE);
 }
 
-static sheep_t do_binop(struct sheep_vm *vm, unsigned int nr_args,
+static sheep_t do_binop(struct sheep_vm *vm,
+			unsigned int nr_args,
 			char operation)
 {
 	long value, a, b;

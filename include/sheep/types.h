@@ -37,11 +37,15 @@ struct sheep_type {
 	void (*mark)(sheep_t);
 	void (*free)(struct sheep_vm *, sheep_t);
 
-	int (*compile)(struct sheep_compile *, struct sheep_function *,
-		struct sheep_context *, sheep_t);
+	int (*compile)(struct sheep_compile *,
+		       struct sheep_function *,
+		       struct sheep_context *,
+		       sheep_t);
 
-	enum sheep_call (*call)(struct sheep_vm *, sheep_t,
-		unsigned int, sheep_t *);
+	enum sheep_call (*call)(struct sheep_vm *,
+				sheep_t,
+				unsigned int,
+				sheep_t *);
 
 	int (*test)(sheep_t);
 	int (*equal)(sheep_t, sheep_t);

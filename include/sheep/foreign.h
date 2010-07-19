@@ -43,11 +43,13 @@ struct sheep_indirect {
 
 /* compile-time */
 unsigned int sheep_foreign_slot(struct sheep_function *,
-				unsigned int, unsigned int);
+				unsigned int,
+				unsigned int);
 void sheep_foreign_propagate(struct sheep_function *, struct sheep_function *);
 
 /* eval-time */
-struct sheep_vector *sheep_foreign_open(struct sheep_vm *, unsigned long,
+struct sheep_vector *sheep_foreign_open(struct sheep_vm *,
+					unsigned long,
 					struct sheep_function *,
 					struct sheep_function *);
 void sheep_foreign_save(struct sheep_vm *, unsigned long);

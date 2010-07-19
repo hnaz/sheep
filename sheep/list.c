@@ -102,8 +102,9 @@ static sheep_t do_list_concat(struct sheep_vm *vm, sheep_t base, sheep_t tail)
 	return base;
 }
 
-static sheep_t list_concat(struct sheep_vm *vm, sheep_t sheep,
-			unsigned int nr_args)
+static sheep_t list_concat(struct sheep_vm *vm,
+			   sheep_t sheep,
+			   unsigned int nr_args)
 {
 	sheep_t start, pos, result = NULL;
 	unsigned int i;
@@ -173,8 +174,10 @@ static sheep_t list_nth(struct sheep_vm *vm, size_t n, sheep_t sheep)
 	return sheep;
 }
 
-static sheep_t list_slice(struct sheep_vm *vm, sheep_t sheep,
-			size_t from, size_t to)
+static sheep_t list_slice(struct sheep_vm *vm,
+			  sheep_t sheep,
+			  size_t from,
+			  size_t to)
 {
 	struct sheep_list *list, *pos;
 	sheep_t new, result = NULL;

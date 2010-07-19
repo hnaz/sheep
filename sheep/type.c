@@ -64,8 +64,10 @@ static void typeclass_free(struct sheep_vm *vm, sheep_t sheep)
 	sheep_free(class);
 }
 
-static enum sheep_call typeclass_call(struct sheep_vm *vm, sheep_t callable,
-				unsigned int nr_args, sheep_t *valuep)
+static enum sheep_call typeclass_call(struct sheep_vm *vm,
+				      sheep_t callable,
+				      unsigned int nr_args,
+				      sheep_t *valuep)
 {
 	struct sheep_typeobject *object;
 	struct sheep_typeclass *class;
@@ -107,8 +109,10 @@ const struct sheep_type sheep_typeclass_type = {
 	.format = typeclass_format,
 };
 
-sheep_t sheep_make_typeclass(struct sheep_vm *vm, const char *name,
-			const char **names, unsigned int nr_slots)
+sheep_t sheep_make_typeclass(struct sheep_vm *vm,
+			     const char *name,
+			     const char **names,
+			     unsigned int nr_slots)
 {
 	struct sheep_typeclass *class;
 

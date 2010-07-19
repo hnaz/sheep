@@ -14,8 +14,9 @@
 
 #include <sheep/object.h>
 
-sheep_t sheep_make_object(struct sheep_vm *vm, const struct sheep_type *type,
-			void *data)
+sheep_t sheep_make_object(struct sheep_vm *vm,
+			  const struct sheep_type *type,
+			  void *data)
 {
 	struct sheep_object *sheep;
 

@@ -18,7 +18,8 @@ struct sheep_reader {
 };
 
 static inline void sheep_reader_init(struct sheep_reader *reader,
-				const char *filename, FILE *file)
+				     const char *filename,
+				     FILE *file)
 {
 	reader->filename = filename;
 	reader->lineno = 1;

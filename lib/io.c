@@ -137,7 +137,7 @@ static sheep_t write(struct sheep_vm *vm, unsigned int nr_args)
 /* (readline file) */
 static sheep_t readline(struct sheep_vm *vm, unsigned int nr_args)
 {
-	char *str = NULL, *endp = NULL, buf[512];
+	char *str, *endp = NULL, buf[512];
 	unsigned long len = 0;
 	struct file *file;
 
@@ -147,6 +147,7 @@ static sheep_t readline(struct sheep_vm *vm, unsigned int nr_args)
 	if (!file_check(vm, file))
 		return NULL;
 
+	str = sheep_zalloc(1);
 	while (!endp && fgets(buf, sizeof(buf), file->filp)) {
 		unsigned long delta;
 

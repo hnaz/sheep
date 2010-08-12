@@ -31,7 +31,6 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 
 	if (sheep_unpack_stack(vm, nr_args, "ss", &regex_, &string_))
 		return NULL;
-
 	sheep_protect(vm, string_);
 
 	regex = sheep_rawstring(regex_);
@@ -41,12 +40,13 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 	}
 
 	result = sheep_make_cons(vm, NULL, NULL);
-	string = sheep_rawstring(string_);
+	sheep_protect(vm, result);
 
+	string = sheep_rawstring(string_);
 	status = regexec(&reg, string, MAX_MATCHES, matches, 0);
 	regfree(&reg);
 	if (status == REG_NOMATCH)
-		goto out;
+		goto out_result;
 
 	list = sheep_list(result);
 	for (i = 0; i < MAX_MATCHES && matches[i].rm_so != -1; i++) {
@@ -64,6 +64,8 @@ static sheep_t match(struct sheep_vm *vm, unsigned int nr_args)
 		list->tail = sheep_make_cons(vm, NULL, NULL);
 		list = sheep_list(list->tail);
 	}
+out_result:
+	sheep_unprotect(vm, result);
 out:
 	sheep_unprotect(vm, string_);
 	return result;

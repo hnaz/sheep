@@ -122,7 +122,7 @@ static unsigned long *function_codep(struct sheep_function *function)
 	return (unsigned long *)function->code.code.items;
 }
 
-sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function)
+sheep_t sheep_eval(struct sheep_vm *vm, sheep_t function, int inner_call)
 {
 	struct sheep_function *current;
 	unsigned long basep, *codep;
@@ -317,7 +317,13 @@ out:
 err:
 	vm->stack.nr_items = 0;
 	vm->calls.nr_items -= 3 * nesting;
-	if (!vm->calls.nr_items)
+
+	/*
+	 * If it's an inner call, eg. a SHEEP_TAILCALL inside a SHEEP_CALL, we
+	 * should rely on the upper one doing the reporting, otherwise
+	 * vm->error is lost in sheep_report_error.
+	 */
+	if (!inner_call && !vm->calls.nr_items)
 		sheep_report_error(vm, problem);
 	sheep_unprotect(vm, function);
 	return NULL;
@@ -333,7 +339,7 @@ static sheep_t call(struct sheep_vm *vm, sheep_t callable, unsigned int nr_args)
 	case SHEEP_CALL_DONE:
 		return value;
 	case SHEEP_CALL_EVAL:
-		return sheep_eval(vm, callable);
+		return sheep_eval(vm, callable, 1);
 	}
 	sheep_bug("precall returned bull");
 }

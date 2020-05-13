@@ -116,7 +116,7 @@ static unsigned int load_sheep(struct sheep_vm *vm,
 		sheep_free_expr(expr);
 		if (!fun)
 			goto out_file;
-		if (!sheep_eval(vm, fun))
+		if (!sheep_eval(vm, fun, 0))
 			goto out_file;
 	}
 	ret = LOAD_OK;

@@ -61,7 +61,7 @@ static int read_token(struct sheep_reader *reader,
 {
 	int i, c = c;
 
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len - 1; i++) {
 		c = next(reader, 1);
 		if (string && c == EOF) {
 			barf(reader, "end of file while reading string");

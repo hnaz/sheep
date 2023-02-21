@@ -11,7 +11,7 @@
 #include <sheep/vm.h>
 #include <stdarg.h>
 
-sheep_t sheep_eval(struct sheep_vm *, sheep_t);
+sheep_t sheep_eval(struct sheep_vm *, sheep_t, int);
 sheep_t sheep_apply(struct sheep_vm *, sheep_t, struct sheep_list *);
 sheep_t sheep_call(struct sheep_vm *, sheep_t, unsigned int, ...);
 

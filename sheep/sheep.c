@@ -39,7 +39,7 @@ static int do_file(int ac, char **av)
 		sheep_free_expr(expr);
 		if (!fun)
 			goto out;
-		val = sheep_eval(&vm, fun);
+		val = sheep_eval(&vm, fun, 0);
 		if (!val)
 			goto out;
 	}
@@ -83,7 +83,7 @@ static int do_stdin(int ac, char **av)
 		sheep_free_expr(expr);
 		if (!fun)
 			continue;
-		val = sheep_eval(&vm, fun);
+		val = sheep_eval(&vm, fun, 0);
 		if (!val)
 			continue;
 		repr = sheep_repr(val);
